@@ -1,15 +1,9 @@
-# 40 Proyectos prioritarios
+# 40 Proyectos activos
 
-Prioriza estos proyectos cuando haya ambigüedad:
-1. `projects/mementobloom`
-2. `projects/Management360`
-3. `projects/Ventas_Porta`
+No hay prioridades fijas en este archivo.
 
-Para MementoBloom:
-- La semilla del agente está en `.kilo/agent/init.md`.
-- El agente generado está en `.kilo/agent/memento-curador.md`.
-- El contexto de arranque puede regenerarse localmente en `.kilo/START_CONTEXT.md`, pero no debe trackearse.
-
-Para Management360 y Ventas_Porta:
-- Usa sus HANDOFF recientes para reconstruir estado.
-- No asumas que servicios remotos están activos; verifica antes de operar.
+Regla operativa:
+- Leer `.kilo/secure/USER_CONTEXT.md` si existe para obtener prioridades contextuales del usuario.
+- Si no hay contexto de usuario, priorizar el proyecto activo detectado desde el directorio de trabajo o desde `USER_CONTEXT.md`.
+- Para proyectos distintos al activo, usar sus HANDOFF recientes solo cuando el usuario o el contexto lo indiquen.
+- No asumir que servicios remotos están activos; verificar antes de operar.

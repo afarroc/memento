@@ -32,7 +32,26 @@ REDIS_HOST = os.environ.get("REDIS_HOST", "localhost" if os.environ.get("REDIS_D
 REDIS_PORT = int(os.environ.get("REDIS_PORT", "6379"))
 SALA_PORT = int(os.environ.get("SALA_PORT", "8767"))
 PANEL_PORT = int(os.environ.get("PANEL_PORT", "8766"))
-PROJECT_PRIORITY = ["mementobloom", "Management360", "Ventas_Porta"]
+PROJECT_PRIORITY: List[str] = []
+
+
+def load_project_priority() -> List[str]:
+    if not USER_CONTEXT.exists():
+        return []
+    text = USER_CONTEXT.read_text(encoding="utf-8", errors="replace")
+    in_section = False
+    priorities: List[str] = []
+    for raw_line in text.splitlines():
+        line = raw_line.strip()
+        if line.startswith("## "):
+            in_section = line.lower() == "## proyectos prioritarios"
+            continue
+        if not in_section or not line.startswith("-"):
+            continue
+        match = re.search(r"`([^`]+)`", line)
+        if match:
+            priorities.append(match.group(1))
+    return priorities
 
 
 def rel(path: Path) -> str:
@@ -80,7 +99,8 @@ def entry_sort_key(entry: Dict[str, Any]) -> tuple[Any, ...]:
     ts = parse_ts(str(entry.get("ts", "")))
     project = str(entry.get("project", ""))
     entry_type = str(entry.get("type", ""))
-    project_priority = PROJECT_PRIORITY.index(project) if project in PROJECT_PRIORITY else 99
+    priorities = PROJECT_PRIORITY or load_project_priority()
+    project_priority = priorities.index(project) if priorities and project in priorities else 99
     type_priority = {"HANDOFF": 0, "SOURCE": 1, "NOTE": 2, "CONTEXT": 3, "COMPONENT": 4}.get(entry_type, 50)
     return (ts, -project_priority, -type_priority, str(entry.get("id", "")))
 
