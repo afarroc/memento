@@ -28,7 +28,7 @@ ROOT = Path(__file__).resolve().parent.parent
 INDEX_PATH = ROOT / "memory" / "graph" / "memory_index.json"
 START_CONTEXT = ROOT / ".kilo" / "START_CONTEXT.md"
 PROJECT_META = ROOT / ".kilo" / "PROJECT_META.md"
-USER_CONTEXT = ROOT / ".kilo" / "USER_CONTEXT.md"
+USER_CONTEXT = ROOT / ".kilo" / "secure" / "USER_CONTEXT.md"
 AGENT_DIR = ROOT / ".kilo" / "agent"
 AGENT_INIT = AGENT_DIR / "init.md"
 AGENT_SEED = AGENT_DIR / "memento-curador.md"
@@ -50,7 +50,7 @@ SECRET_PATTERNS = [
 ]
 IGNORED_PATHS = [
     ".kilo/START_CONTEXT.md",
-    ".kilo/USER_CONTEXT.md",
+    ".kilo/secure/USER_CONTEXT.md",
     "memory/graph/*.json",
     ".memento/",
     ".memento_runtime/",
