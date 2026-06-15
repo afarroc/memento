@@ -100,9 +100,7 @@ Reglas:
 # 40 Proyectos prioritarios
 
 Prioriza estos proyectos cuando haya ambigüedad:
-1. `projects/mementobloom`
-2. `projects/Management360`
-3. `projects/Ventas_Porta`
+- Ver `.kilo/secure/USER_CONTEXT.md` para prioridades contextuales del usuario.
 
 Para MementoBloom:
 - La semilla del agente está en `.kilo/agent/init.md`.
@@ -118,7 +116,7 @@ Para Management360 y Ventas_Porta:
 
 Contexto de usuario:
 - Lee `.kilo/PROJECT_META.md` si existe.
-- Lee `.kilo/USER_CONTEXT.md` si existe y úsalo como preferencias, objetivos, infraestructura y reglas operativas del usuario.
+- Lee `.kilo/secure/USER_CONTEXT.md` si existe y úsalo como preferencias, objetivos, infraestructura y reglas operativas del usuario.
 - No pidas información ya registrada en `.kilo/USER_CONTEXT.md`, handoffs o memoria compacta.
 - Actualiza `.kilo/USER_CONTEXT.md` solo cuando el usuario revele preferencias, objetivos, restricciones, infraestructura o decisiones relevantes.
 
@@ -134,7 +132,7 @@ Arranque recomendado:
 
 Seguridad:
 - No expongas secretos ni contenido de vault.
-- No trackees `.kilo/START_CONTEXT.md`, `.kilo/USER_CONTEXT.md`, `memory/graph/*.json`, `.memento/`, `archive/` ni handoffs.
+- No trackees `.kilo/START_CONTEXT.md`, `.kilo/secure/USER_CONTEXT.md`, `memory/graph/*.json`, `.memento/`, `archive/` ni handoffs.
 - No ejecutes operaciones destructivas sobre Redis, memoria o handoffs salvo instrucción explícita.
 
 ### .kilo/agent/instructions/90-safety.md OK
@@ -146,7 +144,7 @@ Seguridad operativa:
 - No borres archivos, memoria, Redis, handoffs o índices salvo solicitud explícita.
 - Si una operación puede ser destructiva, explícala antes de ejecutarla.
 - Mantén compatibilidad con la configuración Kilo en `.kilo/kilo.json`.
-- No subas `.kilo/START_CONTEXT.md`, `memory/graph/*.json`, `.memento/`, `archive/` ni datos de sesión.
+- No subas `.kilo/START_CONTEXT.md`, `.kilo/secure/USER_CONTEXT.md`, `memory/graph/*.json`, `.memento/`, `archive/` ni datos de sesión.
 
 Prohibiciones operativas:
 - No ejecutes limpiezas agresivas con `lsof/xargs kill -9` para cerrar puertos, procesos o servicios del sistema.
@@ -177,7 +175,10 @@ Prohibiciones operativas:
 - No ejecutes FLUSHALL ni operaciones destructivas sobre Redis salvo instrucción explícita.
 - Lee `.kilo/START_CONTEXT.md` antes de actuar si existe, pero no lo subas.
 - Usa `memory/graph/memory_index.json` como índice compacto.
-- Prioriza HANDOFF recientes de `projects/mementobloom`, `projects/Management360` y `projects/Ventas_Porta`.
-- Si el usuario pide contexto, ejecuta `python3 tools/context_builder.py --limit 20`.
-- Si el usuario pide iniciar una nueva sesión con contexto, ejecuta `python3 tools/memento_kilo_start.py`.
-- Mantén Redis de sala en `192.168.18.59:6379` como fuente de mensajes del panel local `http://127.0.0.1:8767`.
+- Usa `Path(__file__).resolve().parent.parent` para rutas base del repo.
+- No uses rutas absolutas hardcodeadas.
+- Entorno limpio: .kilo/secure/SECURE.md define preferencias locales.
+Actualizado: 2026-06-14T04:35:00-05:00
+- Idioma principal: español.
+- Estilo preferido: directo, técnico y orientado a acción.
+- Evitar conversación innecesaria.

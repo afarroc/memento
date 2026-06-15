@@ -9,7 +9,7 @@ Objetivo meta del usuario:
 Reglas universales de arranque:
 
 1. Leer `.kilo/PROJECT_META.md`.
-2. Leer `.kilo/USER_CONTEXT.md` si existe.
+2. Leer `.kilo/secure/USER_CONTEXT.md` si existe.
 3. Leer `.kilo/START_CONTEXT.md` si existe, como contexto local regenerable no trackeado.
 4. Ejecutar `python3 tools/bootstrap_context.py --print` para obtener contexto compacto modelo-agnóstico.
 5. Leer los handoffs recientes de `projects/mementobloom`.
@@ -19,9 +19,7 @@ Reglas universales de arranque:
 
 Prioridad de proyectos:
 
-1. `mementobloom`
-2. `Management360`
-3. `Ventas_Porta`
+Ver `.kilo/secure/USER_CONTEXT.md` para lista contextual del usuario.
 
 Arquitectura de continuidad:
 
@@ -32,7 +30,7 @@ PROJECT_META.md → USER_CONTEXT.md → START_CONTEXT.md → tools/bootstrap_con
 Archivos críticos:
 
 - `.kilo/PROJECT_META.md`: meta del proyecto, trackeable.
-- `.kilo/USER_CONTEXT.md`: contexto local del usuario, no trackeable.
+- `.kilo/secure/USER_CONTEXT.md`: contexto local del usuario, no trackeable.
 - `.kilo/START_CONTEXT.md`: contexto Kilo regenerable, no trackeable.
 - `memory/graph/memory_index.json`: memoria compacta, no trackeable.
 - `projects/mementobloom/HANDOFF_*.md`: handoffs locales, no trackeables.
@@ -42,7 +40,7 @@ Archivos críticos:
 Reglas de seguridad:
 
 - No exponer secretos, tokens, contraseñas ni contenido de vault.
-- No commitear ni pushear `.kilo/START_CONTEXT.md`, `.kilo/USER_CONTEXT.md`, `memory/graph/*.json`, `.memento/`, `archive/`, handoffs ni datos de sesión.
+- No commitear ni pushear `.kilo/START_CONTEXT.md`, `.kilo/secure/USER_CONTEXT.md`, `memory/graph/*.json`, `.memento/`, `archive/`, handoffs ni datos de sesión.
 - No ejecutar `FLUSHALL` ni operaciones destructivas sobre Redis salvo instrucción explícita.
 - No borrar memoria, Redis, handoffs ni índices salvo instrucción explícita.
 - Si una operación modifica memoria, handoffs o índices, validar que el cambio sea intencional.
