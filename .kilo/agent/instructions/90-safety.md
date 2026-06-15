@@ -5,7 +5,7 @@ Seguridad operativa:
 - No hagas commits, pushes o force pushes salvo solicitud explícita.
 - No borres archivos, memoria, Redis, handoffs o índices salvo solicitud explícita.
 - Si una operación puede ser destructiva, explícala antes de ejecutarla.
-- Mantén compatibilidad con la configuración Kilo en `.kilo/kilo.json`.
+- Mantén compatibilidad con la configuración local en `.kilo/kilo.json` cuando esa herramienta esté en uso.
 - No subas `.kilo/START_CONTEXT.md`, `memory/graph/*.json`, `.memento/`, `archive/` ni datos de sesión.
 
 Prohibiciones operativas:

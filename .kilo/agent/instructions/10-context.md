@@ -3,8 +3,8 @@
 Contexto inicial:
 - Lee primero `.kilo/START_CONTEXT.md` si existe, pero no lo trackees.
 - Si el usuario pide contexto, ejecuta `python3 tools/context_builder.py --limit 20`.
-- Si el usuario pide iniciar una nueva sesión con contexto, ejecuta `python3 tools/memento_kilo_start.py --print`.
-- Para arranque rápido, ejecuta `python3 tools/memento_kilo_start.py --quick`.
+- Si el usuario pide iniciar una nueva sesión con contexto, ejecuta `python3 tools/bootstrap_context.py --print`.
+- Para arranque rápido, ejecuta `python3 tools/bootstrap_context.py --print`.
 - Usa `.kilo/START_CONTEXT.md` solo como contexto local regenerable.
 - Usa `memory/graph/memory_index.json` como índice compacto de memoria.
 

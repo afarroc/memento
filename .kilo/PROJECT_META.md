@@ -31,11 +31,16 @@ Archivos críticos:
 
 - `.kilo/PROJECT_META.md`: meta del proyecto, trackeable.
 - `.kilo/secure/USER_CONTEXT.md`: contexto local del usuario, no trackeable.
-- `.kilo/START_CONTEXT.md`: contexto Kilo regenerable, no trackeable.
+- `.kilo/START_CONTEXT.md`: contexto local regenerable, no trackeable.
 - `memory/graph/memory_index.json`: memoria compacta, no trackeable.
 - `projects/*/HANDOFF_*.md`: handoffs locales del proyecto activo, no trackeables.
-- `tools/bootstrap_context.py`: bootstrap universal para cualquier modelo.
-- `tools/optimize_agent.py`: auditoría y optimización del agente.
+- `tools/bootstrap_context.py`: bootstrap universal para cualquier modelo, CLI o agente.
+- `tools/context_builder.py`: contexto ranked para revisión más profunda.
+
+## Neutralidad de agente
+
+El proyecto no depende de ningún agente, modelo o CLI específico.
+El directorio `.kilo/` puede contener rutas propias de una herramienta local; si otro agente no las usa, debe ignorarlas y reconstruir el contexto desde `PROJECT_META.md`, `USER_CONTEXT.md`, `tools/bootstrap_context.py`, handoffs y estado Git.
 
 Reglas de seguridad:
 
@@ -49,8 +54,11 @@ Comandos base:
 
 ```bash
 python3 tools/bootstrap_context.py --print
-python3 tools/optimize_agent.py --context
-python3 tools/memento_kilo_start.py --quick --project=mementobloom --limit 8
 python3 tools/context_builder.py --limit 12
 python3 tools/quick_scan.py <HANDOFF_PATH>
+```
+
+Comandos opcionales:
+```bash
+python3 tools/optimize_agent.py --context
 ```

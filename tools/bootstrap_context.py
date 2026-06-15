@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Bootstrap universal de contexto para MementoBloom.
 
-Este script no depende de Kilo ni de un modelo específico. Imprime un contexto
+Este script no depende de ningún agente ni modelo específico. Imprime un contexto
 compacto que cualquier modelo, CLI o agente puede usar para continuar una
 sesión: usuario, meta del proyecto, Git, memoria, handoffs y servicios.
 """
@@ -247,7 +247,6 @@ def build_context(limit: int = 8, project: Optional[str] = None, include_files: 
         "bootstrap_commands": {
             "universal": "python3 tools/bootstrap_context.py --print",
             "audit": "python3 tools/optimize_agent.py --context",
-            "kilo_quick": "python3 tools/memento_kilo_start.py --quick --project=mementobloom --limit 8",
             "ranked_context": "python3 tools/context_builder.py --limit 12",
         },
     }
@@ -317,9 +316,11 @@ def format_markdown(context: Dict[str, Any]) -> str:
         "",
         "## Bootstrap commands",
         "- python3 tools/bootstrap_context.py --print",
-        "- python3 tools/optimize_agent.py --context",
-        "- python3 tools/memento_kilo_start.py --quick --project=mementobloom --limit 8",
         "- python3 tools/context_builder.py --limit 12",
+        "- python3 tools/quick_scan.py <HANDOFF_PATH>",
+        "",
+        "## Optional agent-specific commands",
+        "- python3 tools/optimize_agent.py --context",
     ])
     return "\n".join(lines) + "\n"
 
