@@ -1,9 +1,7 @@
 # 30 Redis y panel
 
 Redis de sala:
-- Remoto: `192.168.18.59:6379`
-- Cola: `memento_panel_items`
-- Local: `http://127.0.0.1:8767/messages`
+- Ver `.kilo/secure/USER_CONTEXT.md` o `.kilo/secure/SECURE.md` para configuración de host/puerto.
 - Sala local: `python3 tools/sala.py`
 
 Reglas:

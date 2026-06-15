@@ -33,13 +33,13 @@ AGENT_DIR = ROOT / ".kilo" / "agent"
 AGENT_INIT = AGENT_DIR / "init.md"
 AGENT_SEED = AGENT_DIR / "memento-curador.md"
 INSTRUCTION_DIR = AGENT_DIR / "instructions"
-HANDOFF_DIR = ROOT / "projects" / "mementobloom"
-REDIS_HOST = os.environ.get("REDIS_HOST", "192.168.18.59")
+HANDOFF_DIR = ROOT / "projects" / ROOT.name
+REDIS_HOST = os.environ.get("REDIS_HOST", "localhost" if os.environ.get("REDIS_DISABLE") else "192.168.18.59")
 REDIS_PORT = int(os.environ.get("REDIS_PORT", "6379"))
 SALA_PORT = int(os.environ.get("SALA_PORT", "8767"))
 PANEL_PORT = int(os.environ.get("PANEL_PORT", "8766"))
 REDIS_QUEUE = os.environ.get("REDIS_QUEUE", "memento_panel_items")
-PROJECT_PRIORITY = ["mementobloom", "Management360", "Ventas_Porta"]
+PROJECT_PRIORITY = []  # Se llena dinámicamente desde USER_CONTEXT.md si existe
 DEFAULT_CONTEXT_LIMIT = 8
 SECRET_PATTERNS = [
     ("api_key", re.compile(r"(?i)(api[_-]?key|apikey)\s*[:=]\s*['\"]?[\w\-]{8,}")),
@@ -121,9 +121,9 @@ def entry_sort_key(entry: Dict[str, Any]) -> tuple[Any, ...]:
     ts = parse_ts(str(entry.get("ts", "")))
     project = str(entry.get("project", ""))
     type_name = str(entry.get("type", ""))
-    priority = PROJECT_PRIORITY.index(project) if project in PROJECT_PRIORITY else 99
+    # Prioridad por tipo: HANDOFF primero, luego por fecha
     type_priority = {"HANDOFF": 0, "SOURCE": 1, "NOTE": 2, "CONTEXT": 3, "COMPONENT": 4}.get(type_name, 50)
-    return (ts, -priority, -type_priority, str(entry.get("id", "")))
+    return (ts, -type_priority, project, str(entry.get("id", "")))
 
 
 def top_entries(index: Dict[str, Dict[str, Any]], limit: int, project: Optional[str] = None) -> List[Dict[str, Any]]:
@@ -412,7 +412,7 @@ def compact_context(audit: Dict[str, Any]) -> str:
     user_context = audit.get("user_context", {})
     project_meta = audit.get("project_meta", {})
     lines = [
-        "Resumen de optimización MementoBloom",
+        "Resumen de optimización del agente",
         "",
         f"Generado: {audit.get('generated_at')}",
         f"Proyecto: {audit.get('project')}",
@@ -454,7 +454,7 @@ def environment_details_block() -> str:
     ])
 
 
-def panel_markdown(text: str, title: str = "Optimización agente") -> str:
+def panel_markdown(text: str, title: str = "Optimización") -> str:
     body = text.strip()
     if "<environment_details>" not in body:
         body = environment_details_block() + body
@@ -471,7 +471,7 @@ def format_handoff(audit: Dict[str, Any]) -> str:
     changes = audit.get("git", {}).get("status", {}).get("raw", "")
     latest_handoffs = audit.get("latest_handoffs", [])
     lines = [
-        "# HANDOFF - Optimización de agente MementoBloom",
+        "# HANDOFF - Optimización de agente",
         "",
         compact,
         "",
@@ -622,7 +622,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         audit["self_test"] = self_test(audit)
 
     if args.panel:
-        audit["panel"] = post_panel(compact_context(audit), title="Optimización agente")
+        audit["panel"] = post_panel(compact_context(audit), title="Optimización")
 
     if not args.no_default_audit or args.context:
         print_context(audit)

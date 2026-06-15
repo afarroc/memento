@@ -49,14 +49,14 @@ INCLUDE_RE = re.compile(r"^#(?:include|load)\s+(.+)$", re.MULTILINE)
 
 INIT_TEMPLATE = """# Semilla inicial del agente MementoBloom
 
-Objetivo: construir progresivamente un agente de memoria histórica para MementoBloom.
+Objetivo: construir progresivamente un agente de memoria histórica.
 
 Flujo obligatorio:
 1. Leer esta semilla inicial.
 2. Cargar las instrucciones progresivas listadas abajo.
 3. Leer `.kilo/START_CONTEXT.md` si existe, pero no lo trackees.
 4. Usar `memory/graph/memory_index.json` como memoria compacta local.
-5. Priorizar HANDOFF recientes de `projects/mementobloom`, `projects/Management360` y `projects/Ventas_Porta`.
+5. Priorizar HANDOFF recientes del proyecto activo (ver `projects/` o `USER_CONTEXT.md`).
 6. Continuar desde el último handoff relevante sin pedir información ya registrada.
 7. No destruir memoria, Redis ni handoffs salvo instrucción explícita.
 
@@ -65,14 +65,13 @@ Flujo obligatorio:
 #include instructions/10-context.md
 #include instructions/20-memory.md
 #include instructions/30-redis-panel.md
-#include instructions/40-projects.md
 #include instructions/90-safety.md
 """
 
 INSTRUCTION_TEMPLATES = {
     "00-core.md": """# 00 Core
 
-Eres el agente principal de MementoBloom.
+Eres el agente principal del proyecto.
 
 Comportamiento:
 - Actúa como curador de memoria histórica y contexto operativo.
@@ -100,7 +99,7 @@ Reglas de arranque:
 - Continúa desde el último handoff relevante.
 - No repitas instrucciones ya registradas salvo que sea necesario para ejecutar una tarea.
 """,
-    "20-memory.md": """# 20 Memoria
+     "20-memory.md": """# 20 Memoria
 
 Memoria operativa:
 - Prioriza HANDOFF recientes.
@@ -115,12 +114,10 @@ No borrar:
 - No borres handoffs.
 - No elimines índices salvo instrucción explícita.
 """,
-    "30-redis-panel.md": """# 30 Redis y panel
+     "30-redis-panel.md": """# 30 Redis y panel
 
 Redis de sala:
-- Remoto: `192.168.18.59:6379`
-- Cola: `memento_panel_items`
-- Local: `http://127.0.0.1:8767/messages`
+- Ver `.kilo/secure/USER_CONTEXT.md` o `.kilo/secure/SECURE.md` para configuración de host/puerto.
 - Sala local: `python3 tools/sala.py`
 
 Reglas:
@@ -128,51 +125,7 @@ Reglas:
 - Si necesitas levantar la sala, usa `python3 tools/sala.py` o `python3 tools/memento_kilo_start.py --services`.
 - Verifica `/stats` y `/messages` cuando el usuario pregunte por el panel.
 """,
-    "40-projects.md": """# 40 Proyectos prioritarios
-
-Prioriza estos proyectos cuando haya ambigüedad:
-1. `projects/mementobloom`
-2. `projects/Management360`
-3. `projects/Ventas_Porta`
-
-Para MementoBloom:
-- La semilla del agente está en `.kilo/agent/init.md`.
-- El agente generado está en `.kilo/agent/memento-curador.md`.
-- El contexto de arranque puede regenerarse localmente en `.kilo/START_CONTEXT.md`, pero no debe trackearse.
-
-Para Management360 y Ventas_Porta:
-- Usa sus HANDOFF recientes para reconstruir estado.
-- No asumas que servicios remotos están activos; verifica antes de operar.
-""",
-     "50-user-meta.md": """# 50 Usuario y meta del proyecto
-
-Contexto de usuario:
-- Lee `.kilo/PROJECT_META.md` si existe.
-- Si existe `.kilo/secure/USER_CONTEXT.md`, úsalo como preferencias, objetivos, infraestructura y reglas operativas locales.
-- No pidas información ya registrada en `.kilo/secure/USER_CONTEXT.md`, handoffs o memoria compacta.
-- Actualiza `.kilo/secure/USER_CONTEXT.md` solo cuando el usuario revele preferencias, objetivos, restricciones, infraestructura o decisiones relevantes.
-
-Meta del proyecto:
-- Cada sesión debe poder continuar sin depender de un modelo específico.
-- El contexto debe ser modelo-agnóstico y legible desde archivos locales.
-- Prioriza continuidad sobre dependencias de una UI o modelo concreto.
-- Python Portable: `.kilo/USER_CONTEXT.md` debe poder ejecutarse desde cualquier carpeta con `python3 <path>` sin rutas absolutas.
-- Python Portable: Usa `Path(__file__).resolve().parent` para crear rutas relativas seguras dentro del proyecto.
-- Python Portable: No uses rutas absolutas hardcodeadas como `/Users/...`, `/Volumes/...`, ni referencias a carpetas externas al repo.
-- Python Portable: Asegura que el código de herramientas pueda clonarse en `/home/usuario/mementobloom` o `/mnt/c/Users/.../mementobloom` y seguir funcionando.
-- Python Portable: Cualquier ruta dentro del proyecto debe crearse relativa al archivo `tools/` o al root del repo, no desde la ubicación actual del usuario.
-
-Arranque recomendado:
-- Ejecuta `python3 tools/bootstrap_context.py --print` cuando necesites reconstruir contexto para cualquier modelo.
-- Ejecuta `python3 tools/optimize_agent.py --context` cuando necesites auditoría operativa.
-- Ejecuta `python3 tools/memento_kilo_start.py --quick --project=mementobloom --limit 8` para arranque rápido Kilo.
-
-Seguridad:
-- No expongas secretos ni contenido de vault.
-- No trackees `.kilo/START_CONTEXT.md`, `.kilo/secure/USER_CONTEXT.md`, `memory/graph/*.json`, `.memento/`, `archive/`, `.kilo/secure/*` ni handoffs.
-- No ejecutes operaciones destructivas sobre Redis, memoria o handoffs salvo instrucción explícita.
-""",
-     "90-safety.md": """# 90 Seguridad
+      "90-safety.md": """# 90 Seguridad
 
 Seguridad operativa:
 - No expongas credenciales, secretos ni contenido de vault salvo que sea estrictamente necesario.
@@ -182,7 +135,7 @@ Seguridad operativa:
 - Mantén compatibilidad con la configuración Kilo en `.kilo/kilo.json`.
 - Usa rutas relativas y portable-friendly; no dependas de `/Users/...` ni `/Volumes/...`.
 """,
-}
+ }
 
 
 def load_index():
@@ -308,14 +261,14 @@ def build_agent_content(project: str | None = None) -> tuple[str, str]:
 
     lines = [
         "---",
-        "description: Curador de memoria histórica para MementoBloom",
+        "description: Curador de memoria histórica del proyecto",
         "mode: primary",
         "model: kilo/kilo-auto/free",
         "steps: 25",
         "---",
         f"<!-- generated-hash: {signature} -->",
         "",
-        "# MementoBloom Agent Seed",
+        "# Agente Seed",
         "",
         "Agente construido progresivamente desde `.kilo/agent/init.md`.",
         "La semilla inicial carga instrucciones adicionales y memoria compacta hasta formar un agente robusto.",
@@ -419,21 +372,11 @@ def build_context(limit: int, project: str | None = None, agent_result: dict | N
         )
     lines.extend([
         "",
-        "## Commands",
-        "- `python3 tools/memento_kilo_start.py --quick --project=mementobloom --limit 8` arranque rápido local sin regenerar contexto trackeado.",
-        "- `python3 tools/memento_kilo_start.py --print --project=mementobloom --limit 14` prepara agente, imprime contexto local y sale.",
-        "- `python3 tools/memento_kilo_start.py --services` prepara el agente, regenera el contexto y levanta servicios locales antes de abrir Kilo.",
-        "- `python3 tools/memento_kilo_start.py --services-only` levanta servicios locales sin abrir Kilo.",
+        "## Safe next-session commands",
+        f"- `python3 tools/memento_kilo_start.py --quick --limit 8` (proyecto por defecto: {ROOT.name})",
         "- `python3 tools/bootstrap_context.py --print` imprime contexto universal para cualquier modelo.",
         "- `python3 tools/optimize_agent.py --context` audita y resume el entorno operativo.",
-        "- `python3 tools/context_builder.py --limit 20` muestra contexto ranked.",
-        "- `python3 tools/quick_scan.py <HANDOFF_PATH>` indexa un handoff nuevo.",
-        "- `python3 tools/sala.py` inicia solo la sala local en `http://127.0.0.1:8767`.",
-        "",
-        "## Redis sala",
-        "- Remoto: `192.168.18.59:6379`",
-        "- Cola: `memento_panel_items`",
-        "- Local: `http://127.0.0.1:8767/messages`",
+        "- `python3 tools/memento_kilo_start.py --services-only`",
     ])
     return "\n".join(lines) + "\n"
 
@@ -648,7 +591,7 @@ def quick_startup_report(limit: int = 8, project: str | None = None) -> str:
         f"- Sala local: {'OK' if sala.get('ok') else 'UNAVAILABLE'} at http://127.0.0.1:{SALA_PORT}",
         "",
         "## Safe next-session commands",
-        "- `python3 tools/memento_kilo_start.py --quick --project=mementobloom --limit 8`",
+        f"- `python3 tools/memento_kilo_start.py --quick --limit 8` (proyecto por defecto: {ROOT.name})",
         "- `python3 tools/bootstrap_context.py --print` imprime contexto universal para cualquier modelo.",
         "- `python3 tools/optimize_agent.py --context` audita y resume el entorno operativo.",
         "- `python3 tools/memento_kilo_start.py --services-only`",
@@ -713,27 +656,14 @@ def run_kilo(args: argparse.Namespace) -> int:
 
 
 def normalize_argv(argv: list[str]) -> list[str]:
-    out = []
-    i = 0
-    while i < len(argv):
-        arg = argv[i]
-        if arg == "--project":
-            if i + 1 < len(argv) and not argv[i + 1].startswith("-"):
-                out.extend([arg, argv[i + 1]])
-                i += 2
-            else:
-                out.extend([arg, "mementobloom"])
-                i += 1
-        else:
-            out.append(arg)
-            i += 1
-    return out
+    # Con default=None en argparse, ya no necesitamos forzar valor por defecto aquí
+    return argv
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Prepare the MementoBloom progressive agent seed and launch Kilo")
+    parser = argparse.ArgumentParser(description="Prepare the progressive agent seed and launch Kilo")
     parser.add_argument("--limit", type=int, default=14)
-    parser.add_argument("--project", default="mementobloom")
+    parser.add_argument("--project", default=None)  # Por defecto usa el directorio actual
     parser.add_argument("--agent", default=DEFAULT_AGENT)
     parser.add_argument("--model", default=DEFAULT_MODEL)
     parser.add_argument("--print", action="store_true", help="Print context and exit without preparing services")
@@ -745,13 +675,14 @@ def main():
     parser.add_argument("--force-seed", action="store_true", help="Force progressive agent seed regeneration")
     parser.add_argument("--no-kilo", action="store_true", help="Do not launch Kilo after agent/context preparation")
     args = parser.parse_args(normalize_argv(sys.argv[1:]))
+    project = args.project or ROOT.name
 
     if args.quick:
-        print(quick_startup_report(limit=args.limit, project=args.project), end="")
+        print(quick_startup_report(limit=args.limit, project=project), end="")
         return 0
 
-    agent_result = {"status": "skipped", "path": str(AGENT_SEED), "hash": "?"} if args.no_agent_seed else ensure_agent_seed(force=args.force_seed, project=args.project)
-    context = build_context(limit=args.limit, project=args.project, agent_result=agent_result)
+    agent_result = {"status": "skipped", "path": str(AGENT_SEED), "hash": "?"} if args.no_agent_seed else ensure_agent_seed(force=args.force_seed, project=project)
+    context = build_context(limit=args.limit, project=project, agent_result=agent_result)
     write_context(context)
     print(context, end="")
     print_agent_seed(agent_result)
