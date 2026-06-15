@@ -1,0 +1,84 @@
+# MementoBloom - Secure .gitignore
+# Proyecto mutable con contexto privado - NO subir credenciales ni datos de sesión
+
+# === CREDENTIALS & SECRETS (CRITICAL) ===
+~/.memento/vault.json
+.memento/
+.memento/vault.json
+*.env
+.env.local
+.env.dev
+.env.prod
+*.env.*
+!.env.example
+
+# === SESSION, CONTEXT & RUNTIME DATA (DO NOT UPLOAD) ===
+session_record.json
+sessions/
+memory/sessions/
+.memento_runtime/
+uploads/
+*HANDOFF*.md
+*_CONTEXT.md
+.kilo/START_CONTEXT.md
+.kilo/START_CONTEXT.md
+.kilo/USER_CONTEXT.md
+.kilo/agent/memento-curador.md
+.kilo/secure/*
+!.kilo/secure/SECURE.md
+!.kilo/secure/.gitkeep
+!.kilo/secure/agent.template.json
+memory/graph/*.json
+memory/graph/*.bak_*
+.panel_messages.json
+.chat_waiter_state.json
+tools/secure_context.py
+
+# === ARCHIVE PRESERVATION (LOCAL ONLY) ===
+archive/
+etl/
+
+# === CONFIG WITH LOCAL PATHS ===
+config.json
+
+# === PYTHON ARTIFACTS ===
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.pyo
+*.pyd
+
+# === VIRTUAL ENVIRONMENT ===
+venv/
+ENV/
+env/
+.venv
+
+# === OS METADATA ===
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+.fseventsd
+.fsattributes
+
+# === IDE / EDITOR ===
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# === BUILD ARTIFACTS ===
+dist/
+build/
+*.egg-info/
+.eggs
+
+# === NODE MODULES (LOCAL TOOLING ONLY) ===
+.kilo/node_modules/
+.kilo/package-lock.json

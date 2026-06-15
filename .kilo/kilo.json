@@ -1,0 +1,8 @@
+{
+  "$schema": "https://app.kilo.ai/config.json",
+  "default_agent": "memento-curador",
+  "model": "kilo/kilo-auto/free",
+  "instructions": [
+    ".kilo/START_CONTEXT.md"
+  ]
+}

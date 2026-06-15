@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sala · MementoBloom</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#08090a;color:#d4d4d4;height:100vh;display:flex;flex-direction:column}
+header{display:flex;align-items:center;justify-content:space-between;padding:6px 10px;background:#0f1419;border-bottom:1px solid #1f2933}
+header h1{font-size:13px;font-weight:600;color:#e5e7eb}
+header .status{font-size:11px;color:#6b7280}
+#feed{flex:1;overflow-y:auto;padding:12px 10px}
+.msg{margin:8px 0;padding:10px 12px;background:#111318;border-radius:8px;font-size:13px;line-height:1.45;border-left:3px solid #262a33;border:1px solid #1f2933}
+.msg .time{font-size:10px;color:#4b5563;display:inline-block;margin-right:6px}
+.msg .badge{display:inline-block;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;padding:2px 6px;border-radius:999px;margin-right:6px;border:1px solid transparent}
+.msg .meta-line{font-size:11px;color:#6b7280;margin-top:4px}
+.reply-context{margin:6px 0;padding:6px 8px;background:#0b0d11;border:1px solid #1f2933;border-radius:4px;font-size:12px}
+.reply-context .reply-label{font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px}
+.reply-context .reply-text{color:#9ca3af;line-height:1.3}
+.msg.html{background:#0f1524;border-left-color:#1e3a8a}
+.msg.html .badge{color:#93c5fd;border-color:#1e3a8a;background:#0f1524}
+.msg.html .html-content{line-height:1.5}
+.msg.html form{display:grid;gap:8px;margin-top:8px;padding:10px;background:#0b121e;border:1px solid #1f4f7a;border-radius:6px}
+.msg.html label{display:grid;gap:4px;font-size:12px;color:#d4d4d4}
+.msg.html input,.msg.html select,.msg.html textarea{background:#0a0c10;color:#e5e7eb;border:1px solid #374151;border-radius:5px;padding:7px 8px;font:inherit}
+.msg.html button{background:#2563eb;color:#fff;border:0;border-radius:5px;padding:8px 10px;font-weight:600;cursor:pointer}
+.msg.html button:hover{background:#1d4ed8}
+.msg.html .form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px}
+.msg.html .form-actions{display:flex;gap:8px;align-items:center;justify-content:flex-end}
+.msg.html,.msg.code,.msg.json,.msg.pixels,.msg.image,.msg.file,.msg.system{margin:8px 12px}
+.msg.code .badge{color:#6ee7b7;border-color:#14532d;background:#0e1b16}
+.env-block{margin:6px 0;padding:8px 10px;background:#0b121e;border-left:3px solid #1f4f7a;border-radius:4px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;white-space:pre-wrap;word-wrap:break-word;color:#e5e7eb}
+.env-block .env-label{font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+.msg.json{background:#230f0f;border-left-color:#7f1d1d;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px}
+.msg.json .badge{color:#fca5a5;border-color:#7f1d1d;background:#230f0f}
+.msg.pixels{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;background:#14100f;border-left-color:#422006}
+.msg.pixels .badge{color:#fdba74;border-color:#422006;background:#14100f}
+.msg.image{background:#141318;border-left-color:#3f3f46}
+.msg.image img{max-width:100%;max-height:260px;border-radius:4px;border:1px solid #262a33;display:block;margin-top:4px}
+.msg.file{background:#121318;border-left-color:#3f3f46}
+.msg.file a{color:#9ca3af;text-decoration:none;font-size:12px}
+.msg.system{border-left-style:dashed}
+.msg.system .badge{opacity:.85}
+.msg.client{margin-left:18%;margin-right:0;background:#0b2f22!important;border-left-color:#34d399!important;color:#dcfce7!important}
+.msg.client .badge{color:#bbf7d0!important;border-color:#34d399!important;background:#0b2f22!important}
+.msg.assistant{margin:8px 12px;background:#101827!important;border-left-color:#60a5fa!important;color:#e0f2fe!important}
+.msg.assistant .badge{color:#bfdbfe!important;border-color:#60a5fa!important;background:#0f172a!important}
+.msg.content-only{margin-left:0;margin-right:0}
+.msg .content{white-space:pre-wrap;word-wrap:break-word;border:1px solid #1f2933;border-radius:4px;padding:8px;margin-top:6px}
+.msg .content ul{margin:8px 0;padding-left:20px}
+.msg .content li{margin:4px 0}
+.msg code{background:#0b0d11;padding:1px 4px;border-radius:4px;font-size:11px}
+pre{margin:6px 0;padding:8px;background:#0b0d11;border-radius:4px;overflow-x:auto}
+pre code{background:transparent;padding:0;font-size:12px}
+#composer{background:#0f1419;border-top:1px solid #1f2933;padding:8px 10px}
+#toolbar{display:flex;align-items:center;gap:6px;margin-bottom:6px}
+#toolbar select,#toolbar button{background:#111318;color:#d4d4d4;border:1px solid #1f2933;border-radius:4px;padding:4px 8px;font-size:12px;cursor:pointer}
+#toolbar select:hover,#toolbar button:hover{background:#1a1f27}
+#row{display:flex;gap:8px;align-items:flex-end}
+#txt{flex:1;min-height:34px;max-height:160px;padding:8px;background:#0a0c10;color:#e5e7eb;border:1px solid #1f2933;border-radius:6px;resize:vertical;font:inherit}
+#txt:focus{outline:none;border-color:#374151}
+#btn{padding:0 14px;height:34px;background:#2563eb;color:#fff;border:none;border-radius:6px;font-weight:600;cursor:pointer}
+#btn:hover{background:#1d4ed8}
+#hint{font-size:10px;color:#6b7280;margin-top:4px}
+.files{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0}
+.files .chip{background:#111318;border:1px solid #1f2933;border-radius:999px;padding:3px 8px;font-size:11px;color:#9ca3af;display:inline-flex;align-items:center;gap:6px}
+.files .chip button{background:transparent;border:none;color:#9ca3af;cursor:pointer;font-size:13px;line-height:1}
+.preview-files{padding:2px 0 6px}
+.preview-files .chip{border-color:#374151;background:#0a0c10}
+</style>
+</head>
+<body>
+<header>
+  <h1>🜄 MementoBloom · Sala</h1>
+  <div class="status" id="status">conectando…</div>
+</header>
+<div id="feed"></div>
+<div id="composer">
+  <div id="replyIndicator" style="display:none;position:fixed;top:50px;right:20px;z-index:100;background:#101827;border:1px solid #60a5fa;border-radius:6px;padding:10px 12px;max-width:320px;font-size:12px;box-shadow:0 4px 12px rgba(0,0,0,0.3)">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+      <span style="color:#60a5fa;font-weight:600">Respondiendo</span>
+      <button id="cancelReply" style="background:transparent;border:none;color:#fca5a5;cursor:pointer;font-size:14px">✕</button>
+    </div>
+    <div id="replyText" style="color:#d4d4d4;line-height:1.3;max-height:60px;overflow:hidden"></div>
+  </div>
+    <select id="etype">
+      <option value="text">Texto</option>
+      <option value="markdown">Markdown</option>
+      <option value="code">Código</option>
+      <option value="json">JSON</option>
+      <option value="system">Sistema</option>
+      <option value="image">Imagen</option>
+      <option value="file">Archivo</option>
+    </select>
+    <input id="lang" placeholder="lenguaje" style="width:120px">
+    <label style="font-size:12px;color:#9ca3af;display:inline-flex;align-items:center;gap:4px">
+      <input type="checkbox" id="richSystem"> Sistema rico
+    </label>
+    <button id="addFileBtn">+ archivo</button>
+    <button id="sendBatchBtn">Envío rápido</button>
+  </div>
+  <div id="row">
+    <textarea id="txt" placeholder="Escribe un mensaje…"></textarea>
+    <button id="btn">Enviar</button>
+  </div>
+  <div id="selectedFiles" class="files preview-files" style="display:none"></div>
+  <div id="hint">Enter envía. Shift+Enter salto de línea.</div>
+  <input type="file" id="fileInput" multiple style="display:none">
+</div>
+
+<script>
+const feed=document.getElementById('feed');
+const ids=new Set();
+let atBottom=true;
+
+feed.addEventListener('scroll',()=>{atBottom=feed.scrollHeight-feed.scrollTop-feed.clientHeight<60;});
+
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+function styleFor(type,level,style){
+  if(style && style.border) return style.border;
+  if(type==='system'&&level==='error') return '#7f1d1d';
+  if(type==='system'&&level==='warn') return '#422006';
+  if(type==='system'&&level==='info') return '#0f1524';
+  if(type==='code') return '#14532d';
+  if(type==='json') return '#7f1d1d';
+  if(type==='html') return '#1e3a8a';
+  if(type==='markdown') return '#1f2933';
+  if(type==='pixels') return '#422006';
+  if(type==='image') return '#3f3f46';
+  if(type==='file') return '#3f3f46';
+  return '#262a33';
+}
+
+function bgFor(style, fallback){
+  return style && style.bg ? style.bg : fallback;
+}
+
+function colorFor(style, fallback){
+  return style && style.color ? style.color : fallback;
+}
+
+function badgeBgFor(style){
+  return style && style.badgeBg ? style.badgeBg : '#0a0b0f';
+}
+
+function renderBadge(m){
+  const t=(m.type||'text').toUpperCase();
+  const level=m.level?' · '+(m.level||'').toUpperCase():'';
+  const meta=m.meta||{};
+  const source=(meta.source||m.source||'assistant').toUpperCase();
+  const style=m.style||{};
+  const border=styleFor(m.type,m.level,style).replace('#','');
+  const bg=badgeBgFor(style);
+  const color=style.badgeColor||'#e5e7eb';
+  return `<span class="badge" style="color:${esc(color)};border-color:#${esc(border)};background:${esc(bg)}">${esc(source)} · ${esc(t)}${esc(level)}</span>`;
+}
+
+function renderMeta(m){
+  const meta=m.meta||{};
+  const parts=[];
+  const source=meta.source||m.source||'assistant';
+  const origin=meta.origin||m.origin||'api';
+  if(source) parts.push(`source: ${esc(source)}`);
+  if(origin) parts.push(`origin: ${esc(origin)}`);
+  if(meta.project) parts.push(`project: ${esc(meta.project)}`);
+  if(meta.session) parts.push(`session: ${esc(meta.session)}`);
+  if(meta.trace_id) parts.push(`trace: ${esc(meta.trace_id)}`);
+  if(meta.model) parts.push(`model: ${esc(meta.model)}`);
+  if(Array.isArray(meta.tags)&&meta.tags.length) parts.push(`tags: ${meta.tags.map(esc).join(', ')}`);
+  if(meta.tokens!=null) parts.push(`tokens: ${meta.tokens}`);
+  if(meta.latency_ms!=null) parts.push(`latency: ${meta.latency_ms}ms`);
+  return parts.length?`<div class="meta-line">${parts.join(' · ')}</div>`:'';
+}
+
+function renderFiles(files){
+  if(!Array.isArray(files) || !files.length) return '';
+  return `<div class="files">${files.map(f=>`<div class="chip"><a href="${esc(f.url||'')}" target="_blank" rel="noopener">${esc(f.name||'file')}</a><span style="color:#6b7280">${esc(f.size!=null?(f.size+'B'):'')}</span></div>`).join('')}</div>`;
+}
+
+function mdInline(s){
+  return esc(s)
+    .replace(/`([^`]+)`/g,'<code>$1</code>')
+    .replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*([^*]+)\*/g,'<em>$1</em>');
+}
+function mdHtml(s){
+  const raw = String(s==null?'':s).replace(/\\r\\n/g,'\n').replace(/\\n/g,'\n').replace(/\\r/g,'\n');
+  let html = '';
+  let i = 0;
+  while (i < raw.length) {
+    if (raw.slice(i, i+3) === '```') {
+      const close = raw.indexOf('\n```', i+3);
+      const codeEnd = close === -1 ? raw.length : close;
+      const codeBlock = raw.slice(i+3, codeEnd).replace(/^\w+\n/, '') ;
+      html += `<pre><code>${esc(codeBlock)}</code></pre>`;
+      i = close === -1 ? raw.length : close + 4;
+      continue;
+    }
+    if (raw.slice(i, i+2) === '# ') {
+      const end = raw.indexOf('\n', i);
+      const head = raw.slice(i+2, end===-1?raw.length:end).trim();
+      html += `<h1>${mdInline(head)}</h1>`;
+      i = end===-1 ? raw.length : end+1;
+      continue;
+    }
+    if (raw.slice(i, i+3) === '## ') {
+      const end = raw.indexOf('\n', i);
+      const head = raw.slice(i+3, end===-1?raw.length:end).trim();
+      html += `<h2>${mdInline(head)}</h2>`;
+      i = end===-1 ? raw.length : end+1;
+      continue;
+    }
+    if (raw.slice(i, i+4) === '### ') {
+      const end = raw.indexOf('\n', i);
+      const head = raw.slice(i+4, end===-1?raw.length:end).trim();
+      html += `<h3>${mdInline(head)}</h3>`;
+      i = end===-1 ? raw.length : end+1;
+      continue;
+    }
+    if (raw.slice(i, i+2) === '- ') {
+      const end = raw.indexOf('\n', i);
+      const item = raw.slice(i+2, end===-1?raw.length:end).trim();
+      html += `<li>${mdInline(item)}</li>`;
+      i = end===-1 ? raw.length : end+1;
+      continue;
+    }
+    if (raw.slice(i, i+2) === '> ') {
+      const end = raw.indexOf('\n', i);
+      const quote = raw.slice(i+2, end===-1?raw.length:end).trim();
+      html += `<blockquote>${mdInline(quote)}</blockquote>`;
+      i = end===-1 ? raw.length : end+1;
+      continue;
+    }
+    const nl = raw.indexOf('\n', i);
+    const segment = raw.slice(i, nl===-1?raw.length:nl);
+    html += mdInline(segment);
+    i = nl===-1 ? raw.length : nl+1;
+  }
+  html = html.replace(/((?:<li>.*?<\/li>\s*)+)/g, (m) => `<ul>${m}</ul>`);
+  return html.replace(/\r?\n/g,'<br>');
+}
+
+function sanitizeEnvHtml(s){
+  const allowed = 'div|strong|span|br|code|pre|ul|ol|li|p|b|i|em|table|tr|td|th|thead|tbody';
+  return String(s==null?'':s)
+    .replace(/<script[\s\S]*?<\/script>/gi,'')
+    .replace(/<iframe[\s\S]*?<\/iframe>/gi,'')
+    .replace(/<object[\s\S]*?<\/object>/gi,'')
+    .replace(/<embed[\s\S]*?>/gi,'')
+    .replace(new RegExp('</?(?!/?(?:' + allowed + ')(?:\\s|>|/))[^>]*>', 'gi'), '');
+}
+
+function envDetailsHtml(s){
+  return String(s==null?'':s).replace(/<environment_details>([\s\S]*?)<\/environment_details>/ig, (m, content)=>{
+    return `<div class="env-block"><div class="env-label">environment</div><div class="content env-html">${sanitizeEnvHtml(content.trim())}</div></div>`;
+  });
+}
+
+function renderReplyContext(m){
+  const replyTo = m.reply_to || m.meta?.reply_to;
+  if (!replyTo) return '';
+  const replyText = replyTo.text || replyTo.title || '';
+  const replySource = replyTo.source || 'unknown';
+  const shortReply = replyText.length > 60 ? replyText.slice(0, 60) + '…' : replyText;
+  return `<div class="reply-context"><div class="reply-label">↳ ${esc(replySource)}</div><div class="reply-text">${esc(shortReply)}</div></div>`;
+}
+
+function renderMsg(m){
+  if(ids.has(m.id)) return;
+  ids.add(m.id);
+
+  const d=document.createElement('div');
+  const style=m.style||{};
+  const border=styleFor(m.type,m.level,style);
+  const meta=m.meta||{};
+  const source=(meta.source||m.source||'assistant').toLowerCase();
+  const sourceClass=['client','assistant','system','api'].includes(source)?source:'assistant';
+  const typeClass=(m.type==='image'?'image':(m.type==='file'?'file':(m.type||'text')));
+  const replyClass = m.reply_to ? ' has-reply' : '';
+  d.className=`msg ${sourceClass} ${typeClass}${replyClass}`;
+  d.style.borderLeftColor=border;
+  d.style.backgroundColor=bgFor(style,'#111318');
+  d.style.color=colorFor(style,'#d4d4d4');
+
+  const timeSpan=`<span class="time">${esc(m.created_at||'')}</span>`;
+  const badge=renderBadge(m);
+  const replyBtn=`<button data-reply-id="${esc(m.id)}" data-reply-text="${esc(m.text||'').replace(/"/g,'&quot;')}" data-reply-source="${esc(meta.source||m.source||'assistant')}" class="reply-btn" style="background:transparent;border:none;color:#6b7280;cursor:pointer;font-size:12px;margin-left:6px">↪</button>`;
+
+  let body='';
+
+  if(m.type==='image'){
+    const url=(m.meta&&m.meta.files&&m.meta.files[0]&&m.meta.files[0].url)||(m.pixels&&m.pixels[0])||'';
+    if(url) body+=`<div><img src="${esc(url)}" alt="image" loading="lazy"></div>`;
+    if(m.text) body+=`<div class="content">${mdHtml(m.text)}</div>`;
+  } else if(m.type==='file'){
+    const files=(m.meta&&m.meta.files)||[];
+    if(files.length){
+      body+=renderFiles(files);
+    }
+    if(m.text) body+=`<div class="content">${mdHtml(m.text)}</div>`;
+  } else if(m.type==='code'){
+    body+=`<pre><code>${esc(m.code||m.text||'')}</code></pre>`;
+    if(m.text && m.text!==(m.code||'')) body+=`<div class="content">${mdHtml(m.text)}</div>`;
+  } else if(m.type==='json'){
+    const payload=(m.meta&&m.meta.payload)!=null?m.meta.payload:m.text;
+    body+=`<pre><code>${esc(JSON.stringify(payload,null,2))}</code></pre>`;
+    if(m.text && !payload) body+=`<div class="content">${mdHtml(m.text)}</div>`;
+  } else if(m.type==='markdown'){
+    const md = m.text || '';
+    const safe = md.replace(/&lt;/g,'<').replace(/&gt;/g,'>');
+    const envBlocks = [];
+    let rest = safe;
+    const re = /<environment_details>([\s\S]*?)<\/environment_details>/ig;
+    let m2;
+    while ((m2 = re.exec(rest)) !== null) {
+      envBlocks.push(m2[1].trim());
+    }
+    rest = rest.replace(re, '');
+    envBlocks.forEach((content) => {
+      const normalized = content.replace(/\\r\\n/g,'\n').replace(/\\n/g,'\n').replace(/\\r/g,'\n').trim();
+      body += `<div class="env-block"><div class="env-label">environment</div><div class="content">${esc(normalized)}</div></div>`;
+    });
+    body += `<div class="content">${mdHtml(rest.trim())}</div>`;
+  } else if(m.type==='html'){
+    const html = envDetailsHtml(m.html || '');
+    body += `<div class="content html-content">${html || esc(m.text||'')}</div>`;
+  } else if(m.type==='system'){
+    body+=`<div class="content"><strong>${esc(m.text||'')}</strong></div>`;
+    if(m.html && m.type==='system') body+=`<div class="content">${m.html}</div>`;
+  } else {
+    const files=(m.meta&&m.meta.files)||[];
+    if(files.length) body+=renderFiles(files);
+    body+=`<div class="content">${esc(m.text||'')}</div>`;
+  }
+
+  d.innerHTML=`${timeSpan}${badge}${replyBtn}${renderReplyContext(m)}${body}${renderMeta(m)}`;
+  feed.appendChild(d);
+  if(atBottom) feed.scrollTop=feed.scrollHeight;
+}
+
+async function load(){
+  try{
+    const r=await fetch('/messages');
+    const d=await r.json();
+    d.messages.forEach(renderMsg);
+  }catch(e){}
+}
+
+const txt=document.getElementById('txt');
+const etype=document.getElementById('etype');
+const lang=document.getElementById('lang');
+const richSystem=document.getElementById('richSystem');
+const filesField={value:[]};
+let replyToId=null;
+let replyToText=null;
+let replyToSource=null;
+
+function formatBytes(size){
+  if(size==null || Number.isNaN(Number(size))) return '';
+  const n=Number(size);
+  if(n<1024) return `${n}B`;
+  if(n<1024*1024) return `${(n/1024).toFixed(1)}KB`;
+  if(n<1024*1024*1024) return `${(n/1024/1024).toFixed(1)}MB`;
+  return `${(n/1024/1024/1024).toFixed(1)}GB`;
+}
+
+function renderSelectedFiles(){
+  const box=document.getElementById('selectedFiles');
+  const files=filesField.value||[];
+  if(!files.length){
+    box.style.display='none';
+    box.innerHTML='';
+    return;
+  }
+  box.style.display='flex';
+  box.innerHTML=files.map((f,i)=>`<div class="chip"><span>${esc(f.name||'file')}</span><span style="color:#6b7280">${esc(formatBytes(f.size))}</span><button type="button" data-remove-file="${i}" title="Quitar">×</button></div>`).join('');
+}
+
+function removeSelectedFile(index){
+  filesField.value.splice(index,1);
+  fileInput.value='';
+  renderSelectedFiles();
+}
+
+document.getElementById('selectedFiles').addEventListener('click',(e)=>{
+  const btn=e.target.closest('[data-remove-file]');
+  if(!btn) return;
+  removeSelectedFile(Number(btn.dataset.removeFile));
+});
+
+fileInput.addEventListener('change',(e)=>{
+  const selected=Array.from(e.target.files||[]);
+  if(selected.length){
+    filesField.value=[...filesField.value,...selected].slice(0,5);
+    renderSelectedFiles();
+    updateHints();
+  }
+  e.target.value='';
+});
+
+renderSelectedFiles();
+
+function buildPayload(){
+  const type=etype.value||'text';
+  const payload={type, text:txt.value, language:lang.value||undefined, source:'client', origin:'sala-client'};
+  if(type==='system' && richSystem.checked){
+    payload.session=document.getElementById('session')?.value;
+    payload.project=document.getElementById('project')?.value;
+  }
+  if (replyToId){
+    payload.reply_to={id: replyToId, text: replyToText, source: replyToSource};
+  }
+  if (filesField.value.length){
+    if(type!=='system') payload.type='file';
+    payload.files=filesField.value.slice(0,5).map(f=>({name:f.name,size:f.size,mime:f.type,url:''}));
+    payload.file={name:filesField.value[0].name,size:filesField.value[0].size,mime:filesField.value[0].type};
+  }
+  return payload;
+}
+
+async function uploadFiles(files){
+  const formData=new FormData();
+  files.slice(0,5).forEach(f=>formData.append('files', f, f.name));
+  const r=await fetch('/upload',{method:'POST',body:formData});
+  const d=await r.json();
+  if(!d.ok || !d.files.length) throw new Error(d.error || 'upload failed');
+  return d.files;
+}
+
+async function send(){
+   const msg=buildPayload();
+   if(!msg.text && (!msg.files||!msg.files.length) && msg.type!=='system') return;
+   try{
+     if(filesField.value.length){
+       const uploaded=await uploadFiles(filesField.value);
+       msg.files=uploaded;
+       if(msg.type==='file'||msg.type==='image') msg.file=uploaded[0];
+     }
+     txt.value='';
+     filesField.value=[];
+     renderSelectedFiles();
+     replyToId=null; replyToText=null; replyToSource=null;
+     document.getElementById('replyIndicator').style.display='none';
+     updateHints();
+     await fetch('/send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(msg)});
+  }catch(e){
+    alert('Error subiendo archivo: '+e.message);
+  }
+}
+
+async function sendBatch(){
+   const lines=txt.value.split('\n').map(s=>s.trim()).filter(Boolean);
+   if(!lines.length) return;
+   const base={type:etype.value||'text',language:lang.value||undefined,source:'client',origin:'sala-client'};
+   if(richSystem.checked){
+     base.session=document.getElementById('session')?.value;
+     base.project=document.getElementById('project')?.value;
+   }
+   if (replyToId){
+     base.reply_to={id: replyToId, text: replyToText, source: replyToSource};
+   }
+   let uploaded=[];
+   try{
+     if(filesField.value.length) uploaded=await uploadFiles(filesField.value);
+     if(uploaded.length) base.type='file';
+   }catch(e){
+     alert('Error subiendo archivo: '+e.message);
+     return;
+   }
+   await fetch('/send-batch',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({items:lines.map(t=>({...base,text:t,files:uploaded,file:uploaded[0]}))})});
+   txt.value='';
+   filesField.value=[];
+   replyToId=null; replyToText=null; replyToSource=null;
+   document.getElementById('replyIndicator').style.display='none';
+   renderSelectedFiles();
+ }
+
+document.getElementById('btn').addEventListener('click',()=>{
+  if(document.getElementById('sendBatchBtn').dataset.active==='1') sendBatch(); else send();
+});
+document.getElementById('sendBatchBtn').addEventListener('click',()=>{
+  const btn=document.getElementById('sendBatchBtn');
+  const active=btn.dataset.active==='1';
+  btn.dataset.active=active?'0':'1';
+  btn.textContent=active?'Envío rápido':'Batch ON';
+  btn.style.background=active?'#111318':'#2563eb';
+  btn.style.color=active?'#e5e7eb':'#fff';
+});
+document.getElementById('cancelReply').addEventListener('click',()=>{
+  replyToId=null; replyToText=null; replyToSource=null;
+  document.getElementById('replyIndicator').style.display='none';
+});
+feed.addEventListener('click',(e)=>{
+  const btn=e.target.closest('.reply-btn');
+  if(!btn) return;
+  const id=btn.dataset.replyId;
+  const text=btn.dataset.replyText;
+  const source=btn.dataset.replySource;
+  setReply(id, text, source);
+});
+function setReply(id, text, source){
+  replyToId = id;
+  replyToText = text;
+  replyToSource = source;
+  const indicator=document.getElementById('replyIndicator');
+  const replyTextEl=document.getElementById('replyText');
+  indicator.style.display='block';
+  const short = text.length > 60 ? text.slice(0, 60) + '…' : text;
+  replyTextEl.textContent = `Respondiendo a ${source}: ${short}`;
+}
+document.getElementById('addFileBtn').addEventListener('click',()=>document.getElementById('fileInput').click());
+document.getElementById('etype').addEventListener('change', updateHints);
+
+function updateHints(){
+  const type=etype.value;
+  const el=document.getElementById('hint');
+  if(type==='code') el.textContent='Código | Enter envía | Previsualización local';
+  else if(type==='json') el.textContent='JSON | Se formatea automáticamente';
+  else if(type==='markdown') el.textContent='Markdown ligero (negrita/código/listas) | Enter envía';
+  else if(type==='system') el.textContent='Sistema | Usa Sistema rico para metadata avanzada';
+  else if(type==='file') el.textContent='Adjunta archivos con + archivo';
+  else if(filesField.value.length) el.textContent=`${filesField.value.length} archivo(s) seleccionado(s) | Enter envía`;
+  else el.textContent='Enter envía | Shift+Enter salto de línea';
+}
+
+txt.addEventListener('keydown',e=>{
+  if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); send(); }
+});
+
+load();
+setInterval(load,2000);
+</script>
+</body>
+</html>
