@@ -618,6 +618,65 @@ def print_services(results: list[dict]):
             print(f"  - {name}: {status} {item.get('reason', '')}".strip())
 
 
+ALLOWED_AGENT_CLIS = {
+    "kilo": ["run"],
+    "claude": ["run"],
+    "code": [""],
+    "memento_start": [],
+}
+
+
+def _split_command(command: str) -> list[str] | None:
+    """Safely split a command string into argv list.
+
+    Rejects empty commands and commands with null bytes.
+    Returns None if the command looks unsafe for direct execution.
+    """
+    if not command or not command.strip():
+        return None
+    if "\x00" in command:
+        return None
+    try:
+        import shlex
+        return shlex.split(command)
+    except ValueError:
+        return None
+
+
+def _validate_command(argv: list[str]) -> tuple[bool, str]:
+    """Validate command argv against known safe CLI patterns.
+
+    Returns (is_safe, reason).
+    """
+    if not argv:
+        return False, "empty command"
+    cli = Path(argv[0]).name
+    if cli not in ALLOWED_AGENT_CLIS:
+        return False, f"unknown CLI '{cli}'"
+    allowed = ALLOWED_AGENT_CLIS[cli]
+    if allowed and (len(argv) < 2 or argv[1] not in allowed):
+        return False, f"'{cli}' requires one of {allowed} as subcommand"
+    return True, "ok"
+
+
+def _run_command_safe(command: str) -> int:
+    """Execute command with safety checks, avoiding shell=True when possible."""
+    argv = _split_command(command)
+    if argv is None:
+        print(f"WARN: unsafe/null command, skipping: {command!r}")
+        return 1
+    safe, reason = _validate_command(argv)
+    if not safe:
+        print(f"WARN: command rejected ({reason}): {command!r}")
+        return 1
+    try:
+        result = subprocess.run(argv, cwd=str(ROOT), check=False)
+        return result.returncode
+    except FileNotFoundError:
+        print(f"ERROR: CLI not found: {argv[0]}")
+        return 1
+
+
 def launch_external_agent(command: str | None = None) -> int:
     agent_command = command or os.environ.get("MEMENTO_AGENT_CMD")
     if not agent_command:
@@ -629,7 +688,7 @@ def launch_external_agent(command: str | None = None) -> int:
     print("\nLaunching external agent:")
     print(f"  {agent_command}")
     sys.stdout.flush()
-    return_code = subprocess.run(agent_command, shell=True, cwd=str(ROOT)).returncode
+    return_code = _run_command_safe(agent_command)
     if "agent-onboarding" in agent_command and return_code == 0:
         marker = ROOT / ".agent_context" / "secure" / "ONBOARDED"
         marker.parent.mkdir(parents=True, exist_ok=True)
