@@ -657,6 +657,10 @@ def main():
         print(quick_startup_report(limit=args.limit, project=project), end="")
         return 0
 
+    if args.services_only:
+        print_services(ensure_services())
+        return 0
+
     agent_result = {"status": "skipped", "path": str(AGENT_SEED), "hash": "?"} if args.no_agent_seed else ensure_agent_seed(force=args.force_seed, project=project)
     context = build_context(limit=args.limit, project=project, agent_result=agent_result)
     write_context(context)
