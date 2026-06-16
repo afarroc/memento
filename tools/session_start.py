@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from __future__ import annotations
 """Prepare the MementoBloom agent seed and local session context."""
 
 import argparse
@@ -14,6 +15,7 @@ import urllib.error
 import urllib.request
 from datetime import datetime
 from pathlib import Path
+from typing import Dict, List, Optional, Tuple
 
 ROOT = Path(__file__).resolve().parent.parent  # mementobloom root
 # Detect workspace mode: if mementobloom is subdirectory of a workspace with projects/
