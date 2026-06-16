@@ -9,6 +9,8 @@ VENV_DIR="${VENV_DIR:-venv}"
 REQUIREMENTS="requirements.txt"
 AGENT_CMD_FILE=".agent_context/secure/AGENT_CMD.env"
 USER_CONTEXT=".agent_context/secure/USER_CONTEXT.md"
+ONBOARD_MARKER=".agent_context/secure/ONBOARDED"
+AGENT_TEMPLATE_DIR=".agent_context/agent"
 
 log() {
   printf '\n%s\n' "$*"
@@ -178,36 +180,64 @@ EOF
   fi
 }
 
-install_kilo_if_needed() {
+detect_agent_cli() {
+  log "Detección de CLI/agente externo"
+  local detected=""
   if command_exists kilo; then
-    ok "Kilo CLI detectado: $(command -v kilo)"
-    return 0
+    detected="kilo"
+    ok "CLI detectado: kilo ($(command -v kilo))"
+  elif command_exists claude; then
+    detected="claude"
+    ok "CLI detectado: claude ($(command -v claude))"
+  elif command_exists code; then
+    detected="code"
+    ok "CLI detectado: code ($(command -v code))"
+  else
+    warn "No se detectó ningún CLI de agente conocido."
   fi
 
-  warn "Kilo CLI no detectado."
-  if ! confirm "¿Intentar instalar Kilo CLI con npm?" "n"; then
-    return 1
+  if [[ -n "$detected" ]]; then
+    if confirm "¿Usar '$detected' como CLI de agente?" "y"; then
+      printf '%s' "$detected"
+      return 0
+    fi
   fi
 
-  if ! command_exists npm; then
-    warn "npm no está disponible. Instala Node.js/npm o instala Kilo manualmente."
-    return 1
-  fi
-
-  npm install -g @kilocode/cli
-  if command_exists kilo; then
-    ok "Kilo CLI instalado: $(command -v kilo)"
-    return 0
-  fi
-
-  warn "La instalación de Kilo no pudo verificarse."
   return 1
+}
+
+setup_agent_files() {
+  if [[ ! -d "$AGENT_TEMPLATE_DIR" ]]; then
+    warn "No se encontraron plantillas de agente en $AGENT_TEMPLATE_DIR."
+    return 1
+  fi
+
+  if [[ -f "$AGENT_TEMPLATE_DIR/agent-main.md" ]]; then
+    cp -n "$AGENT_TEMPLATE_DIR/agent-main.md" "$AGENT_TEMPLATE_DIR/memento-curador.md" 2>/dev/null || true
+  fi
+
+  if [[ -f "$AGENT_TEMPLATE_DIR/agent-onboarding.md" ]]; then
+    cp -n "$AGENT_TEMPLATE_DIR/agent-onboarding.md" "$AGENT_TEMPLATE_DIR/memento-onboarding.md" 2>/dev/null || true
+  fi
+}
+
+select_agent() {
+  if [[ -f "$ONBOARD_MARKER" ]]; then
+    printf 'agent-main\n'
+    return 0
+  fi
+
+  if confirm "¿Ejecutar agente de configuración inicial (solo primera vez)?" "y"; then
+    printf 'agent-onboarding\n'
+  else
+    printf 'agent-main\n'
+  fi
 }
 
 configure_agent_command() {
   log "Configuración del agente/CLI externo"
-  printf '1) Kilo CLI (opcional)\n'
-  printf '2) Otro CLI/agente\n'
+  printf '1) Usar un CLI detectado (kilo, claude, code...)\n'
+  printf '2) Ingresar comando personalizado del agente\n'
   printf '3) No configurar agente ahora; solo preparar contexto\n'
   printf 'Opción [1]: '
   read -r option
@@ -215,28 +245,29 @@ configure_agent_command() {
 
   case "$option" in
     1)
-      if ! install_kilo_if_needed; then
-        if confirm "¿Guardar el comando de Kilo de todos modos?" "n"; then
-          local agent="${MEMENTO_AGENT:-memento-curador}"
-          local model="${MEMENTO_MODEL:-kilo/kilo-auto/free}"
-          local cmd
-          cmd="kilo run --agent \"$agent\" --model \"$model\" --dir \"$ROOT\" -i \"\$(python3 tools/bootstrap_context.py --print)\""
-          printf '%s\n' "$cmd" > "$AGENT_CMD_FILE"
-          export MEMENTO_AGENT_CMD="$cmd"
-          ok "Comando de agente guardado en $AGENT_CMD_FILE"
-        else
-          warn "No se configuró agente porque Kilo CLI no está disponible."
-        fi
-        return 0
+      setup_agent_files || warn "No se pudieron preparar las plantillas de agente."
+      local agent
+      agent="$(select_agent)"
+
+      local cli
+      cli="$(detect_agent_cli)"
+      local flags=""
+      if [[ "$cli" == "kilo" ]]; then
+        flags=" --agent '$agent'"
       fi
 
-      local agent="${MEMENTO_AGENT:-memento-curador}"
-      local model="${MEMENTO_MODEL:-kilo/kilo-auto/free}"
-      local cmd
-      cmd="kilo run --agent \"$agent\" --model \"$model\" --dir \"$ROOT\" -i \"\$(python3 tools/bootstrap_context.py --print)\""
+      local model="${MEMENTO_MODEL:-}"
+      local model_flag=""
+      if [[ -n "$model" ]]; then
+        model_flag=" --model '$model'"
+      fi
+
+      local cmd="$cli run --dir '$ROOT'${flags}${model_flag} -i \"\$(python3 tools/bootstrap_context.py --print)\""
       printf '%s\n' "$cmd" > "$AGENT_CMD_FILE"
       export MEMENTO_AGENT_CMD="$cmd"
       ok "Comando de agente guardado en $AGENT_CMD_FILE"
+      ok "CLI seleccionado: ${cli:-ninguno detectado}"
+      ok "Agente seleccionado: $agent"
       ;;
     2)
       printf 'Escribe el comando completo que inicia tu agente. Ejemplo:\n'

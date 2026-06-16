@@ -1,0 +1,3 @@
+# .agent_context/secure
+Contenido local sensible privado al usuario: USER_CONTEXT.md, AGENT_CMD.env, ONBOARDED.
+Esta carpeta está excluida del repositorio en .gitignore y no debe compartirse.

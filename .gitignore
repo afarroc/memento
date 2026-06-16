@@ -22,7 +22,10 @@ uploads/
 *_CONTEXT.md
 .agent_context/START_CONTEXT.md
 .agent_context/USER_CONTEXT.md
+
+# === AGENT FILES ===
 .agent_context/agent/memento-curador.md
+.agent_context/agent/memento-onboarding.md
 .agent_context/secure/
 memory/graph/*.json
 memory/graph/*.bak_*

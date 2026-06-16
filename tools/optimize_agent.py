@@ -31,10 +31,10 @@ PROJECT_META = ROOT / ".agent_context" / "PROJECT_META.md"
 USER_CONTEXT = ROOT / ".agent_context" / "secure" / "USER_CONTEXT.md"
 AGENT_DIR = ROOT / ".agent_context" / "agent"
 AGENT_INIT = AGENT_DIR / "init.md"
-AGENT_SEED = AGENT_DIR / "memento-curador.md"
+AGENT_SEED = AGENT_DIR / "agent-main.md"
 INSTRUCTION_DIR = AGENT_DIR / "instructions"
 HANDOFF_DIR = ROOT / "projects" / ROOT.name
-REDIS_HOST = os.environ.get("REDIS_HOST", "localhost" if os.environ.get("REDIS_DISABLE") else "192.168.18.59")
+REDIS_HOST = os.environ.get("REDIS_HOST", "localhost")
 REDIS_PORT = int(os.environ.get("REDIS_PORT", "6379"))
 SALA_PORT = int(os.environ.get("SALA_PORT", "8767"))
 PANEL_PORT = int(os.environ.get("PANEL_PORT", "8766"))
@@ -375,7 +375,7 @@ def build_audit(project: Optional[str] = None, context_limit: int = DEFAULT_CONT
         "project": ROOT.name,
         "requested_project": project,
         "agent": {
-            "name": "memento-curador",
+            "name": AGENT_SEED.stem,
             "seed": AGENT_SEED.name,
             "init": AGENT_INIT.name,
             **seed,

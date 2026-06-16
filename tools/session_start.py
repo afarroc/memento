@@ -22,22 +22,22 @@ PROJECT_META = ROOT / ".agent_context" / "PROJECT_META.md"
 USER_CONTEXT = ROOT / ".agent_context" / "secure" / "USER_CONTEXT.md"
 SECURE_CONTEXT = ROOT / ".agent_context" / "secure" / "SECURE.md"
 AGENT_DIR = ROOT / ".agent_context" / "agent"
-AGENT_SEED = AGENT_DIR / "memento-curador.md"
+AGENT_SEED = AGENT_DIR / "agent-main.md"
 AGENT_INIT = AGENT_DIR / "init.md"
 AGENT_INCLUDE_DIR = AGENT_DIR / "instructions"
 SECURE_DIR = ROOT / ".agent_context" / "secure"
 RUNTIME_DIR = ROOT / ".memento_runtime"
 LOG_DIR = RUNTIME_DIR / "logs"
 PID_DIR = RUNTIME_DIR / "pids"
-DEFAULT_AGENT = "memento-curador"
-REDIS_HOST = os.environ.get("REDIS_HOST", "localhost" if os.environ.get("REDIS_DISABLE") else "192.168.18.59")
+DEFAULT_AGENT = "agent-main"
+REDIS_HOST = os.environ.get("REDIS_HOST", "localhost")
 REDIS_PORT = int(os.environ.get("REDIS_PORT", "6379"))
 SALA_PORT = int(os.environ.get("SALA_PORT", "8767"))
 PANEL_PORT = int(os.environ.get("PANEL_PORT", "8766"))
 START_TIMEOUT = float(os.environ.get("MEMENTO_START_TIMEOUT", "12"))
 AGENT_VERSION = "progressive-agent-v1"
 AGENT_GITIGNORE_PATHS = [
-    ".agent_context/agent/memento-curador.md",
+    ".agent_context/agent/agent-main.md",
     ".agent_context/START_CONTEXT.md",
     ".agent_context/USER_CONTEXT.md",
     ".agent_context/secure/*",
@@ -629,7 +629,13 @@ def launch_external_agent(command: str | None = None) -> int:
     print("\nLaunching external agent:")
     print(f"  {agent_command}")
     sys.stdout.flush()
-    return subprocess.run(agent_command, shell=True, cwd=str(ROOT)).returncode
+    return_code = subprocess.run(agent_command, shell=True, cwd=str(ROOT)).returncode
+    if "agent-onboarding" in agent_command and return_code == 0:
+        marker = ROOT / ".agent_context" / "secure" / "ONBOARDED"
+        marker.parent.mkdir(parents=True, exist_ok=True)
+        marker.touch(exist_ok=True)
+        print("\nOnboarding marked as completed: .agent_context/secure/ONBOARDED")
+    return return_code
 
 
 def normalize_argv(argv: list[str]) -> list[str]:
