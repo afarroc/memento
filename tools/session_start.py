@@ -17,10 +17,16 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent  # mementobloom root
 # Detect workspace mode: if mementobloom is subdirectory of a workspace with projects/
-if (ROOT.parent / "projects").exists() and not (ROOT / "projects").exists():
-    WS_ROOT = ROOT.parent  # Client mode - workspace has projects/
+# Use MEMENTO_WORKSPACE env var for explicit control, or detect from script location
+_ws_env = os.environ.get("MEMENTO_WORKSPACE")
+if _ws_env:
+    WS_ROOT = Path(_ws_env)
 else:
-    WS_ROOT = ROOT  # Standalone mode
+    script_root = Path(__file__).resolve().parent.parent
+    if (script_root / ".git").exists() and (script_root.parent / "projects").exists() and not (script_root / "projects").exists():
+        WS_ROOT = script_root.parent  # Client mode - workspace has projects/
+    else:
+        WS_ROOT = script_root  # Standalone mode
 CONTEXT_ROOT = WS_ROOT if WS_ROOT != ROOT else ROOT
 AGENT_TEMPLATE_ROOT = ROOT / ".agent_context" / "agent"
 INDEX_PATH = WS_ROOT / ".memento" / "memory" / "graph" / "memory_index.json"
@@ -739,7 +745,7 @@ def main():
     parser.add_argument("--launch-agent", action="store_true", help="Launch external agent command after context preparation")
     parser.add_argument("--agent-command", default=None, help="External agent/CLI command to launch when --launch-agent is used")
     args = parser.parse_args(normalize_argv(sys.argv[1:]))
-    project = args.project or ROOT.name
+    project = args.project or WS_ROOT.name  # Use workspace name for default project
 
     if args.quick:
         print(quick_startup_report(limit=args.limit, project=project), end="")
