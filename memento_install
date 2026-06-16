@@ -266,7 +266,7 @@ configure_agent_command() {
         model_flag=" --model '$model'"
       fi
 
-local cmd="$cli run --dir '$ROOT'${flags}${model_flag} -i \"\$(MEMENTO_WORKSPACE='$ROOT' python3 $MEMENTO_DIR/tools/bootstrap_context.py --print)\""
+local cmd="$cli run --dir '$ROOT'${flags}${model_flag} --auto \"\$(MEMENTO_WORKSPACE='$ROOT' python3 $MEMENTO_DIR/tools/bootstrap_context.py --print)\""
        printf '%s\n' "$cmd" > "$AGENT_CMD_FILE"
       export MEMENTO_AGENT_CMD="$cmd"
       ok "Comando de agente guardado en $AGENT_CMD_FILE"

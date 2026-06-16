@@ -83,3 +83,6 @@ build/
 # === NODE MODULES (LOCAL TOOLING ONLY) ===
 .agent_context/node_modules/
 .agent_context/package-lock.json
+
+# === KILO CLI CONFIG (LOCAL ONLY) ===
+.kilo/
