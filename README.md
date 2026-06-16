@@ -29,6 +29,10 @@ python3 tools/session_start.py --quick --limit 8
 # Compatibilidad con el launcher anterior
 ./memento_start --quick --limit 8
 
+# Iniciar como agente externo configurado localmente
+export MEMENTO_AGENT_CMD='<agent-cli> run --dir .'
+./memento_start --print --no-services --limit 14 --launch-agent
+
 # Contexto universal modelo-agnóstico para cualquier modelo, CLI o asistente
 python3 tools/bootstrap_context.py --print
 
@@ -57,6 +61,8 @@ python3 tools/bootstrap_context.py --print
 python3 tools/session_start.py --quick --limit 8
 python3 tools/optimize_agent.py --context
 python3 tools/agent_prompt.py "pregunta" --limit 10
+# Iniciar el proyecto como agente usando el CLI configurado localmente
+MEMENTO_AGENT_CMD='<agent-cli> run --dir .' python3 tools/session_start.py --print --launch-agent
 ```
 - `/memento-context --ready` - Verificar expansión
 - `/memento-context --project Management360` - Contexto de proyecto

@@ -5,5 +5,9 @@
     ".agent_context/PROJECT_META.md",
     ".agent_context/START_CONTEXT.md",
     ".agent_context/agent/memento-curador.md"
-  ]
+  ],
+  "runtime": {
+    "launcher_env": "MEMENTO_AGENT_CMD",
+    "description": "Comando externo opcional para iniciar el proyecto como agente. El repositorio no define ningún CLI específico."
+  }
 }

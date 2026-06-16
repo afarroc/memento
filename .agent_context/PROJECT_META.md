@@ -12,7 +12,8 @@ Reglas universales de arranque:
 2. Leer `.agent_context/secure/USER_CONTEXT.md` si existe.
 3. Leer `.agent_context/START_CONTEXT.md` si existe, como contexto local regenerable no trackeado.
 4. Ejecutar `python3 tools/bootstrap_context.py --print` para obtener contexto compacto modelo-agnóstico.
-5. Leer los handoffs recientes del proyecto activo (ver `projects/` o `USER_CONTEXT.md`).
+5. Si se necesita iniciar como agente externo, ejecutar `python3 tools/session_start.py --print --launch-agent` con `MEMENTO_AGENT_CMD` configurado.
+6. Leer los handoffs recientes del proyecto activo (ver `projects/` o `USER_CONTEXT.md`).
 6. Verificar `git status`, último commit y cambios pendientes.
 7. Verificar Redis/sala si la tarea involucra panel o comunicación.
 8. Continuar desde el último handoff relevante sin pedir información ya registrada.

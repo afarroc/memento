@@ -32,7 +32,27 @@ También puedes omitir `--project`, porque por defecto usa `mementobloom`:
 python3 tools/session_start.py --limit 14
 ```
 
-Ese script prepara `.agent_context/agent/init.md`, carga instrucciones progresivas desde `.agent_context/agent/instructions/`, regenera `.agent_context/agent/memento-curador.md` y puede regenerar `.agent_context/START_CONTEXT.md` como archivo local ignorado. No lanza ningún agente externo; el CLI, modelo o asistente que use el proyecto decide cómo consumir ese contexto.
+Ese script prepara `.agent_context/agent/init.md`, carga instrucciones progresivas desde `.agent_context/agent/instructions/`, regenera `.agent_context/agent/memento-curador.md` y puede regenerar `.agent_context/START_CONTEXT.md` como archivo local ignorado. No impone ningún agente externo; el CLI, modelo o asistente que use el proyecto decide cómo consumir ese contexto.
+
+Para iniciar el proyecto como agente usando un CLI configurado localmente:
+
+```bash
+export MEMENTO_AGENT_CMD='<agent-cli> run --dir .'
+python3 tools/session_start.py --print --no-services --limit 14 --launch-agent
+```
+
+Con el wrapper compatible:
+
+```bash
+export MEMENTO_AGENT_CMD='<agent-cli> run --dir .'
+./memento_start --print --no-services --limit 14 --launch-agent
+```
+
+Si el CLI requiere instrucciones explícitas, usa el contexto generado:
+
+```bash
+python3 tools/bootstrap_context.py --print
+```
 
 Archivos de continuidad modelo-agnóstica:
 

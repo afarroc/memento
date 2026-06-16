@@ -618,6 +618,20 @@ def print_services(results: list[dict]):
             print(f"  - {name}: {status} {item.get('reason', '')}".strip())
 
 
+def launch_external_agent(command: str | None = None) -> int:
+    agent_command = command or os.environ.get("MEMENTO_AGENT_CMD")
+    if not agent_command:
+        print("\nNo external agent command configured.")
+        print("Set MEMENTO_AGENT_CMD or pass --agent-command to start an agent/CLI.")
+        print("Example: MEMENTO_AGENT_CMD='<agent-cli> run --dir .' python3 tools/session_start.py --print --launch-agent")
+        return 0
+
+    print("\nLaunching external agent:")
+    print(f"  {agent_command}")
+    sys.stdout.flush()
+    return subprocess.run(agent_command, shell=True, cwd=str(ROOT)).returncode
+
+
 def normalize_argv(argv: list[str]) -> list[str]:
     # Con default=None en argparse, ya no necesitamos forzar valor por defecto aquí
     return argv
@@ -634,6 +648,8 @@ def main():
     parser.add_argument("--no-services", action="store_true", help="Do not start optional local services")
     parser.add_argument("--no-agent-seed", action="store_true", help="Do not prepare the progressive agent seed before building context")
     parser.add_argument("--force-seed", action="store_true", help="Force progressive agent seed regeneration")
+    parser.add_argument("--launch-agent", action="store_true", help="Launch external agent command after context preparation")
+    parser.add_argument("--agent-command", default=None, help="External agent/CLI command to launch when --launch-agent is used")
     args = parser.parse_args(normalize_argv(sys.argv[1:]))
     project = args.project or ROOT.name
 
@@ -646,9 +662,13 @@ def main():
     write_context(context)
     print(context, end="")
     print_agent_seed(agent_result)
+    sys.stdout.flush()
 
     if args.services or args.services_only:
         print_services(ensure_services())
+
+    if args.launch_agent:
+        return launch_external_agent(args.agent_command)
 
     return 0
 

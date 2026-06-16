@@ -12,6 +12,7 @@ Al iniciar, usa este flujo modelo-agnóstico:
 ```bash
 python3 tools/bootstrap_context.py --print
 python3 tools/session_start.py --print
+python3 tools/session_start.py --print --launch-agent
 python3 tools/context_builder.py --limit 20
 python3 tools/quick_scan.py <HANDOFF_PATH>
 ```
