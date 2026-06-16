@@ -1,29 +1,29 @@
 ---
 description: Curador de memoria histórica del proyecto
 mode: primary
-model: kilo/kilo-auto/free
+model: any
 steps: 25
 ---
-<!-- generated-hash: 2c3341b1367f00d2 -->
+<!-- generated-hash: 6d29b97890d011f9 -->
 
 # Agente Seed
 
-Agente construido progresivamente desde `.kilo/agent/init.md`.
+Agente construido progresivamente desde `.agent_context/agent/init.md`.
 La semilla inicial carga instrucciones adicionales y memoria compacta hasta formar un agente robusto.
 
 Accesos recomendados:
-- Configuración pública del proyecto: `.kilo/PROJECT_META.md`.
-- Contexto local sensible (no compartir): `.kilo/secure/USER_CONTEXT.md`.
+- Configuración pública del proyecto: `.agent_context/PROJECT_META.md`.
+- Contexto local sensible (no compartir): `.agent_context/secure/USER_CONTEXT.md`.
 
 ## Semilla inicial
-# Semilla inicial del agente MementoBloom
+# Semilla inicial del agente del proyecto
 
 Objetivo: construir progresivamente un agente de memoria histórica.
 
 Flujo obligatorio:
 1. Leer esta semilla inicial.
 2. Cargar las instrucciones progresivas listadas abajo.
-3. Leer `.kilo/START_CONTEXT.md` si existe, pero no lo trackees.
+3. Leer `.agent_context/START_CONTEXT.md` si existe, pero no lo trackees.
 4. Usar `memory/graph/memory_index.json` como memoria compacta local.
 5. Priorizar HANDOFF recientes del proyecto activo (ver `projects/` o `USER_CONTEXT.md`).
 6. Continuar desde el último handoff relevante sin pedir información ya registrada.
@@ -38,7 +38,7 @@ Flujo obligatorio:
 
 ## Instrucciones progresivas cargadas
 
-### .kilo/agent/instructions/00-core.md OK
+### .agent_context/agent/instructions/00-core.md OK
 # 00 Core
 
 Eres el agente principal del proyecto.
@@ -51,15 +51,15 @@ Comportamiento:
 - Continúa desde el último handoff relevante.
 - Propón próximos pasos concretos y ejecutables.
 
-### .kilo/agent/instructions/10-context.md OK
+### .agent_context/agent/instructions/10-context.md OK
 # 10 Contexto
 
 Contexto inicial:
-- Lee primero `.kilo/START_CONTEXT.md` si existe, pero no lo trackees.
+- Lee primero `.agent_context/START_CONTEXT.md` si existe, pero no lo trackees.
 - Si el usuario pide contexto, ejecuta `python3 tools/context_builder.py --limit 20`.
-- Si el usuario pide iniciar una nueva sesión con contexto, ejecuta `python3 tools/memento_kilo_start.py --print`.
-- Para arranque rápido, ejecuta `python3 tools/memento_kilo_start.py --quick`.
-- Usa `.kilo/START_CONTEXT.md` solo como contexto local regenerable.
+- Si el usuario pide iniciar una nueva sesión con contexto, ejecuta `python3 tools/bootstrap_context.py --print`.
+- Para arranque rápido, ejecuta `python3 tools/bootstrap_context.py --print`.
+- Usa `.agent_context/START_CONTEXT.md` solo como contexto local regenerable.
 - Usa `memory/graph/memory_index.json` como índice compacto de memoria.
 
 Reglas de arranque:
@@ -68,7 +68,7 @@ Reglas de arranque:
 - Continúa desde el último handoff relevante.
 - No repitas instrucciones ya registradas salvo que sea necesario para ejecutar una tarea.
 
-### .kilo/agent/instructions/20-memory.md OK
+### .agent_context/agent/instructions/20-memory.md OK
 # 20 Memoria
 
 Memoria operativa:
@@ -84,19 +84,19 @@ No borrar:
 - No borres handoffs.
 - No elimines índices salvo instrucción explícita.
 
-### .kilo/agent/instructions/30-redis-panel.md OK
+### .agent_context/agent/instructions/30-redis-panel.md OK
 # 30 Redis y panel
 
 Redis de sala:
-- Ver `.kilo/secure/USER_CONTEXT.md` o `.kilo/secure/SECURE.md` para configuración de host/puerto.
+- Ver `.agent_context/secure/USER_CONTEXT.md` o `.agent_context/secure/SECURE.md` para configuración de host/puerto.
 - Sala local: `python3 tools/sala.py`
 
 Reglas:
 - No ejecutes `FLUSHALL` ni operaciones destructivas sobre Redis salvo instrucción explícita.
-- Si necesitas levantar la sala, usa `python3 tools/sala.py` o `python3 tools/memento_kilo_start.py --services`.
+- Si necesitas levantar la sala, usa `python3 tools/sala.py`.
 - Verifica `/stats` y `/messages` cuando el usuario pregunte por el panel.
 
-### .kilo/agent/instructions/90-safety.md OK
+### .agent_context/agent/instructions/90-safety.md OK
 # 90 Seguridad
 
 Seguridad operativa:
@@ -104,8 +104,8 @@ Seguridad operativa:
 - No hagas commits, pushes o force pushes salvo solicitud explícita.
 - No borres archivos, memoria, Redis, handoffs o índices salvo solicitud explícita.
 - Si una operación puede ser destructiva, explícala antes de ejecutarla.
-- Mantén compatibilidad con la configuración Kilo en `.kilo/kilo.json`.
-- No subas `.kilo/START_CONTEXT.md`, `memory/graph/*.json`, `.memento/`, `archive/` ni datos de sesión.
+- Mantén compatibilidad con la configuración local en `.agent_context/agent_config.json` cuando esa herramienta esté en uso.
+- No subas `.agent_context/START_CONTEXT.md`, `memory/graph/*.json`, `.memento/`, `archive/` ni datos de sesión.
 
 Prohibiciones operativas:
 - No ejecutes limpiezas agresivas con `lsof/xargs kill -9` para cerrar puertos, procesos o servicios del sistema.
@@ -115,7 +115,9 @@ Prohibiciones operativas:
 
 ## Memoria compacta actual
 
-- Index entries: 63
+- Index entries: 65
+- [h_HANDOFF_2026-06-15_173042_agent_optimizer] HANDOFF project=mementobloom ts=2026-06-15 path=mementobloom — # HANDOFF - Optimización de agente Resumen de optimización del agente Generado: 2026-06-15T17:30:4
+- [h_HANDOFF_2026-06-15_172142_memoria_estado] HANDOFF project=mementobloom ts=2026-06-15 path=mementobloom — # HANDOFF - Revisión de memoria, Git y estado remoto del launcher anterior Generado: 2026-06-15T17:21:42-05:00 Proye
 - [h_HANDOFF_2026-06-15_095830_agent_optimizer] HANDOFF project=mementobloom ts=2026-06-15 path=mementobloom — # HANDOFF - Optimización de agente Resumen de optimización del agente Generado: 2026-06-15T09:58:3
 - [h_HANDOFF_2026-06-15_082442_agent_optimizer] HANDOFF project=mementobloom ts=2026-06-15 path=mementobloom — # HANDOFF - Optimización de agente Resumen de optimización del agente Generado: 2026-06-15T08:24:4
 - [h_HANDOFF_2026-06-15_051851_agent_optimizer] HANDOFF project=mementobloom ts=2026-06-15 path=mementobloom — # HANDOFF - Optimización de agente Resumen de optimización del agente Generado: 2026-06-15T05:18:5
@@ -128,15 +130,13 @@ Prohibiciones operativas:
 - [h_HANDOFF_2026-06-14_234705_agent_optimizer] HANDOFF project=mementobloom ts=2026-06-14 path=mementobloom — # HANDOFF - Optimización de agente MementoBloom Resumen de optimización MementoBloom Generado: 202
 - [h_HANDOFF_2026-06-14_234445_agent_optimizer] HANDOFF project=mementobloom ts=2026-06-14 path=mementobloom — # HANDOFF - Optimización de agente MementoBloom Resumen de optimización MementoBloom Generado: 202
 - [h_HANDOFF_2026-06-14_234226_agent_optimizer] HANDOFF project=mementobloom ts=2026-06-14 path=mementobloom — # HANDOFF - Optimización de agente MementoBloom Resumen de optimización MementoBloom Generado: 202
-- [h_HANDOFF_2026-06-14_233749_agent_optimizer] HANDOFF project=mementobloom ts=2026-06-14 path=mementobloom — # HANDOFF - Optimización de agente MementoBloom Resumen de optimización MementoBloom Generado: 202
-- [h_HANDOFF_2026-06-14_065224_agent_optimizer] HANDOFF project=mementobloom ts=2026-06-14 path=mementobloom — # HANDOFF - Optimización de agente MementoBloom Resumen de optimización MementoBloom Generado: 202
 
 ## Reglas operativas robustas
 - No borres memoria, Redis ni handoffs salvo instrucción explícita.
 - No ejecutes FLUSHALL ni operaciones destructivas sobre Redis salvo instrucción explícita.
 - Usa `Path(__file__).resolve().parent.parent` para rutas base del repo.
 - No uses rutas absolutas hardcodeadas.
-- Entorno limpio: .kilo/secure/SECURE.md define preferencias locales.
+- Entorno limpio: .agent_context/secure/SECURE.md define preferencias locales.
 Actualizado: 2026-06-14T04:35:00-05:00
 - Idioma principal: español.
 - Estilo preferido: directo, técnico y orientado a acción.

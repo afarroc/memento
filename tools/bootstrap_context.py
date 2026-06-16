@@ -23,11 +23,11 @@ from typing import Any, Dict, List, Optional
 
 ROOT = Path(__file__).resolve().parent.parent
 INDEX_PATH = ROOT / "memory" / "graph" / "memory_index.json"
-PROJECT_META = ROOT / ".kilo" / "PROJECT_META.md"
-USER_CONTEXT = ROOT / ".kilo" / "secure" / "USER_CONTEXT.md"
-START_CONTEXT = ROOT / ".kilo" / "START_CONTEXT.md"
-AGENT_INIT = ROOT / ".kilo" / "agent" / "init.md"
-SECURE_CONTEXT = ROOT / ".kilo" / "secure" / "SECURE.md"
+PROJECT_META = ROOT / ".agent_context" / "PROJECT_META.md"
+USER_CONTEXT = ROOT / ".agent_context" / "secure" / "USER_CONTEXT.md"
+START_CONTEXT = ROOT / ".agent_context" / "START_CONTEXT.md"
+AGENT_INIT = ROOT / ".agent_context" / "agent" / "init.md"
+SECURE_CONTEXT = ROOT / ".agent_context" / "secure" / "SECURE.md"
 REDIS_HOST = os.environ.get("REDIS_HOST", "localhost" if os.environ.get("REDIS_DISABLE") else "192.168.18.59")
 REDIS_PORT = int(os.environ.get("REDIS_PORT", "6379"))
 SALA_PORT = int(os.environ.get("SALA_PORT", "8767"))

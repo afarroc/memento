@@ -1,0 +1,9 @@
+{
+  "name": "memento-curador",
+  "description": "Curador de memoria histórica y contexto operativo para MementoBloom",
+  "instructions": [
+    ".agent_context/PROJECT_META.md",
+    ".agent_context/START_CONTEXT.md",
+    ".agent_context/agent/memento-curador.md"
+  ]
+}

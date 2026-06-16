@@ -8,9 +8,9 @@ Objetivo meta del usuario:
 
 Reglas universales de arranque:
 
-1. Leer `.kilo/PROJECT_META.md`.
-2. Leer `.kilo/secure/USER_CONTEXT.md` si existe.
-3. Leer `.kilo/START_CONTEXT.md` si existe, como contexto local regenerable no trackeado.
+1. Leer `.agent_context/PROJECT_META.md`.
+2. Leer `.agent_context/secure/USER_CONTEXT.md` si existe.
+3. Leer `.agent_context/START_CONTEXT.md` si existe, como contexto local regenerable no trackeado.
 4. Ejecutar `python3 tools/bootstrap_context.py --print` para obtener contexto compacto modelo-agnóstico.
 5. Leer los handoffs recientes del proyecto activo (ver `projects/` o `USER_CONTEXT.md`).
 6. Verificar `git status`, último commit y cambios pendientes.
@@ -19,7 +19,7 @@ Reglas universales de arranque:
 
 ## Configuración del proyecto
 
-Ver `.kilo/secure/USER_CONTEXT.md` para configuración contextual específica.
+Ver `.agent_context/secure/USER_CONTEXT.md` para configuración contextual específica.
 
 Arquitectura de continuidad:
 
@@ -29,9 +29,9 @@ PROJECT_META.md → USER_CONTEXT.md → START_CONTEXT.md → tools/bootstrap_con
 
 Archivos críticos:
 
-- `.kilo/PROJECT_META.md`: meta del proyecto, trackeable.
-- `.kilo/secure/USER_CONTEXT.md`: contexto local del usuario, no trackeable.
-- `.kilo/START_CONTEXT.md`: contexto local regenerable, no trackeable.
+- `.agent_context/PROJECT_META.md`: meta del proyecto, trackeable.
+- `.agent_context/secure/USER_CONTEXT.md`: contexto local del usuario, no trackeable.
+- `.agent_context/START_CONTEXT.md`: contexto local regenerable, no trackeable.
 - `memory/graph/memory_index.json`: memoria compacta, no trackeable.
 - `projects/*/HANDOFF_*.md`: handoffs locales del proyecto activo, no trackeables.
 - `tools/bootstrap_context.py`: bootstrap universal para cualquier modelo, CLI o agente.
@@ -40,12 +40,12 @@ Archivos críticos:
 ## Neutralidad de agente
 
 El proyecto no depende de ningún agente, modelo o CLI específico.
-El directorio `.kilo/` puede contener rutas propias de una herramienta local; si otro agente no las usa, debe ignorarlas y reconstruir el contexto desde `PROJECT_META.md`, `USER_CONTEXT.md`, `tools/bootstrap_context.py`, handoffs y estado Git.
+El directorio `.agent_context/` puede contener rutas propias de una herramienta local; si otro agente no las usa, debe ignorarlas y reconstruir el contexto desde `PROJECT_META.md`, `USER_CONTEXT.md`, `tools/bootstrap_context.py`, handoffs y estado Git.
 
 Reglas de seguridad:
 
 - No exponer secretos, tokens, contraseñas ni contenido de vault.
-- No commitear ni pushear `.kilo/START_CONTEXT.md`, `.kilo/secure/USER_CONTEXT.md`, `memory/graph/*.json`, `.memento/`, `archive/`, handoffs ni datos de sesión.
+- No commitear ni pushear `.agent_context/START_CONTEXT.md`, `.agent_context/secure/USER_CONTEXT.md`, `memory/graph/*.json`, `.memento/`, `archive/`, handoffs ni datos de sesión.
 - No ejecutar `FLUSHALL` ni operaciones destructivas sobre Redis salvo instrucción explícita.
 - No borrar memoria, Redis, handoffs ni índices salvo instrucción explícita.
 - Si una operación modifica memoria, handoffs o índices, validar que el cambio sea intencional.

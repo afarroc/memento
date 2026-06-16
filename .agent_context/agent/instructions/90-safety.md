@@ -5,8 +5,8 @@ Seguridad operativa:
 - No hagas commits, pushes o force pushes salvo solicitud explícita.
 - No borres archivos, memoria, Redis, handoffs o índices salvo solicitud explícita.
 - Si una operación puede ser destructiva, explícala antes de ejecutarla.
-- Mantén compatibilidad con la configuración local en `.kilo/kilo.json` cuando esa herramienta esté en uso.
-- No subas `.kilo/START_CONTEXT.md`, `memory/graph/*.json`, `.memento/`, `archive/` ni datos de sesión.
+- Mantén compatibilidad con la configuración local en `.agent_context/agent_config.json` cuando esa herramienta esté en uso.
+- No subas `.agent_context/START_CONTEXT.md`, `memory/graph/*.json`, `.memento/`, `archive/` ni datos de sesión.
 
 Prohibiciones operativas:
 - No ejecutes limpiezas agresivas con `lsof/xargs kill -9` para cerrar puertos, procesos o servicios del sistema.

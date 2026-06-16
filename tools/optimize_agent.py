@@ -26,10 +26,10 @@ from typing import Any, Dict, Iterable, List, Optional
 
 ROOT = Path(__file__).resolve().parent.parent
 INDEX_PATH = ROOT / "memory" / "graph" / "memory_index.json"
-START_CONTEXT = ROOT / ".kilo" / "START_CONTEXT.md"
-PROJECT_META = ROOT / ".kilo" / "PROJECT_META.md"
-USER_CONTEXT = ROOT / ".kilo" / "secure" / "USER_CONTEXT.md"
-AGENT_DIR = ROOT / ".kilo" / "agent"
+START_CONTEXT = ROOT / ".agent_context" / "START_CONTEXT.md"
+PROJECT_META = ROOT / ".agent_context" / "PROJECT_META.md"
+USER_CONTEXT = ROOT / ".agent_context" / "secure" / "USER_CONTEXT.md"
+AGENT_DIR = ROOT / ".agent_context" / "agent"
 AGENT_INIT = AGENT_DIR / "init.md"
 AGENT_SEED = AGENT_DIR / "memento-curador.md"
 INSTRUCTION_DIR = AGENT_DIR / "instructions"
@@ -49,8 +49,8 @@ SECRET_PATTERNS = [
     ("vault_secret", re.compile(r"(?i)(secret|credential|clave)\s*[:=]\s*['\"]?[^\s'\"]{8,}")),
 ]
 IGNORED_PATHS = [
-    ".kilo/START_CONTEXT.md",
-    ".kilo/secure/USER_CONTEXT.md",
+    ".agent_context/START_CONTEXT.md",
+    ".agent_context/secure/USER_CONTEXT.md",
     "memory/graph/*.json",
     ".memento/",
     ".memento_runtime/",
@@ -492,7 +492,7 @@ def format_handoff(audit: Dict[str, Any]) -> str:
         "## Recomendaciones operativas",
         "- Usar `python3 tools/optimize_agent.py --context` para revisar estado antes de trabajar.",
         "- Usar `python3 tools/optimize_agent.py --handoff` al cerrar sesión si hay cambios relevantes.",
-        "- No commitear `.kilo/START_CONTEXT.md`, `memory/graph/*.json`, `.memento/`, `archive/` ni handoffs.",
+        "- No commitear `.agent_context/START_CONTEXT.md`, `memory/graph/*.json`, `.memento/`, `archive/` ni handoffs.",
         "- No ejecutar operaciones destructivas sobre Redis sin instrucción explícita.",
     ])
     return "\n".join(lines) + "\n"

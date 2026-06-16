@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
-"""Prepare the MementoBloom agent progressively and launch Kilo."""
+"""Prepare the MementoBloom agent seed and local session context."""
 
 import argparse
 import hashlib
 import json
 import os
 import re
-import shutil
 import socket
 import subprocess
 import sys
@@ -18,20 +17,19 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 INDEX_PATH = ROOT / "memory" / "graph" / "memory_index.json"
-START_CONTEXT = ROOT / ".kilo" / "START_CONTEXT.md"
-PROJECT_META = ROOT / ".kilo" / "PROJECT_META.md"
-USER_CONTEXT = ROOT / ".kilo" / "secure" / "USER_CONTEXT.md"
-SECURE_CONTEXT = ROOT / ".kilo" / "secure" / "SECURE.md"
-AGENT_DIR = ROOT / ".kilo" / "agent"
+START_CONTEXT = ROOT / ".agent_context" / "START_CONTEXT.md"
+PROJECT_META = ROOT / ".agent_context" / "PROJECT_META.md"
+USER_CONTEXT = ROOT / ".agent_context" / "secure" / "USER_CONTEXT.md"
+SECURE_CONTEXT = ROOT / ".agent_context" / "secure" / "SECURE.md"
+AGENT_DIR = ROOT / ".agent_context" / "agent"
 AGENT_SEED = AGENT_DIR / "memento-curador.md"
 AGENT_INIT = AGENT_DIR / "init.md"
 AGENT_INCLUDE_DIR = AGENT_DIR / "instructions"
-SECURE_DIR = ROOT / ".kilo" / "secure"
+SECURE_DIR = ROOT / ".agent_context" / "secure"
 RUNTIME_DIR = ROOT / ".memento_runtime"
 LOG_DIR = RUNTIME_DIR / "logs"
 PID_DIR = RUNTIME_DIR / "pids"
 DEFAULT_AGENT = "memento-curador"
-DEFAULT_MODEL = "kilo/kilo-auto/free"
 REDIS_HOST = os.environ.get("REDIS_HOST", "localhost" if os.environ.get("REDIS_DISABLE") else "192.168.18.59")
 REDIS_PORT = int(os.environ.get("REDIS_PORT", "6379"))
 SALA_PORT = int(os.environ.get("SALA_PORT", "8767"))
@@ -39,22 +37,22 @@ PANEL_PORT = int(os.environ.get("PANEL_PORT", "8766"))
 START_TIMEOUT = float(os.environ.get("MEMENTO_START_TIMEOUT", "12"))
 AGENT_VERSION = "progressive-agent-v1"
 AGENT_GITIGNORE_PATHS = [
-    ".kilo/agent/memento-curador.md",
-    ".kilo/START_CONTEXT.md",
-    ".kilo/USER_CONTEXT.md",
-    ".kilo/secure/*",
+    ".agent_context/agent/memento-curador.md",
+    ".agent_context/START_CONTEXT.md",
+    ".agent_context/USER_CONTEXT.md",
+    ".agent_context/secure/*",
     "memory/graph/*.json",
 ]
 INCLUDE_RE = re.compile(r"^#(?:include|load)\s+(.+)$", re.MULTILINE)
 
-INIT_TEMPLATE = """# Semilla inicial del agente MementoBloom
+INIT_TEMPLATE = """# Semilla inicial del agente del proyecto
 
 Objetivo: construir progresivamente un agente de memoria histórica.
 
 Flujo obligatorio:
 1. Leer esta semilla inicial.
 2. Cargar las instrucciones progresivas listadas abajo.
-3. Leer `.kilo/START_CONTEXT.md` si existe, pero no lo trackees.
+3. Leer `.agent_context/START_CONTEXT.md` si existe, pero no lo trackees.
 4. Usar `memory/graph/memory_index.json` como memoria compacta local.
 5. Priorizar HANDOFF recientes del proyecto activo (ver `projects/` o `USER_CONTEXT.md`).
 6. Continuar desde el último handoff relevante sin pedir información ya registrada.
@@ -84,14 +82,14 @@ Comportamiento:
      "10-context.md": """# 10 Contexto
 
 Contexto inicial:
-- Lee primero `.kilo/START_CONTEXT.md` si existe, pero no lo trackees.
+- Lee primero `.agent_context/START_CONTEXT.md` si existe, pero no lo trackees.
 - Si el usuario pide contexto, ejecuta `python3 tools/context_builder.py --limit 20`.
-- Si el usuario pide iniciar una nueva sesión con contexto, ejecuta `python3 tools/memento_kilo_start.py --print`.
-- Para arranque rápido, ejecuta `python3 tools/memento_kilo_start.py --quick`.
-- Usa `.kilo/START_CONTEXT.md` solo como contexto local regenerable.
+- Si el usuario pide iniciar una nueva sesión con contexto, ejecuta `python3 tools/bootstrap_context.py --print`.
+- Para arranque rápido, ejecuta `python3 tools/bootstrap_context.py --print`.
+- Usa `.agent_context/START_CONTEXT.md` solo como contexto local regenerable.
 - Usa `memory/graph/memory_index.json` como índice compacto de memoria.
-- Si existe contexto seguro en `.kilo/secure/SECURE.md`, léelo solo como referencia local y no lo expongas.
-- El contexto de usuario puede residir en `.kilo/secure/USER_CONTEXT.md` y no se expone.
+- Si existe contexto seguro en `.agent_context/secure/SECURE.md`, léelo solo como referencia local y no lo expongas.
+- El contexto de usuario puede residir en `.agent_context/secure/USER_CONTEXT.md` y no se expone.
 
 Reglas de arranque:
 - Resume el estado del proyecto.
@@ -117,12 +115,12 @@ No borrar:
      "30-redis-panel.md": """# 30 Redis y panel
 
 Redis de sala:
-- Ver `.kilo/secure/USER_CONTEXT.md` o `.kilo/secure/SECURE.md` para configuración de host/puerto.
+- Ver `.agent_context/secure/USER_CONTEXT.md` o `.agent_context/secure/SECURE.md` para configuración de host/puerto.
 - Sala local: `python3 tools/sala.py`
 
 Reglas:
 - No ejecutes `FLUSHALL` ni operaciones destructivas sobre Redis salvo instrucción explícita.
-- Si necesitas levantar la sala, usa `python3 tools/sala.py` o `python3 tools/memento_kilo_start.py --services`.
+- Si necesitas levantar la sala, usa `python3 tools/sala.py`.
 - Verifica `/stats` y `/messages` cuando el usuario pregunte por el panel.
 """,
       "90-safety.md": """# 90 Seguridad
@@ -130,9 +128,9 @@ Reglas:
 Seguridad operativa:
 - No expongas credenciales, secretos ni contenido de vault salvo que sea estrictamente necesario.
 - No hagas commits, pushes o force pushes salvo solicitud explícita.
-- No borres archivos, memoria, Redis, handoffs o índices salvo solicitud explícita.
+- No borres archivos, memoria, Redis, handoffs ni índices salvo solicitud explícita.
 - Si una operación puede ser destructiva, explícala antes de ejecutarla.
-- Mantén compatibilidad con la configuración Kilo en `.kilo/kilo.json`.
+- Mantén compatibilidad con la configuración local en `.agent_context/agent_config.json` cuando esa herramienta esté en uso.
 - Usa rutas relativas y portable-friendly; no dependas de `/Users/...` ni `/Volumes/...`.
 """,
  }
@@ -263,19 +261,19 @@ def build_agent_content(project: str | None = None) -> tuple[str, str]:
         "---",
         "description: Curador de memoria histórica del proyecto",
         "mode: primary",
-        "model: kilo/kilo-auto/free",
+        "model: any",
         "steps: 25",
         "---",
         f"<!-- generated-hash: {signature} -->",
         "",
         "# Agente Seed",
         "",
-        "Agente construido progresivamente desde `.kilo/agent/init.md`.",
+        "Agente construido progresivamente desde `.agent_context/agent/init.md`.",
         "La semilla inicial carga instrucciones adicionales y memoria compacta hasta formar un agente robusto.",
         "",
         "Accesos recomendados:",
-        "- Configuración pública del proyecto: `.kilo/PROJECT_META.md`.",
-        "- Contexto local sensible (no compartir): `.kilo/secure/USER_CONTEXT.md`.",
+        "- Configuración pública del proyecto: `.agent_context/PROJECT_META.md`.",
+        "- Contexto local sensible (no compartir): `.agent_context/secure/USER_CONTEXT.md`.",
         "",
         "## Semilla inicial",
         init.strip(),
@@ -312,7 +310,7 @@ def build_agent_content(project: str | None = None) -> tuple[str, str]:
         "- No ejecutes FLUSHALL ni operaciones destructivas sobre Redis salvo instrucción explícita.",
         "- Usa `Path(__file__).resolve().parent.parent` para rutas base del repo.",
         "- No uses rutas absolutas hardcodeadas.",
-        f"- Entorno limpio: {(rel(SECURE_CONTEXT) if SECURE_CONTEXT.exists() else '.kilo/secure/SECURE.md')} define preferencias locales.",
+        f"- Entorno limpio: {(rel(SECURE_CONTEXT) if SECURE_CONTEXT.exists() else '.agent_context/secure/SECURE.md')} define preferencias locales.",
     ])
     lines.extend(user_context_short(limit=4))
     return "\n".join(lines), signature
@@ -346,7 +344,7 @@ def build_context(limit: int, project: str | None = None, agent_result: dict | N
     selected = entries[:limit]
     agent = agent_result or {"status": "skipped", "path": str(AGENT_SEED), "hash": "?"}
     lines = [
-        "# MEMENTO Kilo Startup Context",
+        "# MementoBloom Startup Context",
         "",
         f"Generated: {datetime.now().isoformat(timespec='seconds')}",
         f"Workspace: {ROOT.parent}",
@@ -373,10 +371,10 @@ def build_context(limit: int, project: str | None = None, agent_result: dict | N
     lines.extend([
         "",
         "## Safe next-session commands",
-        f"- `python3 tools/memento_kilo_start.py --quick --limit 8` (proyecto por defecto: {ROOT.name})",
+        f"- `python3 tools/session_start.py --quick --limit 8` (proyecto por defecto: {ROOT.name})",
         "- `python3 tools/bootstrap_context.py --print` imprime contexto universal para cualquier modelo.",
         "- `python3 tools/optimize_agent.py --context` audita y resume el entorno operativo.",
-        "- `python3 tools/memento_kilo_start.py --services-only`",
+        "- `python3 tools/session_start.py --services-only`",
     ])
     return "\n".join(lines) + "\n"
 
@@ -400,18 +398,6 @@ def local_context_summary(path: Path, title: str) -> list[str]:
             break
     lines.append("")
     return lines
-
-
-def kilo_path():
-    candidates = [
-        Path.home() / ".local" / "bin" / "kilo",
-        Path(sys.executable).parent / "kilo",
-        shutil.which("kilo"),
-    ]
-    for candidate in candidates:
-        if candidate and Path(str(candidate)).exists():
-            return str(candidate)
-    return "kilo"
 
 
 def tcp_open(host: str, port: int, timeout: float = 0.5) -> bool:
@@ -571,7 +557,7 @@ def quick_startup_report(limit: int = 8, project: str | None = None) -> str:
         f"Workspace: {rel(ROOT.parent)}",
         f"Project: {ROOT.name}",
         f"Context file: {rel(START_CONTEXT)}",
-        f"User context: {rel(USER_CONTEXT) if USER_CONTEXT.exists() else '.kilo/secure/USER_CONTEXT.md (no existe)'}",
+        f"User context: {rel(USER_CONTEXT) if USER_CONTEXT.exists() else '.agent_context/secure/USER_CONTEXT.md (no existe)'}",
         f"Project meta: {rel(PROJECT_META)}",
         f"Agent seed: {seed['status']} hash={seed['hash']}",
         f"Memory index: {len(index)} entries",
@@ -591,10 +577,10 @@ def quick_startup_report(limit: int = 8, project: str | None = None) -> str:
         f"- Sala local: {'OK' if sala.get('ok') else 'UNAVAILABLE'} at http://127.0.0.1:{SALA_PORT}",
         "",
         "## Safe next-session commands",
-        f"- `python3 tools/memento_kilo_start.py --quick --limit 8` (proyecto por defecto: {ROOT.name})",
+        f"- `python3 tools/session_start.py --quick --limit 8` (proyecto por defecto: {ROOT.name})",
         "- `python3 tools/bootstrap_context.py --print` imprime contexto universal para cualquier modelo.",
         "- `python3 tools/optimize_agent.py --context` audita y resume el entorno operativo.",
-        "- `python3 tools/memento_kilo_start.py --services-only`",
+        "- `python3 tools/session_start.py --services-only`",
     ])
     return "\n".join(lines) + "\n"
 
@@ -632,40 +618,15 @@ def print_services(results: list[dict]):
             print(f"  - {name}: {status} {item.get('reason', '')}".strip())
 
 
-def run_kilo(args: argparse.Namespace) -> int:
-    if args.no_kilo:
-        return 0
-    cmd = [
-        kilo_path(),
-        "run",
-        "--agent",
-        args.agent,
-        "--model",
-        args.model,
-        "--dir",
-        str(ROOT),
-        "-i",
-        "# MEMENTO Kilo Startup\n\n"
-        f"Prepara la semilla progresiva del agente desde `{AGENT_INIT}`. "
-        "Si existe `.kilo/START_CONTEXT.md`, úsalo solo como contexto local no trackeado. "
-        "Resume el estado del proyecto, confirma el objetivo del usuario y continúa desde el último handoff relevante.",
-    ]
-    print("\nLaunching Kilo:")
-    print("  " + " ".join(cmd))
-    return subprocess.run(cmd).returncode
-
-
 def normalize_argv(argv: list[str]) -> list[str]:
     # Con default=None en argparse, ya no necesitamos forzar valor por defecto aquí
     return argv
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Prepare the progressive agent seed and launch Kilo")
+    parser = argparse.ArgumentParser(description="Prepare the progressive agent seed and local context")
     parser.add_argument("--limit", type=int, default=14)
     parser.add_argument("--project", default=None)  # Por defecto usa el directorio actual
-    parser.add_argument("--agent", default=DEFAULT_AGENT)
-    parser.add_argument("--model", default=DEFAULT_MODEL)
     parser.add_argument("--print", action="store_true", help="Print context and exit without preparing services")
     parser.add_argument("--quick", action="store_true", help="Print a lightweight local-only startup report and exit")
     parser.add_argument("--services", action="store_true", help="Start optional local services after agent/context preparation")
@@ -673,7 +634,6 @@ def main():
     parser.add_argument("--no-services", action="store_true", help="Do not start optional local services")
     parser.add_argument("--no-agent-seed", action="store_true", help="Do not prepare the progressive agent seed before building context")
     parser.add_argument("--force-seed", action="store_true", help="Force progressive agent seed regeneration")
-    parser.add_argument("--no-kilo", action="store_true", help="Do not launch Kilo after agent/context preparation")
     args = parser.parse_args(normalize_argv(sys.argv[1:]))
     project = args.project or ROOT.name
 
@@ -690,10 +650,7 @@ def main():
     if args.services or args.services_only:
         print_services(ensure_services())
 
-    if args.services_only or args.no_kilo:
-        return 0
-
-    return run_kilo(args)
+    return 0
 
 
 if __name__ == "__main__":

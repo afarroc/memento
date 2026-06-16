@@ -20,14 +20,10 @@ memory/sessions/
 uploads/
 *HANDOFF*.md
 *_CONTEXT.md
-.kilo/START_CONTEXT.md
-.kilo/START_CONTEXT.md
-.kilo/USER_CONTEXT.md
-.kilo/agent/memento-curador.md
-.kilo/secure/*
-!.kilo/secure/SECURE.md
-!.kilo/secure/.gitkeep
-!.kilo/secure/agent.template.json
+.agent_context/START_CONTEXT.md
+.agent_context/USER_CONTEXT.md
+.agent_context/agent/memento-curador.md
+.agent_context/secure/
 memory/graph/*.json
 memory/graph/*.bak_*
 .panel_messages.json
@@ -80,5 +76,5 @@ build/
 .eggs
 
 # === NODE MODULES (LOCAL TOOLING ONLY) ===
-.kilo/node_modules/
-.kilo/package-lock.json
+.agent_context/node_modules/
+.agent_context/package-lock.json

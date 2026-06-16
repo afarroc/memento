@@ -1,7 +1,7 @@
 # 30 Redis y panel
 
 Redis de sala:
-- Ver `.kilo/secure/USER_CONTEXT.md` o `.kilo/secure/SECURE.md` para configuración de host/puerto.
+- Ver `.agent_context/secure/USER_CONTEXT.md` o `.agent_context/secure/SECURE.md` para configuración de host/puerto.
 - Sala local: `python3 tools/sala.py`
 
 Reglas:
