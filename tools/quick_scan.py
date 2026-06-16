@@ -63,6 +63,23 @@ class QuickScan:
 
 if __name__ == "__main__":
     import sys
-    ws = Path(__file__).resolve().parent.parent
+    import os
+    from pathlib import Path
+    script_root = Path(__file__).resolve().parent.parent
+    
+    # Priority: env var
+    ws = os.environ.get("MEMENTO_WORKSPACE")
+    if ws:
+        ws = Path(ws)
+    # Check if this is a client installation (mementobloom is subdirectory)
+    elif (script_root / ".git").exists():
+        # Check if parent has projects (client workspace)
+        if (script_root.parent / "projects").exists() and not (script_root / "projects").exists():
+            ws = script_root.parent
+        else:
+            ws = script_root
+    else:
+        ws = script_root
+    
     inc_path = sys.argv[1] if len(sys.argv) > 1 else None
     QuickScan(ws).scan(incremental_path=inc_path)

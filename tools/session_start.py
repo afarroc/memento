@@ -15,8 +15,14 @@ import urllib.request
 from datetime import datetime
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent
-WS_ROOT = ROOT  # Always use repo root as workspace
+ROOT = Path(__file__).resolve().parent.parent  # mementobloom root
+# Detect workspace mode: if mementobloom is subdirectory of a workspace with projects/
+if (ROOT.parent / "projects").exists() and not (ROOT / "projects").exists():
+    WS_ROOT = ROOT.parent  # Client mode - workspace has projects/
+else:
+    WS_ROOT = ROOT  # Standalone mode
+CONTEXT_ROOT = WS_ROOT if WS_ROOT != ROOT else ROOT
+AGENT_TEMPLATE_ROOT = ROOT / ".agent_context" / "agent"
 INDEX_PATH = WS_ROOT / ".memento" / "memory" / "graph" / "memory_index.json"
 START_CONTEXT = WS_ROOT / ".agent_context" / "START_CONTEXT.md"
 PROJECT_META = WS_ROOT / ".agent_context" / "PROJECT_META.md"
@@ -150,9 +156,25 @@ def file_fingerprint(path: Path) -> str:
 
 def ensure_agent_files():
     AGENT_DIR.mkdir(parents=True, exist_ok=True)
+    AGENT_INCLUDE_DIR.mkdir(parents=True, exist_ok=True)
+    
+    # Copy templates from mementobloom if in client mode
+    if WS_ROOT != ROOT and (ROOT / ".agent_context" / "agent").exists():
+        import shutil
+        src_agent = ROOT / ".agent_context" / "agent"
+        for f in src_agent.glob("*.md"):
+            if not (AGENT_DIR / f.name).exists():
+                shutil.copy2(f, AGENT_DIR / f.name)
+        for subdir in ["instructions"]:
+            src_dir = src_agent / subdir
+            if src_dir.exists():
+                dst_dir = AGENT_INCLUDE_DIR
+                for f in src_dir.glob("*.md"):
+                    if not (dst_dir / f.name).exists():
+                        shutil.copy2(f, dst_dir / f.name)
+    
     if not AGENT_INIT.exists():
         AGENT_INIT.write_text(INIT_TEMPLATE, encoding="utf-8")
-    AGENT_INCLUDE_DIR.mkdir(parents=True, exist_ok=True)
     for name, content in INSTRUCTION_TEMPLATES.items():
         path = AGENT_INCLUDE_DIR / name
         if not path.exists():
