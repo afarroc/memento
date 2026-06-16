@@ -376,8 +376,8 @@ def build_context(limit: int, project: str | None = None, agent_result: dict | N
         "# MementoBloom Startup Context",
         "",
         f"Generated: {datetime.now().isoformat(timespec='seconds')}",
-        f"Workspace: {ROOT.parent}",
-        f"Project: {ROOT.name}",
+        f"Workspace: {WS_ROOT}",
+        f"Project: {WS_ROOT.name}",
         f"Index entries: {len(index)}",
         "",
         "## Startup instruction",
@@ -583,8 +583,8 @@ def quick_startup_report(limit: int = 8, project: str | None = None) -> str:
         "# MEMENTO Quick Startup",
         "",
         f"Generated: {datetime.now().isoformat(timespec='seconds')}",
-        f"Workspace: {rel(ROOT.parent)}",
-        f"Project: {ROOT.name}",
+        f"Workspace: {rel(WS_ROOT)}",
+        f"Project: {WS_ROOT.name}",
         f"Context file: {rel(START_CONTEXT)}",
         f"User context: {rel(USER_CONTEXT) if USER_CONTEXT.exists() else '.agent_context/secure/USER_CONTEXT.md (no existe)'}",
         f"Project meta: {rel(PROJECT_META)}",
@@ -592,7 +592,6 @@ def quick_startup_report(limit: int = 8, project: str | None = None) -> str:
         f"Memory index: {len(index)} entries",
         f"Git: {git_status_summary()}",
         "",
-        "## Top recent memory ids",
     ]
     for entry in selected:
         lines.append(
@@ -606,7 +605,7 @@ def quick_startup_report(limit: int = 8, project: str | None = None) -> str:
         f"- Sala local: {'OK' if sala.get('ok') else 'UNAVAILABLE'} at http://127.0.0.1:{SALA_PORT}",
         "",
         "## Safe next-session commands",
-        f"- `python3 tools/session_start.py --quick --limit 8` (proyecto por defecto: {ROOT.name})",
+        f"- `python3 tools/session_start.py --quick --limit 8` (proyecto por defecto: {WS_ROOT.name})",
         "- `python3 tools/bootstrap_context.py --print` imprime contexto universal para cualquier modelo.",
         "- `python3 tools/optimize_agent.py --context` audita y resume el entorno operativo.",
         "- `python3 tools/session_start.py --services-only`",
