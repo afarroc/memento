@@ -26,6 +26,8 @@ python3 tools/optimize_memento.py --search "ubigeo" --limit 5
 
 # Preparar seed y contexto local de sesión, sin trackear contexto
 python3 tools/session_start.py --quick --limit 8
+# Compatibilidad con el launcher anterior
+./memento_start --quick --limit 8
 
 # Contexto universal modelo-agnóstico para cualquier modelo, CLI o asistente
 python3 tools/bootstrap_context.py --print
