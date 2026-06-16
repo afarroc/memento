@@ -1,0 +1,308 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$ROOT"
+
+PYTHON_BIN="${PYTHON_BIN:-python3}"
+VENV_DIR="${VENV_DIR:-venv}"
+REQUIREMENTS="requirements.txt"
+AGENT_CMD_FILE=".agent_context/secure/AGENT_CMD.env"
+USER_CONTEXT=".agent_context/secure/USER_CONTEXT.md"
+
+log() {
+  printf '\n%s\n' "$*"
+}
+
+ok() {
+  printf 'OK: %s\n' "$*"
+}
+
+warn() {
+  printf 'WARN: %s\n' "$*"
+}
+
+command_exists() {
+  command -v "$1" >/dev/null 2>&1
+}
+
+confirm() {
+  local prompt="$1"
+  local default="${2:-y}"
+  local answer
+
+  if [[ "$default" == "y" ]]; then
+    prompt="$prompt [Y/n]"
+  else
+    prompt="$prompt [y/N]"
+  fi
+
+  printf '%s ' "$prompt"
+  read -r answer
+
+  if [[ -z "$answer" ]]; then
+    answer="$default"
+  fi
+
+  case "$answer" in
+    y|Y|yes|YES|s|S) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+read_line() {
+  local prompt="$1"
+  local default="${2:-}"
+  local value
+
+  if [[ -n "$default" ]]; then
+    printf '%s [%s] ' "$prompt" "$default"
+  else
+    printf '%s ' "$prompt"
+  fi
+
+  read -r value
+  if [[ -z "$value" ]]; then
+    value="$default"
+  fi
+
+  printf '%s\n' "$value"
+}
+
+print_header() {
+  cat <<'EOF'
+MementoBloom Installer
+
+Este instalador asume que el repositorio ya fue clonado.
+El único paso indispensable previo es:
+
+  git clone <repo>
+  cd mementobloom
+
+El instalador validará dependencias, creará entorno opcional, configurará
+contexto local y podrá iniciar el proyecto como agente usando el CLI que elijas.
+EOF
+}
+
+check_repo() {
+  if [[ ! -f "$ROOT/.git/HEAD" ]]; then
+    warn "Este directorio no parece ser un repositorio Git clonado."
+    warn "El primer paso indispensable es clonar el repositorio y entrar en él."
+    exit 1
+  fi
+
+  ok "Repositorio detectado: $ROOT"
+}
+
+check_python() {
+  if command_exists "$PYTHON_BIN"; then
+    ok "Python disponible: $("$PYTHON_BIN" --version 2>&1)"
+  else
+    warn "No se encontró '$PYTHON_BIN'. Python 3 es obligatorio para MementoBloom."
+    exit 1
+  fi
+}
+
+setup_venv() {
+  if [[ -x "$VENV_DIR/bin/python" ]]; then
+    ok "Entorno virtual existente: $VENV_DIR"
+    PYTHON_BIN="$VENV_DIR/bin/python"
+    return 0
+  fi
+
+  if confirm "¿Crear entorno virtual en '$VENV_DIR'?" "y"; then
+    "$PYTHON_BIN" -m venv "$VENV_DIR"
+    PYTHON_BIN="$VENV_DIR/bin/python"
+    ok "Entorno virtual creado: $VENV_DIR"
+  else
+    warn "Se usará Python del sistema: $PYTHON_BIN"
+  fi
+}
+
+install_requirements() {
+  if [[ ! -f "$REQUIREMENTS" ]]; then
+    warn "No se encontró $REQUIREMENTS; se omite instalación de dependencias Python."
+    return 0
+  fi
+
+  if confirm "¿Instalar dependencias de $REQUIREMENTS?" "y"; then
+    "$PYTHON_BIN" -m pip install --upgrade pip
+    "$PYTHON_BIN" -m pip install -r "$REQUIREMENTS"
+    ok "Dependencias Python instaladas"
+  else
+    warn "Instalación de dependencias omitida."
+  fi
+}
+
+ensure_agent_context_dirs() {
+  mkdir -p .agent_context/secure
+  ok "Directorio de contexto local listo: .agent_context/secure"
+}
+
+configure_user_context() {
+  if [[ -f "$USER_CONTEXT" ]]; then
+    ok "Contexto de usuario existente: $USER_CONTEXT"
+    if confirm "¿Editar contexto de usuario ahora?" "n"; then
+      "${EDITOR:-vi}" "$USER_CONTEXT"
+    fi
+    return 0
+  fi
+
+  log "Contexto de usuario no encontrado: $USER_CONTEXT"
+  if confirm "¿Crear un contexto básico de usuario?" "y"; then
+    cat > "$USER_CONTEXT" <<'EOF'
+# Contexto de Usuario MementoBloom
+
+Actualizado: $(date -Iseconds)
+
+## Preferencias de comunicación
+- Idioma principal: español.
+- Estilo preferido: directo, técnico y orientado a acción.
+
+## Objetivo del usuario
+- Continuar sesiones con contexto reconstruido desde archivos locales.
+
+## Infraestructura
+- Workspace: pendiente de configurar.
+
+## Reglas operativas
+- No pedir datos ya registrados.
+- Continuar desde el último handoff relevante.
+- No trackear contexto local regenerable.
+EOF
+    sed -i '' "s/\$(date -Iseconds)/$(date -Iseconds)/" "$USER_CONTEXT" 2>/dev/null || \
+      sed -i "s/\$(date -Iseconds)/$(date -Iseconds)/" "$USER_CONTEXT"
+    warn "Edita este archivo cuando quieras personalizar usuario, infraestructura o reglas."
+  else
+    warn "Contexto de usuario no creado. El proyecto seguirá funcionando sin él."
+  fi
+}
+
+install_kilo_if_needed() {
+  if command_exists kilo; then
+    ok "Kilo CLI detectado: $(command -v kilo)"
+    return 0
+  fi
+
+  warn "Kilo CLI no detectado."
+  if ! confirm "¿Intentar instalar Kilo CLI con npm?" "n"; then
+    return 1
+  fi
+
+  if ! command_exists npm; then
+    warn "npm no está disponible. Instala Node.js/npm o instala Kilo manualmente."
+    return 1
+  fi
+
+  npm install -g @kilocode/cli
+  if command_exists kilo; then
+    ok "Kilo CLI instalado: $(command -v kilo)"
+    return 0
+  fi
+
+  warn "La instalación de Kilo no pudo verificarse."
+  return 1
+}
+
+configure_agent_command() {
+  log "Configuración del agente/CLI externo"
+  printf '1) Kilo CLI (opcional)\n'
+  printf '2) Otro CLI/agente\n'
+  printf '3) No configurar agente ahora; solo preparar contexto\n'
+  printf 'Opción [1]: '
+  read -r option
+  option="${option:-1}"
+
+  case "$option" in
+    1)
+      install_kilo_if_needed || true
+      local agent="${MEMENTO_AGENT:-memento-curador}"
+      local model="${MEMENTO_MODEL:-kilo/kilo-auto/free}"
+      local cmd
+      cmd="kilo run --agent \"$agent\" --model \"$model\" --dir \"$ROOT\" -i \"\$(python3 tools/bootstrap_context.py --print)\""
+      printf '%s\n' "$cmd" > "$AGENT_CMD_FILE"
+      export MEMENTO_AGENT_CMD="$cmd"
+      ok "Comando de agente guardado en $AGENT_CMD_FILE"
+      ;;
+    2)
+      printf 'Escribe el comando completo que inicia tu agente. Ejemplo:\n'
+      printf '  <cli> run --dir . -i "$(python3 tools/bootstrap_context.py --print)"\n'
+      local cmd
+      printf 'Comando MEMENTO_AGENT_CMD: '
+      read -r cmd
+      if [[ -z "$cmd" ]]; then
+        warn "No se configuró comando de agente."
+        return 0
+      fi
+      printf '%s\n' "$cmd" > "$AGENT_CMD_FILE"
+      export MEMENTO_AGENT_CMD="$cmd"
+      ok "Comando de agente guardado en $AGENT_CMD_FILE"
+      ;;
+    *)
+      warn "No se configuró agente. Podrás ejecutar ./memento_start --print --no-services --limit 14 más tarde."
+      ;;
+  esac
+}
+
+start_services_optional() {
+  if ! confirm "¿Verificar/iniciar servicios locales opcionales (sala/Redis)?" "n"; then
+    return 0
+  fi
+
+  if [[ -f tools/sala.py ]]; then
+    "$PYTHON_BIN" tools/session_start.py --services-only
+  else
+    warn "tools/sala.py no existe; no se pueden iniciar servicios de sala."
+  fi
+}
+
+prepare_context() {
+  log "Preparando contexto local de sesión"
+  "$PYTHON_BIN" tools/session_start.py --print --no-services --limit 14
+}
+
+launch_agent_optional() {
+  if [[ -z "${MEMENTO_AGENT_CMD:-}" ]]; then
+    warn "No hay MEMENTO_AGENT_CMD configurado; no se lanzará agente."
+    return 0
+  fi
+
+  if ! confirm "¿Lanzar ahora el agente configurado?" "y"; then
+    return 0
+  fi
+
+  "$PYTHON_BIN" tools/session_start.py --print --no-services --limit 14 --launch-agent
+}
+
+print_next_steps() {
+  cat <<EOF
+
+Próximos comandos útiles:
+
+  ./memento_start --quick --limit 8
+  ./memento_start --print --no-services --limit 14
+  ./memento_start --services --launch-agent
+  python3 tools/bootstrap_context.py --print
+
+Si editaste .agent_context/secure/AGENT_CMD.env manualmente, recárgalo así:
+
+  export MEMENTO_AGENT_CMD="\$(cat .agent_context/secure/AGENT_CMD.env)"
+EOF
+}
+
+main() {
+  print_header
+  check_repo
+  check_python
+  ensure_agent_context_dirs
+  setup_venv
+  install_requirements
+  configure_user_context
+  configure_agent_command
+  start_services_optional
+  prepare_context
+  launch_agent_optional
+  print_next_steps
+}
+
+main "$@"

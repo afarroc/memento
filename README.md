@@ -8,8 +8,20 @@ pip install -r requirements.txt
 ```
 
 ## Uso rápido
+
+### Instalador guiado para primera instalación
+
 ```bash
-# Verificar memoria
+./memento_install
+```
+
+El instalador valida Python, crea entorno virtual opcional, instala dependencias,
+configura contexto local y permite iniciar el proyecto como agente usando el CLI
+que el usuario elija.
+
+### Comandos directos
+
+```bash
 python3 tools/context_builder.py
 
 # Servidor principal (sala interactiva)
@@ -54,9 +66,8 @@ etl/                   # Bitácoras locales (ignorado)
 .env.example           # Variables de entorno de ejemplo
 ```
 
-## Uso rápido
+## Comandos rápidos desde terminal
 ```bash
-# Desde tools/
 python3 tools/bootstrap_context.py --print
 python3 tools/session_start.py --quick --limit 8
 python3 tools/optimize_agent.py --context
