@@ -20,13 +20,13 @@ ROOT = Path(__file__).resolve().parent.parent  # mementobloom root
 # Use MEMENTO_WORKSPACE env var for explicit control, or detect from script location
 _ws_env = os.environ.get("MEMENTO_WORKSPACE")
 if _ws_env:
-    WS_ROOT = Path(_ws_env)
+    WS_ROOT = Path(_ws_env).resolve()
 else:
     script_root = Path(__file__).resolve().parent.parent
     if (script_root / ".git").exists() and (script_root.parent / "projects").exists() and not (script_root / "projects").exists():
-        WS_ROOT = script_root.parent  # Client mode - workspace has projects/
+        WS_ROOT = script_root.parent.resolve()
     else:
-        WS_ROOT = script_root  # Standalone mode
+        WS_ROOT = script_root.resolve()
 CONTEXT_ROOT = WS_ROOT if WS_ROOT != ROOT else ROOT
 AGENT_TEMPLATE_ROOT = ROOT / ".agent_context" / "agent"
 INDEX_PATH = WS_ROOT / ".memento" / "memory" / "graph" / "memory_index.json"
