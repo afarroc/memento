@@ -3,6 +3,7 @@
 
 import cmd
 import json
+import shlex
 import subprocess
 import sys
 from pathlib import Path
@@ -10,8 +11,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 
-from quick_scan import QuickScan
-from context_builder import ContextBuilder
+from tools.quick_scan import QuickScan
+from tools.context_builder import ContextBuilder
 from vault_client import get_vault, get_source
 
 
@@ -77,11 +78,26 @@ class MementoCLI(cmd.Cmd):
 
     def do_agent(self, arg):
         """Generar prompt genérico con contexto Memento - agent \"pregunta\" [--limit N]"""
-        text = arg.strip().strip('"')
-        if not text:
+        try:
+            tokens = shlex.split(arg)
+        except ValueError:
+            tokens = arg.split()
+
+        if not tokens:
             print("Uso: agent \"pregunta\" [--limit N]")
             return
-        subprocess.run([sys.executable, str(ROOT / "tools" / "agent_prompt.py"), text, *arg.split()[1:]])
+
+        question = tokens[0]
+        extra_args = []
+        i = 1
+        while i < len(tokens):
+            if tokens[i] == "--limit" and i + 1 < len(tokens):
+                extra_args.extend([tokens[i], tokens[i + 1]])
+                i += 2
+            else:
+                i += 1
+
+        subprocess.run([sys.executable, str(ROOT / "tools" / "agent_prompt.py"), question, *extra_args])
 
     def do_send(self, arg):
         """Enviar mensaje al panel - send \"mensaje\" """

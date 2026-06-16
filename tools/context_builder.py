@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 from typing import Dict, List, Optional
 import re
-from optimize_memento import MementoOptimizer
+from .optimize_memento import MementoOptimizer
 
 class ContextBuilder:
     def __init__(self, index_path: str):
