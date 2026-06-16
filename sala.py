@@ -13,7 +13,7 @@ from pathlib import Path
 from urllib.parse import unquote, quote
 
 HTML = Path(__file__).parent / "templates" / "sala.html"
-REDIS_HOST = os.environ.get("REDIS_HOST", "192.168.18.59")
+REDIS_HOST = os.environ.get("REDIS_HOST", "localhost")
 REDIS_PORT = int(os.environ.get("REDIS_PORT", "6379"))
 REDIS_KEY = os.environ.get("REDIS_KEY", "memento_panel_items")
 UPLOAD_DIR = Path(__file__).resolve().parent / "uploads"
