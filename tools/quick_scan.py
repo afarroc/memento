@@ -6,7 +6,7 @@ import re
 class QuickScan:
     def __init__(self, workspace: str):
         self.ws = Path(workspace) / "projects"
-        self.output = Path(workspace) / "mementobloom" / "memory" / "graph"
+        self.output = Path(workspace) / ".memento" / "memory" / "graph"
 
     def scan(self, incremental_path: str = None):
         print("🜄 Scanning projects...")
@@ -41,12 +41,11 @@ class QuickScan:
                     new_count += 1
 
             for f in self.ws.rglob("*_CONTEXT.md"):
-                if "mementobloom" not in str(f):
-                    entry = self._parse_context(f)
-                    if entry and entry["id"] not in existing_ids:
-                        index[entry["id"]] = entry
-                        existing_ids.add(entry["id"])
-                        new_count += 1
+                entry = self._parse_context(f)
+                if entry and entry["id"] not in existing_ids:
+                    index[entry["id"]] = entry
+                    existing_ids.add(entry["id"])
+                    new_count += 1
 
         (self.output / "memory_index.json").write_text(json.dumps(index, indent=2))
         print(f"✓ Total: {len(index)} entries (nuevos: {new_count})")
@@ -64,6 +63,6 @@ class QuickScan:
 
 if __name__ == "__main__":
     import sys
-    ws_root = "/Volumes/Macintosh HD - Datos"
+    ws = Path(__file__).resolve().parent.parent
     inc_path = sys.argv[1] if len(sys.argv) > 1 else None
-    QuickScan(ws_root).scan(incremental_path=inc_path)
+    QuickScan(ws).scan(incremental_path=inc_path)

@@ -16,17 +16,18 @@ from datetime import datetime
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-INDEX_PATH = ROOT / "memory" / "graph" / "memory_index.json"
-START_CONTEXT = ROOT / ".agent_context" / "START_CONTEXT.md"
-PROJECT_META = ROOT / ".agent_context" / "PROJECT_META.md"
-USER_CONTEXT = ROOT / ".agent_context" / "secure" / "USER_CONTEXT.md"
-SECURE_CONTEXT = ROOT / ".agent_context" / "secure" / "SECURE.md"
-AGENT_DIR = ROOT / ".agent_context" / "agent"
+WS_ROOT = ROOT  # Always use repo root as workspace
+INDEX_PATH = WS_ROOT / ".memento" / "memory" / "graph" / "memory_index.json"
+START_CONTEXT = WS_ROOT / ".agent_context" / "START_CONTEXT.md"
+PROJECT_META = WS_ROOT / ".agent_context" / "PROJECT_META.md"
+USER_CONTEXT = WS_ROOT / ".agent_context" / "secure" / "USER_CONTEXT.md"
+SECURE_CONTEXT = WS_ROOT / ".agent_context" / "secure" / "SECURE.md"
+AGENT_DIR = WS_ROOT / ".agent_context" / "agent"
 AGENT_SEED = AGENT_DIR / "agent-main.md"
 AGENT_INIT = AGENT_DIR / "init.md"
 AGENT_INCLUDE_DIR = AGENT_DIR / "instructions"
-SECURE_DIR = ROOT / ".agent_context" / "secure"
-RUNTIME_DIR = ROOT / ".memento_runtime"
+SECURE_DIR = WS_ROOT / ".agent_context" / "secure"
+RUNTIME_DIR = WS_ROOT / ".memento_runtime"
 LOG_DIR = RUNTIME_DIR / "logs"
 PID_DIR = RUNTIME_DIR / "pids"
 DEFAULT_AGENT = "agent-main"

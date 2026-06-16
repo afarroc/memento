@@ -9,6 +9,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
+WS_ROOT = ROOT.parent if (ROOT / "projects").exists() else ROOT
 sys.path.insert(0, str(ROOT))
 
 from tools.quick_scan import QuickScan
@@ -22,7 +23,7 @@ class MementoCLI(cmd.Cmd):
 
     def __init__(self):
         super().__init__()
-        index_path = ROOT / "memory" / "graph" / "memory_index.json"
+        index_path = WS_ROOT / ".memento" / "memory" / "graph" / "memory_index.json"
         self.cb = ContextBuilder(str(index_path))
 
     def do_status(self, arg):
@@ -66,7 +67,7 @@ class MementoCLI(cmd.Cmd):
 
     def do_scan(self, arg):
         """Re-escanear workspace para nuevas entradas"""
-        qs = QuickScan(str(ROOT.parent))
+        qs = QuickScan(str(WS_ROOT))
         qs.scan()
 
     def do_vault(self, arg):

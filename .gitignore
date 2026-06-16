@@ -27,6 +27,8 @@ uploads/
 .agent_context/agent/memento-curador.md
 .agent_context/agent/memento-onboarding.md
 .agent_context/secure/
+.memento/memory/graph/*.json
+.memento/memory/graph/*.bak_*
 memory/graph/*.json
 memory/graph/*.bak_*
 .panel_messages.json

@@ -69,12 +69,17 @@ class ContextBuilder:
 
 if __name__ == "__main__":
     import argparse
+    import os
+    from pathlib import Path
     parser = argparse.ArgumentParser(description="MementoBloom Context Builder")
     parser.add_argument("--ready", action="store_true", help="Show ready status only")
     parser.add_argument("--limit", type=int, default=20, help="Limit entries")
     args = parser.parse_args()
-    
-    cb = ContextBuilder("/Volumes/Macintosh HD - Datos/mementobloom/memory/graph/memory_index.json")
+
+    ws_root = Path(__file__).resolve().parent.parent
+    index_path = ws_root / ".memento" / "memory" / "graph" / "memory_index.json"
+
+    cb = ContextBuilder(str(index_path))
     
     if args.ready:
         print(json.dumps(cb.ready_check(), indent=2))
