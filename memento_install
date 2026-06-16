@@ -215,7 +215,21 @@ configure_agent_command() {
 
   case "$option" in
     1)
-      install_kilo_if_needed || true
+      if ! install_kilo_if_needed; then
+        if confirm "¿Guardar el comando de Kilo de todos modos?" "n"; then
+          local agent="${MEMENTO_AGENT:-memento-curador}"
+          local model="${MEMENTO_MODEL:-kilo/kilo-auto/free}"
+          local cmd
+          cmd="kilo run --agent \"$agent\" --model \"$model\" --dir \"$ROOT\" -i \"\$(python3 tools/bootstrap_context.py --print)\""
+          printf '%s\n' "$cmd" > "$AGENT_CMD_FILE"
+          export MEMENTO_AGENT_CMD="$cmd"
+          ok "Comando de agente guardado en $AGENT_CMD_FILE"
+        else
+          warn "No se configuró agente porque Kilo CLI no está disponible."
+        fi
+        return 0
+      fi
+
       local agent="${MEMENTO_AGENT:-memento-curador}"
       local model="${MEMENTO_MODEL:-kilo/kilo-auto/free}"
       local cmd
