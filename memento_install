@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "$ROOT"
+MEMENTO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT="${MEMENTO_WORKSPACE:-$MEMENTO_DIR}"
 
 PYTHON_BIN="${PYTHON_BIN:-python3}"
-VENV_DIR="${VENV_DIR:-venv}"
-REQUIREMENTS="requirements.txt"
-AGENT_CMD_FILE=".agent_context/secure/AGENT_CMD.env"
-USER_CONTEXT=".agent_context/secure/USER_CONTEXT.md"
-ONBOARD_MARKER=".agent_context/secure/ONBOARDED"
-AGENT_TEMPLATE_DIR=".agent_context/agent"
+VENV_DIR="${VENV_DIR:-$ROOT/venv}"
+REQUIREMENTS="$MEMENTO_DIR/requirements.txt"
+AGENT_CMD_FILE="$ROOT/.agent_context/secure/AGENT_CMD.env"
+USER_CONTEXT="$ROOT/.agent_context/secure/USER_CONTEXT.md"
+ONBOARD_MARKER="$ROOT/.agent_context/secure/ONBOARDED"
+AGENT_TEMPLATE_DIR="$MEMENTO_DIR/.agent_context/agent"
 
 log() {
   printf '\n%s\n' "$*"
@@ -72,17 +72,20 @@ read_line() {
 }
 
 print_header() {
-  cat <<'EOF'
+   cat <<'EOF'
 MementoBloom Installer
 
 Este instalador asume que el repositorio ya fue clonado.
 El único paso indispensable previo es:
 
   git clone <repo>
-  cd mementobloom
+  cd <workspace>
 
 El instalador validará dependencias, creará entorno opcional, configurará
 contexto local y podrá iniciar el proyecto como agente usando el CLI que elijas.
+
+Si mementobloom está como subdirectorio (cd <workspace>/mementobloom):
+  export MEMENTO_WORKSPACE=$(pwd)/..  # El workspace raíz
 EOF
 }
 
@@ -137,8 +140,9 @@ install_requirements() {
 }
 
 ensure_agent_context_dirs() {
-  mkdir -p .agent_context/secure
-  ok "Directorio de contexto local listo: .agent_context/secure"
+   mkdir -p "$ROOT/.agent_context/secure"
+   mkdir -p "$ROOT/.memento/memory/graph"
+   ok "Directorio de contexto local listo: $ROOT/.agent_context"
 }
 
 configure_user_context() {
@@ -262,8 +266,8 @@ configure_agent_command() {
         model_flag=" --model '$model'"
       fi
 
-      local cmd="$cli run --dir '$ROOT'${flags}${model_flag} -i \"\$(python3 tools/bootstrap_context.py --print)\""
-      printf '%s\n' "$cmd" > "$AGENT_CMD_FILE"
+local cmd="$cli run --dir '$ROOT'${flags}${model_flag} -i \"\$(MEMENTO_WORKSPACE='$ROOT' python3 $MEMENTO_DIR/tools/bootstrap_context.py --print)\""
+       printf '%s\n' "$cmd" > "$AGENT_CMD_FILE"
       export MEMENTO_AGENT_CMD="$cmd"
       ok "Comando de agente guardado en $AGENT_CMD_FILE"
       ok "CLI seleccionado: ${cli:-ninguno detectado}"
@@ -290,21 +294,21 @@ configure_agent_command() {
 }
 
 start_services_optional() {
-  if ! confirm "¿Verificar/iniciar servicios locales opcionales (sala/Redis)?" "n"; then
-    return 0
-  fi
+   if ! confirm "¿Verificar/iniciar servicios locales opcionales (sala/Redis)?" "n"; then
+     return 0
+   fi
 
-  if [[ -f tools/sala.py ]]; then
-    "$PYTHON_BIN" tools/session_start.py --services-only
-  else
-    warn "tools/sala.py no existe; no se pueden iniciar servicios de sala."
-  fi
-}
+   if [[ -f "$MEMENTO_DIR/tools/sala.py" ]]; then
+     "$PYTHON_BIN" "$MEMENTO_DIR/tools/session_start.py" --services-only
+   else
+     warn "tools/sala.py no existe; no se pueden iniciar servicios de sala."
+   fi
+ }
 
 prepare_context() {
-  log "Preparando contexto local de sesión"
-  "$PYTHON_BIN" tools/session_start.py --print --no-services --limit 14
-}
+   log "Preparando contexto local de sesión"
+   MEMENTO_WORKSPACE="$ROOT" "$PYTHON_BIN" "$MEMENTO_DIR/tools/session_start.py" --print --no-services --limit 14
+ }
 
 launch_agent_optional() {
   if [[ -z "${MEMENTO_AGENT_CMD:-}" ]]; then
