@@ -1,10 +1,10 @@
 ---
 description: Curador de memoria histórica del proyecto
 mode: primary
-model: kilo/kilo-auto/free
+model: any
 steps: 25
 ---
-<!-- generated-hash: 28165e7e456e7336 -->
+<!-- generated-hash: 1e7fe9af04ca1328 -->
 
 # Agente Seed
 
@@ -115,7 +115,8 @@ Prohibiciones operativas:
 
 ## Memoria compacta actual
 
-- Index entries: 66
+- Index entries: 67
+- [h_HANDOFF_2026-06-16_161514_cierre_sesion] HANDOFF project=mementobloom ts=2026-06-16 path=projects/mementobloom/HANDOFF_2026-06-16_161514_cierre_sesion.md — # HANDOFF - Cierre de sesión ## Datos básicos - Proyecto: mementobloom - Fecha/hora: 2026-06-16T16:
 - [h_HANDOFF_2026-06-16_051845_cierre_sesion] HANDOFF project=mementobloom ts=2026-06-16 path=projects/mementobloom/HANDOFF_2026-06-16_051845_cierre_sesion.md — # HANDOFF - Cierre de sesión ## Datos básicos - Proyecto: mementobloom - Fecha/hora: 2026-06-16T05:
 - [h_HANDOFF_2026-06-15_173042_agent_optimizer] HANDOFF project=mementobloom ts=2026-06-15 path=mementobloom — # HANDOFF - Optimización de agente Resumen de optimización del agente Generado: 2026-06-15T17:30:4
 - [h_HANDOFF_2026-06-15_172142_memoria_estado] HANDOFF project=mementobloom ts=2026-06-15 path=mementobloom — # HANDOFF - Revisión de memoria, Git y estado remoto Kilo Generado: 2026-06-15T17:21:42-05:00 Proye
@@ -129,7 +130,6 @@ Prohibiciones operativas:
 - [h_HANDOFF_2026-06-14_234916_agent_optimizer] HANDOFF project=mementobloom ts=2026-06-14 path=mementobloom — # HANDOFF - Optimización de agente MementoBloom Resumen de optimización MementoBloom Generado: 202
 - [h_HANDOFF_2026-06-14_234754_agent_optimizer] HANDOFF project=mementobloom ts=2026-06-14 path=mementobloom — # HANDOFF - Optimización de agente MementoBloom Resumen de optimización MementoBloom Generado: 202
 - [h_HANDOFF_2026-06-14_234705_agent_optimizer] HANDOFF project=mementobloom ts=2026-06-14 path=mementobloom — # HANDOFF - Optimización de agente MementoBloom Resumen de optimización MementoBloom Generado: 202
-- [h_HANDOFF_2026-06-14_234445_agent_optimizer] HANDOFF project=mementobloom ts=2026-06-14 path=mementobloom — # HANDOFF - Optimización de agente MementoBloom Resumen de optimización MementoBloom Generado: 202
 
 ## Reglas operativas robustas
 - No borres memoria, Redis ni handoffs salvo instrucción explícita.

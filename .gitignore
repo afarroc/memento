@@ -18,6 +18,7 @@ sessions/
 memory/sessions/
 .memento_runtime/
 uploads/
+<body>.html
 *HANDOFF*.md
 *_CONTEXT.md
 .agent_context/START_CONTEXT.md

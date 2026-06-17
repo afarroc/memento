@@ -47,9 +47,12 @@ def normalize_style(payload):
 
 def redis_cmd(args):
     try:
+        import os
+        redis_host = os.environ.get("REDIS_HOST", "localhost")
+        redis_port = int(os.environ.get("REDIS_PORT", "6379"))
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.settimeout(3)
-        s.connect((REDIS_HOST, REDIS_PORT))
+        s.connect((redis_host, redis_port))
         chunks = [f"*{len(args)}\r\n".encode("utf-8")]
         for arg in args:
             encoded = str(arg).encode("utf-8")
@@ -192,7 +195,7 @@ def serve_upload(path: str):
 def get_msgs():
     if not redis_ok:
         return []
-    r = redis_cmd(["lrange", REDIS_KEY, "0", "-1"])
+    r = redis_cmd(["lrange", os.environ.get("REDIS_KEY", "memento_panel_items"), "0", "-1"])
     if not r.get("ok"):
         return []
     items = extract_json_objects(r["out"].encode("utf-8"))
@@ -496,7 +499,7 @@ class H(BaseHTTPRequestHandler):
             else:
                 msg = self._handle_text(payload)
             if redis_ok:
-                redis_cmd(["rpush", REDIS_KEY, json.dumps(msg, ensure_ascii=False)])
+                redis_cmd(["rpush", os.environ.get("REDIS_KEY", "memento_panel_items"), json.dumps(msg, ensure_ascii=False)])
             self._send_json({"ok": True, "message": msg})
             return
 
@@ -529,7 +532,7 @@ class H(BaseHTTPRequestHandler):
                     msg = self._handle_text(item)
                 out.append(msg)
                 if redis_ok:
-                    redis_cmd(["rpush", REDIS_KEY, json.dumps(msg, ensure_ascii=False)])
+                    redis_cmd(["rpush", os.environ.get("REDIS_KEY", "memento_panel_items"), json.dumps(msg, ensure_ascii=False)])
             self._send_json({"ok": True, "messages": out})
             return
 
