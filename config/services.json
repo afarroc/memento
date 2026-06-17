@@ -1,0 +1,44 @@
+{
+  "services": {
+    "redis": {
+      "description": "Redis message queue for sala",
+      "endpoints": [
+        {"name": "local", "host": "localhost", "port": 6379, "type": "local"},
+        {"name": "lan", "host": "192.168.18.59", "port": 6379, "type": "lan"}
+      ]
+    },
+    "mariadb": {
+      "description": "MariaDB database server",
+      "endpoints": [
+        {"name": "lan", "host": "192.168.18.59", "port": 3306, "type": "lan"},
+        {"name": "local", "host": "localhost", "port": 3306, "type": "local"}
+      ]
+    },
+    "ssh": {
+      "description": "SSH access server",
+      "endpoints": [
+        {"name": "lan", "host": "192.168.18.59", "port": 22, "type": "lan"},
+        {"name": "local", "host": "localhost", "port": 22, "type": "local"}
+      ]
+    },
+    "adb": {
+      "description": "Android Debug Bridge",
+      "endpoints": [
+        {"name": "lan", "host": "192.168.18.59", "port": 5037, "type": "lan"},
+        {"name": "local", "host": "localhost", "port": 5037, "type": "local"}
+      ]
+    },
+    "sala": {
+      "description": "MementoBloom chat room",
+      "endpoints": [
+        {"name": "local", "host": "127.0.0.1", "port": 8767, "type": "local"}
+      ]
+    }
+  },
+  "defaults": {
+    "redis_port": 6379,
+    "redis_key": "memento_panel_items",
+    "sala_port": 8767,
+    "panel_port": 8766
+  }
+}

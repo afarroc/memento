@@ -13,6 +13,18 @@ from typing import Dict, Any, List
 
 ROOT = Path(__file__).resolve().parent
 PORT = int(os.environ.get("PANEL_PORT", "8766"))
+CONFIG_FILE = ROOT / "config" / "services.json"
+
+
+def load_services_config():
+    """Load services from config file, fallback to defaults."""
+    config = {"services": {}, "defaults": {}}
+    try:
+        if CONFIG_FILE.exists():
+            config = json.loads(CONFIG_FILE.read_text())
+    except:
+        pass
+    return config
 
 @dataclass
 class ServiceEndpoint:
@@ -125,12 +137,12 @@ def get_sala_stats():
 
 # Base HTML template with integrated navbar
 def render_page(content: str, title: str, active: str = "dashboard") -> str:
-    nav_items = [("/", "Dashboard"), ("/services", "Servicios"), ("/handoffs", "Handoffs")]
-    nav_html = f'<header style="padding:12px 16px;background:#0f1419;border-bottom:1px solid #1f2933"><h1 style="font-size:18px;color:#e5e7eb">🜄 MementoBloom · Panel de Control</h1></header><nav style="padding:8px 16px;background:#0f1419;border-bottom:1px solid #1f2933;display:flex;gap:8px;flex-wrap:wrap">'
+    nav_items = [("/", "Dashboard"), ("/services", "Servicios"), ("/handoffs", "Handoffs"), ("/config", "Config")]
+    nav_html = '<header style="padding:12px 16px;background:#0f1419;border-bottom:1px solid #1f2933"><h1 style="font-size:18px;color:#e5e7eb">🜄 MementoBloom · Panel de Control</h1></header><nav style="padding:8px 16px;background:#0f1419;border-bottom:1px solid #1f2933;display:flex;gap:8px;flex-wrap:wrap">'
     for href, label in nav_items:
-        active_class = "active" if href.strip("/") == active else ""
-        bg = "#2563eb" if active_class else "#111318"
-        color = "#fff" if active_class else "#d4d4d4"
+        is_active = "active" if href.strip("/") == active else ""
+        bg = "#2563eb" if is_active else "#111318"
+        color = "#fff" if is_active else "#d4d4d4"
         nav_html += f'<a href="{href}" style="padding:4px 10px;background:{bg};color:{color};border:1px solid #1f2933;border-radius:4px;font-size:12px;text-decoration:none">{label}</a>'
     nav_html += '</nav>'
     
@@ -228,6 +240,30 @@ class PanelHandler(BaseHTTPRequestHandler):
                 content += f'<a href="/handoffs/{h["name"]}" style="display:block;color:#60a5fa;text-decoration:none;padding:8px 0;border-bottom:1px solid #1f2933">{h["name"]}</a>'
             self._send_html(render_page(content, "Handoffs", "handoffs"))
             
+        elif self.path == "/config":
+            config = load_services_config()
+            content = '<h2 style="color:#e5e7eb;margin-bottom:12px">Configuración de servicios</h2>'
+            content += '<p style="color:#9ca3af;margin-bottom:16px">Edita el archivo <code>config/services.json</code> o usa el API.</p>'
+            content += '<form id="svcForm" style="background:#111318;border:1px solid #1f2933;border-radius:8px;padding:16px">'
+            content += '<div style="margin-bottom:8px"><label style="color:#d4d4d4;display:block;margin-bottom:4px">Servicio</label>'
+            content += '<input name="name" required style="width:100%;padding:8px;background:#0a0c10;color:#e5e7eb;border:1px solid #374151;border-radius:4px">'
+            content += '</div>'
+            content += '<div style="margin-bottom:8px"><label style="color:#d4d4d4;display:block;margin-bottom:4px">Host</label>'
+            content += '<input name="host" required style="width:100%;padding:8px;background:#0a0c10;color:#e5e7eb;border:1px solid #374151;border-radius:4px">'
+            content += '</div>'
+            content += '<div style="margin-bottom:8px"><label style="color:#d4d4d4;display:block;margin-bottom:4px">Puerto</label>'
+            content += '<input name="port" type="number" required style="width:100%;padding:8px;background:#0a0c10;color:#e5e7eb;border:1px solid #374151;border-radius:4px">'
+            content += '</div>'
+            content += '<div style="margin-bottom:8px"><label style="color:#d4d4d4;display:block;margin-bottom:4px">Tipo</label>'
+            content += '<select name="type" style="width:100%;padding:8px;background:#0a0c10;color:#e5e7eb;border:1px solid #374151;border-radius:4px">'
+            content += '<option value="local">local</option><option value="lan">lan</option><option value="web">web</option>'
+            content += '</select></div>'
+            content += '<button type="submit" class="btn">Guardar servicio</button></form>'
+            content += '<script>'
+            content += 'document.getElementById("svcForm").onsubmit=e=>{e.preventDefault();fetch("/api/config",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(Object.fromEntries(new FormData(e.target)))).then(r=>r.json()).then(d=>alert(d.ok?"Guardado":"Error"))}'
+            content += '</script>'
+            self._send_html(render_page(content, "Config", "config"))
+            
         elif self.path.startswith("/handoffs/HANDOFF_"):
             name = self.path.split("/")[-1]
             path = ROOT / "projects" / "mementobloom" / f"{name}.md"
@@ -274,6 +310,26 @@ class PanelHandler(BaseHTTPRequestHandler):
                         self._send_json({"ok": s["ok"], "service": svc, "endpoint": ep_name})
                         return
             self._send_json({"ok": False, "error": "not found"})
+        elif self.path == "/api/config":
+            payload = self._read_body()
+            svc_name = payload.get("name", "")
+            svc_host = payload.get("host", "")
+            svc_port = payload.get("port", "")
+            svc_type = payload.get("type", "lan")
+            
+            if svc_name and svc_host and svc_port:
+                config = load_services_config()
+                if "services" not in config:
+                    config["services"] = {}
+                config["services"][svc_name] = {
+                    "description": f"Added service {svc_name}",
+                    "endpoints": [{"name": svc_type, "host": svc_host, "port": int(svc_port), "type": svc_type}]
+                }
+                CONFIG_FILE.parent.mkdir(parents=True, exist_ok=True)
+                CONFIG_FILE.write_text(json.dumps(config, indent=2))
+                self._send_json({"ok": True, "output": f"service {svc_name} added"})
+            else:
+                self._send_json({"ok": False, "error": "missing fields"})
         else:
             self._send_json({"error": "not found"}, 404)
 
