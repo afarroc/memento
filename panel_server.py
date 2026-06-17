@@ -228,8 +228,10 @@ a{color:#60a5fa;text-decoration:none;display:block;padding:8px 0;border-bottom:1
                 content = path.read_text()
                 # Simple HTML escape
                 content = content.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-                self._send_html(f"<!DOCTYPE html><html><head><meta charset='UTF-8'><title>{name}</title>
-<style>body{{margin:0;padding:16px;background:#08090a;color:#d4d4d4;font-family:monospace,monospace;font-size:13px;white-space:pre-wrap}}</style></head><body>{content}</body></html>")
+                html = f"<!DOCTYPE html><html><head><meta charset='UTF-8'><title>{name}</title>"
+                html += '<style>body{margin:0;padding:16px;background:#08090a;color:#d4d4d4;font-family:monospace;font-size:13px;white-space:pre-wrap}</style></head><body>'
+                html += content + "</body></html>"
+                self._send_html(html)
             else:
                 self._send_json({"error": "handoff no encontrado"}, 404)
         elif self.path == "/api/stats":
