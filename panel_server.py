@@ -8,61 +8,89 @@ import subprocess
 import sys
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from pathlib import Path
+from dataclasses import dataclass
+from typing import Dict, Any, List, Optional
 
 ROOT = Path(__file__).resolve().parent
 PORT = int(os.environ.get("PANEL_PORT", "8766"))
-REDIS_HOST = os.environ.get("REDIS_HOST", "192.168.18.59")
-REDIS_PORT = int(os.environ.get("REDIS_PORT", "6379"))
-SALA_PORT = int(os.environ.get("SALA_PORT", "8767"))
-REDIS_KEY = os.environ.get("REDIS_KEY", "memento_panel_items")
 
+# Configuración de servicios con múltiples endpoints
+@dataclass
+class ServiceEndpoint:
+    name: str
+    host: str
+    port: int
+    type: str  # local, lan, web
+    default_port: int = 0
 
-def redis_cmd(args):
+SERVICES = {
+    "redis": [
+        ServiceEndpoint("local", "localhost", int(os.environ.get("REDIS_PORT", "6379")), "local"),
+        ServiceEndpoint("lan", os.environ.get("REDIS_HOST", "192.168.18.59"), int(os.environ.get("REDIS_PORT", "6379")), "lan"),
+    ],
+    "mariadb": [
+        ServiceEndpoint("lan", os.environ.get("MARIADB_HOST", "192.168.18.59"), int(os.environ.get("MARIADB_PORT", "3306")), "lan"),
+        ServiceEndpoint("local", "localhost", int(os.environ.get("MARIADB_LOCAL_PORT", "3306")), "local"),
+    ],
+    "ssh": [
+        ServiceEndpoint("lan", os.environ.get("SSH_HOST", "192.168.18.59"), int(os.environ.get("SSH_PORT", "22")), "lan"),
+        ServiceEndpoint("local", "localhost", 22, "local"),
+    ],
+    "adb": [
+        ServiceEndpoint("lan", os.environ.get("ADB_HOST", "192.168.18.59"), int(os.environ.get("ADB_PORT", "5037")), "lan"),
+        ServiceEndpoint("local", "localhost", 5037, "local"),
+    ],
+    "sala": [
+        ServiceEndpoint("local", "127.0.0.1", int(os.environ.get("SALA_PORT", "8767")), "local"),
+    ],
+}
+
+def check_tcp(host: str, port: int, timeout: float = 1.0) -> bool:
     try:
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.settimeout(2)
-        s.connect((REDIS_HOST, REDIS_PORT))
-        chunks = [f"*{len(args)}\r\n".encode("utf-8")]
-        for arg in args:
-            encoded = str(arg).encode("utf-8")
-            chunks.append(f"${len(encoded)}\r\n".encode("utf-8"))
-            chunks.append(encoded)
-            chunks.append(b"\r\n")
-        s.sendall(b"".join(chunks))
-        received = bytearray()
-        while True:
-            try:
-                chunk = s.recv(65536)
-                received.extend(chunk)
-                if not chunk or received.endswith(b"\r\n"):
-                    break
-            except socket.timeout:
-                break
-        s.close()
-        return {"ok": True, "data": received.decode(errors="replace")}
-    except Exception as e:
-        return {"ok": False, "error": str(e)}
-
-
-def redis_ping():
-    r = redis_cmd(["PING"])
-    return r.get("ok") and "PONG" in r.get("data", "")
-
-
-def get_sala_stats():
-    try:
-        import urllib.request
-        with urllib.request.urlopen(f"http://127.0.0.1:{SALA_PORT}/stats", timeout=2) as resp:
-            return json.loads(resp.read().decode())
+        with socket.create_connection((host, int(port)), timeout=timeout):
+            return True
     except:
-        return {"error": "sala no disponible"}
+        return False
 
+def get_service_status(name: str) -> List[Dict[str, Any]]:
+    endpoints = SERVICES.get(name, [])
+    results = []
+    for ep in endpoints:
+        results.append({
+            "name": ep.name,
+            "host": ep.host,
+            "port": ep.port,
+            "type": ep.type,
+            "ok": check_tcp(ep.host, ep.port),
+        })
+    return results
+
+def get_all_services_status() -> Dict[str, Any]:
+    return {name: get_service_status(name) for name in SERVICES}
+
+def get_handoffs_list(limit: int = 20) -> List[Dict[str, Any]]:
+    handoff_dir = ROOT / "projects" / "mementobloom"
+    handoffs = []
+    if not handoff_dir.exists():
+        return handoffs
+    for path in sorted(handoff_dir.glob("HANDOFF_*.md"), reverse=True)[:limit]:
+        try:
+            content = path.read_text()
+            # Extract basic info
+            first_line = content.split('\n')[0] if content else ""
+            handoffs.append({
+                "path": str(path.relative_to(ROOT)),
+                "name": path.stem,
+                "preview": (first_line + "..." if len(first_line) > 80 else first_line),
+            })
+        except:
+            pass
+    return handoffs
 
 def get_memory_stats():
     idx_path = ROOT / "memory" / "graph" / "memory_index.json"
     try:
         data = json.loads(idx_path.read_text())
-        # Count by type
         by_type = {}
         for entry in data.values():
             t = entry.get("type", "unknown")
@@ -70,7 +98,6 @@ def get_memory_stats():
         return {"entries": len(data), "by_type": by_type}
     except:
         return {"entries": 0, "by_type": {}}
-
 
 def get_git_status():
     try:
@@ -80,59 +107,65 @@ def get_git_status():
         )
         return {"clean": len(result.stdout.strip()) == 0, "raw": result.stdout.strip()}
     except:
-        return {"error": "git no disponible"}
+        return {"clean": False, "raw": ""}
 
-
-def get_latest_commit():
+def get_sala_stats():
+    sala_port = int(os.environ.get("SALA_PORT", "8767"))
     try:
-        result = subprocess.run(
-            ["git", "-C", str(ROOT), "log", "-1", "--oneline"],
-            capture_output=True, text=True, timeout=5
-        )
-        return result.stdout.strip()
+        import urllib.request
+        with urllib.request.urlopen(f"http://127.0.0.1:{sala_port}/stats", timeout=2) as resp:
+            return json.loads(resp.read().decode())
     except:
-        return "?"
+        return {"error": "sala no disponible"}
 
-
-HTML = f"""<!DOCTYPE html>
+HTML_TEMPLATE = """<!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>MementoBloom Panel</title>
 <style>
-*{{margin:0;padding:0;box-sizing:border-box}}
-body{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#08090a;color:#d4d4d4;min-height:100vh}}
-header{{padding:12px 16px;background:#0f1419;border-bottom:1px solid #1f2933}}
-header h1{{font-size:18px;color:#e5e7eb}}
-#grid{{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;padding:16px}}
-.card{{background:#111318;border:1px solid #1f2933;border-radius:8px;padding:16px}}
-.card h3{{font-size:13px;color:#6b7280;margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em}}
-.card .value{{font-size:16px;color:#e5e7eb;margin-bottom:4px}}
-.card .detail{{font-size:11px;color:#9ca3af}}
-.status-ok{{color:#34d399}}
-.status-no{{color:#f87171}}
-a.btn{{display:inline-block;padding:6px 12px;background:#2563eb;color:#fff;border-radius:4px;text-decoration:none;font-size:12px;margin-right:6px;margin-top:8px}}
-a.btn:hover{{background:#1d4ed8}}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#08090a;color:#d4d4d4;min-height:100vh}
+header{padding:12px 16px;background:#0f1419;border-bottom:1px solid #1f2933}
+header h1{font-size:18px;color:#e5e7eb}
+nav{padding:8px 16px;background:#0f1419;border-bottom:1px solid #1f2933;display:flex;gap:8px;flex-wrap:wrap}
+nav a{padding:4px 10px;background:#111318;color:#d4d4d4;border:1px solid #1f2933;border-radius:4px;font-size:12px;text-decoration:none}
+nav a:hover{background:#1a1f27}
+nav a.active{background:#2563eb;color:#fff}
+#grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;padding:16px}
+.card{background:#111318;border:1px solid #1f2933;border-radius:8px;padding:16px}
+.card h3{font-size:13px;color:#6b7280;margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em}
+.card .value{font-size:16px;color:#e5e7eb;margin-bottom:4px}
+.card .detail{font-size:11px;color:#9ca3af}
+.status-ok{color:#34d399}
+.status-no{color:#f87171}
+a.btn{display:inline-block;padding:6px 12px;background:#2563eb;color:#fff;border-radius:4px;text-decoration:none;font-size:12px;margin-right:6px;margin-top:8px}
+a.btn:hover{background:#1d4ed8}
+#handoff-list{margin-top:8px;font-size:11px}
+#handoff-list a{display:block;color:#60a5fa;text-decoration:none;margin:4px 0}
 </style>
 </head>
 <body>
 <header>
 <h1>🜄 MementoBloom · Panel de Control</h1>
 </header>
+<nav>
+<a href="/" class="active">Dashboard</a>
+<a href="/services">Servicios</a>
+<a href="/handoffs">Handoffs</a>
+</nav>
+<div id="content">
 <div id="grid">
-<div class="card"><h3>Servicio Redis</h3><div class="value" id="redis-status">Verificando...</div><div class="detail">{REDIS_HOST}:{REDIS_PORT}</div></div>
-<div class="card"><h3>Sala Local</h3><div class="value" id="sala-status">Verificando...</div><div class="detail">http://127.0.0.1:{SALA_PORT}</div></div>
+<div class="card"><h3>Servicio Redis</h3><div class="value" id="redis-status">Verificando...</div><div class="detail">Instancias: local, lan</div></div>
+<div class="card"><h3>Sala Local</h3><div class="value" id="sala-status">Verificando...</div><div class="detail">http://127.0.0.1:8767</div></div>
 <div class="card"><h3>Memoria</h3><div class="value" id="mem-count">Verificando...</div><div class="detail" id="mem-detail"></div></div>
 <div class="card"><h3>Git</h3><div class="value" id="git-status">Verificando...</div><div class="detail" id="git-detail"></div></div>
-<div class="card"><h3>Acciones rápidas</h3>
-<a href="/bootstrap" class="btn">Bootstrap Context</a>
-<a href="/optimize" class="btn">Optimize Agent</a>
 </div>
 </div>
 <script>
 fetch('/api/stats').then(r=>r.json()).then(d=>{{
-  document.getElementById('redis-status').innerHTML = d.redis.ok ? '<span class=status-ok>● OK</span>' : '<span class=status-no>● Offline</span>';
+  document.getElementById('redis-status').innerHTML = d.services.redis.some(s=>s.ok) ? '<span class=status-ok>● OK</span>' : '<span class=status-no>● Offline</span>';
   document.getElementById('sala-status').innerHTML = d.sala.ok ? '<span class=status-ok>● OK</span> ('+d.sala.messages+' msgs)' : '<span class=status-no>● Offline</span>';
   document.getElementById('mem-count').textContent = d.memory.entries;
   document.getElementById('mem-detail').textContent = 'HANDOFF='+d.memory.by_type.HANDOFF+' | CONTEXT='+d.memory.by_type.CONTEXT;
@@ -142,7 +175,6 @@ fetch('/api/stats').then(r=>r.json()).then(d=>{{
 </body>
 </html>"""
 
-
 class PanelHandler(BaseHTTPRequestHandler):
     def _send_json(self, data, status=200):
         self.send_response(status)
@@ -151,39 +183,75 @@ class PanelHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(json.dumps(data, ensure_ascii=False).encode())
 
+    def _send_html(self, html):
+        self.send_response(200)
+        self.send_header("Content-Type", "text/html")
+        self.end_headers()
+        self.wfile.write(html.encode())
+
     def do_GET(self):
         if self.path == "/" or self.path == "/index.html":
-            self.send_response(200)
-            self.send_header("Content-Type", "text/html")
-            self.end_headers()
-            self.wfile.write(HTML.encode())
+            self._send_html(HTML_TEMPLATE)
+        elif self.path == "/services":
+            services = get_all_services_status()
+            html = """<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Servicios</title>
+<style>body{margin:0;padding:16px;background:#08090a;color:#d4d4d4;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+.card{background:#111318;border:1px solid #1f2933;border-radius:8px;padding:16px;margin:8px 0}
+h3{margin:0 0 8px 0;color:#e5e7eb}
+.status-ok{color:#34d399}.status-no{color:#f87171}
+table{width:100%;border-collapse:collapse}
+td{padding:4px 0;color:#9ca3af}
+</style></head><body>"""
+            for name, endpoints in services.items():
+                html += f"<div class='card'><h3>{name.upper()}</h3>"
+                html += "<table>"
+                for ep in endpoints:
+                    status = "● OK" if ep["ok"] else "● Offline"
+                    html += f"<tr><td>{ep['type']}</td><td>{status}</td><td>{ep['host']}:{ep['port']}</td></tr>"
+                html += "</table></div>"
+            html += "</body></html>"
+            self._send_html(html)
+        elif self.path == "/handoffs":
+            handoffs = get_handoffs_list()
+            html = """<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Handoffs</title>
+<style>body{margin:0;padding:16px;background:#08090a;color:#d4d4d4;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+a{color:#60a5fa;text-decoration:none;display:block;padding:8px 0;border-bottom:1px solid #1f2933}
+</style></head><body><h2 style="color:#e5e7eb;margin-bottom:12px">Handoffs recientes</h2>"""
+            for h in handoffs:
+                html += f'<a href="/handoffs/{h["name"]}">{h["name"]}</a>'
+            html += "</body></html>"
+            self._send_html(html)
+        elif self.path.startswith("/handoffs/HANDOFF_"):
+            name = self.path.split("/")[-1]
+            path = ROOT / "projects" / "mementobloom" / f"{name}.md"
+            if path.exists():
+                content = path.read_text()
+                # Simple HTML escape
+                content = content.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+                self._send_html(f"<!DOCTYPE html><html><head><meta charset='UTF-8'><title>{name}</title>
+<style>body{{margin:0;padding:16px;background:#08090a;color:#d4d4d4;font-family:monospace,monospace;font-size:13px;white-space:pre-wrap}}</style></head><body>{content}</body></html>")
+            else:
+                self._send_json({"error": "handoff no encontrado"}, 404)
         elif self.path == "/api/stats":
+            services = get_all_services_status()
             sala = get_sala_stats()
             mem = get_memory_stats()
             git_status_raw = get_git_status()
             self._send_json({
-                "redis": {"ok": redis_ping()},
+                "services": services,
                 "sala": {"ok": "messages" in sala, "messages": sala.get("messages", 0)},
-                "memory": {
-                    "entries": mem.get("entries", 0),
-                    "by_type": mem.get("by_type", {}),
-                },
+                "memory": mem,
                 "git": {"clean": git_status_raw.get("clean", False), "changes": len(git_status_raw.get("raw", "").splitlines()) if git_status_raw.get("raw") else 0},
             })
-        elif self.path == "/bootstrap":
-            cmd = f"python3 {ROOT}/tools/bootstrap_context.py --print"
-            result = subprocess.run(cmd.split(), capture_output=True, text=True)
-            self._send_json({"ok": result.returncode == 0, "output": result.stdout})
-        elif self.path == "/optimize":
-            cmd = f"python3 {ROOT}/tools/optimize_agent.py --context"
-            result = subprocess.run(cmd.split(), capture_output=True, text=True)
-            self._send_json({"ok": result.returncode == 0, "output": result.stdout})
+        elif self.path == "/api/services":
+            self._send_json(get_all_services_status())
+        elif self.path == "/api/handoffs":
+            self._send_json(get_handoffs_list())
         else:
             self._send_json({"error": "not found"}, 404)
 
     def log_message(self, *args):
         pass
-
 
 if __name__ == "__main__":
     print(f"panel :: http://127.0.0.1:{PORT}")
