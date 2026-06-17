@@ -209,12 +209,12 @@ class PanelHandler(BaseHTTPRequestHandler):
                 for ep in endpoints:
                     status = "● OK" if ep["ok"] else "● Offline"
                     status_cls = "status-ok" if ep["ok"] else "status-no"
-                    content += f'<tr><td>{ep["type"]}</td><td><span class="{status_cls}">{status}</span></td><td>{ep["host"]}:{ep["port"]}</td>'
-                    content += f'<td><button class="btn" onclick="testSvc(\'{svc_name}\',\'{ep[\"name\"]}\')">Test</button>'
+                    content += f"<tr><td>{ep['type']}</td><td><span class='{status_cls}'>{status}</span></td><td>{ep['host']}:{ep['port']}</td>"
+                    content += f"<td><button class='btn' onclick='testSvc(\"{svc_name}\",\"{ep['name']}\")'>Test</button>"
                     if not ep["ok"]:
-                        content += f'<button class="btn" onclick="startSvc(\'{svc_name}\')">Start</button>'
-                    content += '</td></tr>'
-                content += '</table></div>'
+                        content += f"<button class='btn' onclick='startSvc(\"{svc_name}\")'>Start</button>"
+                    content += "</td></tr>"
+                content += "</table></div>"
             content += '<script>'
             content += 'function testSvc(svc,ep){fetch("/api/service/test",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({service:svc,endpoint:ep})}).then(r=>r.json()).then(d=>alert(d.ok?"OK":"Offline"))}'
             content += 'function startSvc(svc){fetch("/api/service/start",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({service:svc})}).then(r=>r.json()).then(d=>alert(d.output||d.error))}'
@@ -233,7 +233,7 @@ class PanelHandler(BaseHTTPRequestHandler):
             path = ROOT / "projects" / "mementobloom" / f"{name}.md"
             if path.exists():
                 content = path.read_text().replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-                self._send_html(render_page(f"<h2 style='color:#e5e7eb;margin-bottom:12px'>{name}</h2><pre style='white-space:pre-wrap;word-wrap:break-word'>{content}</pre>", name))
+                self._send_html(render_page(f'<h2 style="color:#e5e7eb;margin-bottom:12px">{name}</h2><pre style="white-space:pre-wrap;word-wrap:break-word">{content}</pre>', name))
             else:
                 self._send_json({"error": "handoff no encontrado"}, 404)
                 
