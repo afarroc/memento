@@ -68,6 +68,13 @@ pre code{background:transparent;padding:0;font-size:12px}
 .files .chip button{background:transparent;border:none;color:#9ca3af;cursor:pointer;font-size:13px;line-height:1}
 .preview-files{padding:2px 0 6px}
 .preview-files .chip{border-color:#374151;background:#0a0c10}
+.restored-time{display:inline-block;min-width:42px}
+.msg .meta-line .restored-tag{color:#6b7280}
+.msg .content .env-block{border:1px solid #1f2933;padding:6px 8px;border-radius:6px;background:#0b0d11}
+.msg .content .env-block .env-label{color:#9ca3af;font-size:10px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
+.msg.restored-old{border-left-color:#1f2933}
+.msg.restored-old .badge{background:#111318;border-color:#1f2933;color:#d4d4d4}
+.msg.restored-old{border-style:solid;border-width:1px 1px 1px 3px;opacity:.95}
 </style>
 </head>
 <body>
@@ -120,17 +127,14 @@ function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'
 
 function styleFor(type,level,style){
   if(style && style.border) return style.border;
-  if(type==='system'&&level==='error') return '#7f1d1d';
-  if(type==='system'&&level==='warn') return '#422006';
-  if(type==='system'&&level==='info') return '#0f1524';
+  if(style && style._text) style = Object.assign({}, style, {border: style.border || '#374151'});
+  if(type==='system') return '#1f4f7a';
   if(type==='code') return '#14532d';
   if(type==='json') return '#7f1d1d';
   if(type==='html') return '#1e3a8a';
-  if(type==='markdown') return '#1f2933';
-  if(type==='pixels') return '#422006';
   if(type==='image') return '#3f3f46';
   if(type==='file') return '#3f3f46';
-  return '#262a33';
+  return '#374151';
 }
 
 function bgFor(style, fallback){
@@ -143,6 +147,11 @@ function colorFor(style, fallback){
 
 function badgeBgFor(style){
   return style && style.badgeBg ? style.badgeBg : '#0a0b0f';
+}
+
+function isRestored(m){
+  const o = (m && m.meta && m.meta.origin) ? m.meta.origin : (m && m.origin) ? m.origin : '';
+  return o === 'restore';
 }
 
 function renderBadge(m){
@@ -279,12 +288,13 @@ function renderMsg(m){
   const sourceClass=['client','assistant','system','api'].includes(source)?source:'assistant';
   const typeClass=(m.type==='image'?'image':(m.type==='file'?'file':(m.type||'text')));
   const replyClass = m.reply_to ? ' has-reply' : '';
-  d.className=`msg ${sourceClass} ${typeClass}${replyClass}`;
+  const restored = isRestored(m) ? ' restored-old' : '';
+  d.className=`msg ${sourceClass} ${typeClass}${replyClass}${restored}`;
   d.style.borderLeftColor=border;
   d.style.backgroundColor=bgFor(style,'#111318');
   d.style.color=colorFor(style,'#d4d4d4');
 
-  const timeSpan=`<span class="time">${esc(m.created_at||'')}</span>`;
+  const timeSpan=`<span class="time restored-time"><span class="restored-tag">[restored]</span> ${esc(m.created_at||'')}</span>`;
   const badge=renderBadge(m);
   const replyBtn=`<button data-reply-id="${esc(m.id)}" data-reply-text="${esc(m.text||'').replace(/"/g,'&quot;')}" data-reply-source="${esc(meta.source||m.source||'assistant')}" class="reply-btn" style="background:transparent;border:none;color:#6b7280;cursor:pointer;font-size:12px;margin-left:6px">↪</button>`;
 
@@ -332,7 +342,20 @@ function renderMsg(m){
   } else {
     const files=(m.meta&&m.meta.files)||[];
     if(files.length) body+=renderFiles(files);
-    body+=`<div class="content">${esc(m.text||'')}</div>`;
+    const txt = m.text || '';
+    const envRe = /<environment_details>([\s\S]*?)<\/environment_details>/ig;
+    let envMatch;
+    const envBlocks=[];
+    let restTxt = txt;
+    while ((envMatch = envRe.exec(txt)) !== null) {
+      envBlocks.push(envMatch[1].trim());
+    }
+    restTxt = txt.replace(envRe, '');
+    envBlocks.forEach((content) => {
+      const normalized = content.replace(/\\r\\n/g,'\n').replace(/\\n/g,'\n').replace(/\\r/g,'\n').trim();
+      body += `<div class="env-block"><div class="env-label">environment</div><div class="content">${esc(normalized)}</div></div>`;
+    });
+    body += `<div class="content">${esc(restTxt)}</div>`;
   }
 
   d.innerHTML=`${timeSpan}${badge}${replyBtn}${renderReplyContext(m)}${body}${renderMeta(m)}`;
