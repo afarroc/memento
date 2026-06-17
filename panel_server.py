@@ -61,9 +61,15 @@ def get_sala_stats():
 def get_memory_stats():
     idx_path = ROOT / "memory" / "graph" / "memory_index.json"
     try:
-        return json.loads(idx_path.read_text())
+        data = json.loads(idx_path.read_text())
+        # Count by type
+        by_type = {}
+        for entry in data.values():
+            t = entry.get("type", "unknown")
+            by_type[t] = by_type.get(t, 0) + 1
+        return {"entries": len(data), "by_type": by_type}
     except:
-        return {}
+        return {"entries": 0, "by_type": {}}
 
 
 def get_git_status():
@@ -159,8 +165,8 @@ class PanelHandler(BaseHTTPRequestHandler):
                 "redis": {"ok": redis_ping()},
                 "sala": {"ok": "messages" in sala, "messages": sala.get("messages", 0)},
                 "memory": {
-                    "entries": len(mem),
-                    "by_type": {"HANDOFF": mem.get("by_type", {}).get("HANDOFF", 0), "CONTEXT": mem.get("by_type", {}).get("CONTEXT", 0)},
+                    "entries": mem.get("entries", 0),
+                    "by_type": mem.get("by_type", {}),
                 },
                 "git": {"clean": git_status_raw.get("clean", False), "changes": len(git_status_raw.get("raw", "").splitlines()) if git_status_raw.get("raw") else 0},
             })
