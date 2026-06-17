@@ -183,6 +183,15 @@ class PanelHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(json.dumps(data, ensure_ascii=False).encode())
 
+    def _read_body(self):
+        length = int(self.headers.get("Content-Length", 0))
+        if not length:
+            return {}
+        try:
+            return json.loads(self.rfile.read(length).decode("utf-8"))
+        except:
+            return {}
+
     def _send_html(self, html):
         self.send_response(200)
         self.send_header("Content-Type", "text/html")
@@ -199,24 +208,47 @@ class PanelHandler(BaseHTTPRequestHandler):
 .card{background:#111318;border:1px solid #1f2933;border-radius:8px;padding:16px;margin:8px 0}
 h3{margin:0 0 8px 0;color:#e5e7eb}
 .status-ok{color:#34d399}.status-no{color:#f87171}
-table{width:100%;border-collapse:collapse}
-td{padding:4px 0;color:#9ca3af}
-</style></head><body>"""
+table{width:100%;border-collapse:collapse;margin-bottom:8px}
+td{padding:4px 8px;color:#9ca3af;border-bottom:1px solid #1f2933}
+.btn{padding:4px 8px;background:#2563eb;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer;margin:0 2px}
+.btn:hover{background:#1d4ed8}
+.btn.danger{background:#ef4444}
+.btn.danger:hover{background:#dc2626}
+</style></head><body>
+<nav style="padding:8px 16px;background:#0f1419;display:flex;gap:8px">
+<a href="/" style="padding:4px 10px;background:#111318;color:#d4d4d4;border:1px solid #1f2933;border-radius:4px;font-size:12px;text-decoration:none">Dashboard</a>
+<a href="/services" style="padding:4px 10px;background:#2563eb;color:#fff;border:1px solid #1f2933;border-radius:4px;font-size:12px;text-decoration:none">Servicios</a>
+<a href="/handoffs" style="padding:4px 10px;background:#111318;color:#d4d4d4;border:1px solid #1f2933;border-radius:4px;font-size:12px;text-decoration:none">Handoffs</a>
+</nav>
+<div style="padding:16px">"""
             for name, endpoints in services.items():
-                html += f"<div class='card'><h3>{name.upper()}</h3>"
-                html += "<table>"
+                html += f"<div class='card'><h3>{name.upper()}</h3><table>"
                 for ep in endpoints:
                     status = "● OK" if ep["ok"] else "● Offline"
-                    html += f"<tr><td>{ep['type']}</td><td>{status}</td><td>{ep['host']}:{ep['port']}</td></tr>"
+                    html += f"<tr><td>{ep['type']}</td><td>{status}</td><td>{ep['host']}:{ep['port']}</td>"
+                    html += f"<td><button class='btn' onclick='testSvc(\"{name}\",\"{ep['name']}\")'>Test</button>"
+                    if not ep["ok"]:
+                        html += f"<button class='btn' onclick='startSvc(\"{name}\")'>Start</button>"
+                    html += "</td></tr>"
                 html += "</table></div>"
-            html += "</body></html>"
+            html += """</div>
+<script>
+function testSvc(svc,ep){fetch('/api/service/test',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({service:svc,endpoint:ep})}).then(r=>r.json()).then(d=>alert(d.ok?'OK':'Offline'))}
+function startSvc(svc){fetch('/api/service/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({service:svc})}).then(r=>r.json()).then(d=>alert(d.output||d.error))}
+</script></body></html>"""
             self._send_html(html)
         elif self.path == "/handoffs":
             handoffs = get_handoffs_list()
             html = """<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Handoffs</title>
 <style>body{margin:0;padding:16px;background:#08090a;color:#d4d4d4;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
 a{color:#60a5fa;text-decoration:none;display:block;padding:8px 0;border-bottom:1px solid #1f2933}
-</style></head><body><h2 style="color:#e5e7eb;margin-bottom:12px">Handoffs recientes</h2>"""
+</style></head><body>
+<nav style="padding:8px 16px;background:#0f1419;display:flex;gap:8px">
+<a href="/" style="padding:4px 10px;background:#111318;color:#d4d4d4;border:1px solid #1f2933;border-radius:4px;font-size:12px;text-decoration:none">Dashboard</a>
+<a href="/services" style="padding:4px 10px;background:#111318;color:#d4d4d4;border:1px solid #1f2933;border-radius:4px;font-size:12px;text-decoration:none">Servicios</a>
+<a href="/handoffs" style="padding:4px 10px;background:#2563eb;color:#fff;border:1px solid #1f2933;border-radius:4px;font-size:12px;text-decoration:none">Handoffs</a>
+</nav>
+<h2 style="color:#e5e7eb;padding:16px 0 8px 16px;margin:0">Handoffs recientes</h2>"""
             for h in handoffs:
                 html += f'<a href="/handoffs/{h["name"]}">{h["name"]}</a>'
             html += "</body></html>"
@@ -249,6 +281,57 @@ a{color:#60a5fa;text-decoration:none;display:block;padding:8px 0;border-bottom:1
             self._send_json(get_all_services_status())
         elif self.path == "/api/handoffs":
             self._send_json(get_handoffs_list())
+        elif self.path == "/api/service/start":
+            # POST expected with service name in body
+            import urllib.request
+            payload = self._read_body()
+            svc = payload.get("service", "")
+            if svc == "sala":
+                result = subprocess.run([sys.executable, str(ROOT / "tools" / "sala.py")], capture_output=True, text=True)
+                self._send_json({"ok": True, "output": "sala started"})
+            elif svc == "redis-flush":
+                # ONLY flush if explicitly requested
+                redis_cmd(["FLUSHALL"])
+                self._send_json({"ok": True, "output": "redis flushed"})
+            else:
+                self._send_json({"ok": False, "error": "service not supported"})
+        elif self.path == "/api/service/test":
+            payload = self._read_body()
+            svc = payload.get("service", "")
+            ep = payload.get("endpoint", "lan")
+            services = get_all_services_status()
+            if svc in services:
+                for s in services[svc]:
+                    if s["name"] == ep:
+                        self._send_json({"ok": s["ok"], "service": svc, "endpoint": ep})
+                        return
+            self._send_json({"ok": False, "error": "not found"})
+        else:
+            self._send_json({"error": "not found"}, 404)
+
+    def do_POST(self):
+        if self.path == "/api/service/start":
+            payload = self._read_body()
+            svc = payload.get("service", "")
+            if svc == "sala":
+                subprocess.Popen([sys.executable, str(ROOT / "tools" / "sala.py")])
+                self._send_json({"ok": True, "output": "sala started"})
+            elif svc == "redis-flush":
+                redis_cmd(["FLUSHALL"])
+                self._send_json({"ok": True, "output": "redis flushed"})
+            else:
+                self._send_json({"ok": False, "error": "service not supported"})
+        elif self.path == "/api/service/test":
+            payload = self._read_body()
+            svc = payload.get("service", "")
+            ep_name = payload.get("endpoint", "lan")
+            services = get_all_services_status()
+            if svc in services:
+                for s in services[svc]:
+                    if s["name"] == ep_name:
+                        self._send_json({"ok": s["ok"], "service": svc, "endpoint": ep_name})
+                        return
+            self._send_json({"ok": False, "error": "not found"})
         else:
             self._send_json({"error": "not found"}, 404)
 
