@@ -52,6 +52,19 @@ python3 tools/bootstrap_context.py --print
 python3 tools/optimize_agent.py --context
 ```
 
+# Contexto y continuidad de sesión
+
+Cada sesión debe reconstruir contexto desde archivos locales y handoffs, sin depender de un modelo específico:
+
+1. Leer `.agent_context/PROJECT_META.md`.
+2. Leer `.agent_context/secure/USER_CONTEXT.md` si existe.
+3. Leer `.agent_context/START_CONTEXT.md` como contexto local regenerable.
+4. Ejecutar `python3 tools/bootstrap_context.py --print`.
+5. Continuar desde el último handoff relevante en `projects/*/`.
+6. Verificar `git status`, servicios locales y memoria compacta antes de operar.
+
+Los handoffs y `memory/graph/*.json` son memoria local no trackeable; no deben commitearse ni pushearse.
+
 ## Estructura
 ```text
 .agent_context/        # Contexto local, seed y configuración genérica

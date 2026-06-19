@@ -4,7 +4,7 @@ mode: primary
 model: any
 steps: 25
 ---
-<!-- generated-hash: 1e7fe9af04ca1328 -->
+<!-- generated-hash: fcb5aabd9a9bfb41 -->
 
 # Agente Seed
 
@@ -115,7 +115,11 @@ Prohibiciones operativas:
 
 ## Memoria compacta actual
 
-- Index entries: 67
+- Index entries: 71
+- [h_HANDOFF_2026-06-17_195901_cierre_sesion] HANDOFF project=mementobloom ts=2026-06-17 path=mementobloom — # HANDOFF - Cierre de sesión ## Datos básicos - Proyecto: mementobloom - Fecha/hora: 2026-06-17T19:
+- [h_HANDOFF_2026-06-17_062957_agent_optimizer] HANDOFF project=mementobloom ts=2026-06-17 path=mementobloom — # HANDOFF - Optimización de agente Resumen de optimización del agente Generado: 2026-06-17T06:29:5
+- [h_HANDOFF_2026-06-17_062111_agent_optimizer] HANDOFF project=mementobloom ts=2026-06-17 path=mementobloom — # HANDOFF - Optimización de agente Resumen de optimización del agente Generado: 2026-06-17T06:21:1
+- [h_HANDOFF_2026-06-17_055017_agent_optimizer] HANDOFF project=mementobloom ts=2026-06-17 path=mementobloom — # HANDOFF - Optimización de agente Resumen de optimización del agente Generado: 2026-06-17T05:50:1
 - [h_HANDOFF_2026-06-16_161514_cierre_sesion] HANDOFF project=mementobloom ts=2026-06-16 path=projects/mementobloom/HANDOFF_2026-06-16_161514_cierre_sesion.md — # HANDOFF - Cierre de sesión ## Datos básicos - Proyecto: mementobloom - Fecha/hora: 2026-06-16T16:
 - [h_HANDOFF_2026-06-16_051845_cierre_sesion] HANDOFF project=mementobloom ts=2026-06-16 path=projects/mementobloom/HANDOFF_2026-06-16_051845_cierre_sesion.md — # HANDOFF - Cierre de sesión ## Datos básicos - Proyecto: mementobloom - Fecha/hora: 2026-06-16T05:
 - [h_HANDOFF_2026-06-15_173042_agent_optimizer] HANDOFF project=mementobloom ts=2026-06-15 path=mementobloom — # HANDOFF - Optimización de agente Resumen de optimización del agente Generado: 2026-06-15T17:30:4
@@ -126,10 +130,6 @@ Prohibiciones operativas:
 - [h_HANDOFF_2026-06-15_031454_agent_optimizer] HANDOFF project=mementobloom ts=2026-06-15 path=projects/mementobloom/HANDOFF_2026-06-15_031454_agent_optimizer.md — # HANDOFF - Optimización de agente MementoBloom Resumen de optimización MementoBloom Generado: 202
 - [h_HANDOFF_2026-06-15_0248_cierre_sesion] HANDOFF project=mementobloom ts=2026-06-15 path=projects/mementobloom/HANDOFF_2026-06-15_0248_cierre_sesion.md — # HANDOFF - Cierre de sesión ## Datos básicos - Proyecto: mementobloom - Fecha/hora: 2026-06-15T02:
 - [h_HANDOFF_2026-06-15_021138_agent_optimizer] HANDOFF project=mementobloom ts=2026-06-15 path=mementobloom — # HANDOFF - Optimización de agente MementoBloom Resumen de optimización MementoBloom Generado: 202
-- [h_HANDOFF_2026-06-14_235626_agent_optimizer] HANDOFF project=mementobloom ts=2026-06-14 path=mementobloom — # HANDOFF - Optimización de agente MementoBloom Resumen de optimización MementoBloom Generado: 202
-- [h_HANDOFF_2026-06-14_234916_agent_optimizer] HANDOFF project=mementobloom ts=2026-06-14 path=mementobloom — # HANDOFF - Optimización de agente MementoBloom Resumen de optimización MementoBloom Generado: 202
-- [h_HANDOFF_2026-06-14_234754_agent_optimizer] HANDOFF project=mementobloom ts=2026-06-14 path=mementobloom — # HANDOFF - Optimización de agente MementoBloom Resumen de optimización MementoBloom Generado: 202
-- [h_HANDOFF_2026-06-14_234705_agent_optimizer] HANDOFF project=mementobloom ts=2026-06-14 path=mementobloom — # HANDOFF - Optimización de agente MementoBloom Resumen de optimización MementoBloom Generado: 202
 
 ## Reglas operativas robustas
 - No borres memoria, Redis ni handoffs salvo instrucción explícita.

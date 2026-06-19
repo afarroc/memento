@@ -194,9 +194,20 @@ def http_json(url: str, timeout: float = 1.0) -> Dict[str, Any]:
         return {"ok": False, "status": None, "error": str(exc)}
 
 
+def http_text(url: str, timeout: float = 1.0) -> Dict[str, Any]:
+    try:
+        with urllib.request.urlopen(url, timeout=timeout) as response:
+            raw = response.read().decode("utf-8", errors="replace")
+        return {"ok": 200 <= response.status < 500, "status": response.status, "data": raw[:500]}
+    except (urllib.error.URLError, TimeoutError, OSError) as exc:
+        return {"ok": False, "status": None, "error": str(exc)}
+
+
 def services() -> Dict[str, Any]:
     sala = http_json(f"http://127.0.0.1:{SALA_PORT}/stats")
     panel = http_json(f"http://127.0.0.1:{PANEL_PORT}/stats")
+    if not panel.get("ok"):
+        panel = http_text(f"http://127.0.0.1:{PANEL_PORT}/")
     return {
         "redis": redis_ping(timeout=0.6),
         "sala": {"ok": bool(sala.get("ok")), "status": sala.get("status"), "data": sala.get("data"), "error": sala.get("error")},

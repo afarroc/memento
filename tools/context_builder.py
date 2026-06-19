@@ -5,7 +5,11 @@ import json
 from pathlib import Path
 from typing import Dict, List, Optional
 import re
-from .optimize_memento import MementoOptimizer
+try:
+    from .optimize_memento import MementoOptimizer
+except ImportError:
+    from optimize_memento import MementoOptimizer
+
 
 class ContextBuilder:
     def __init__(self, index_path: str):
@@ -77,7 +81,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     ws_root = Path(__file__).resolve().parent.parent
-    index_path = ws_root / ".memento" / "memory" / "graph" / "memory_index.json"
+    index_path = ws_root / "memory" / "graph" / "memory_index.json"
 
     cb = ContextBuilder(str(index_path))
     
