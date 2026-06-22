@@ -51,8 +51,9 @@ class ContextRetriever:
         def score_entry(entry: Dict) -> float:
             score = 0.0
 
-            # Score por palabras clave
-            keywords = set(str(entry.get("keywords", "")).lower().split())
+            # Score por palabras clave (formato: "kw1, kw2, kw3")
+            keywords_str = str(entry.get("keywords", "") or "")
+            keywords = set(kw.strip().lower() for kw in keywords_str.split(",") if kw.strip())
             exact_matches = query_terms & keywords
             partial_matches = sum(1 for term in query_terms if any(term in kw for kw in keywords))
             score += len(exact_matches) * 10 + (partial_matches - len(exact_matches)) * 5

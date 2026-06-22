@@ -116,7 +116,7 @@ def test_context_retriever_search() -> Dict[str, Any]:
                 "ts": "2026-06-22",
                 "path": "projects/mementobloom/HANDOFF_2026-06-22_test.md",
                 "summary": "HANDOFF - Optimización de arranque completada exitosamente",
-                "keywords": ["mementobloom", "startup", "optimization", "arranque"]
+                "keywords": "mementobloom, startup, optimization, arranque"
             },
             "h_HANDOFF_2026-06-22_other": {
                 "id": "h_HANDOFF_2026-06-22_other",
@@ -125,7 +125,7 @@ def test_context_retriever_search() -> Dict[str, Any]:
                 "ts": "2026-06-21",
                 "path": "projects/otro/HANDOFF_2026-06-22_other.md",
                 "summary": "Otro proyecto sin relación con la búsqueda",
-                "keywords": ["otro", "proyecto", "aleatorio"]
+                "keywords": "otro, proyecto, aleatorio"
             }
         }
         save_index(test_index, index_path)
