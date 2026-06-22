@@ -3,7 +3,7 @@
 
 Este script no depende de ningún agente ni modelo específico. Imprime un contexto
 compacto que cualquier modelo, CLI o agente puede usar para continuar una
-sesión: usuario, meta del proyecto, Git, memoria, handoffs y servicios.
+sesión: proyecto, Git, memoria, handoffs y servicios.
 """
 
 from __future__ import annotations
@@ -12,27 +12,24 @@ import argparse
 import json
 import os
 import re
-import socket
-import subprocess
 import sys
-import urllib.error
-import urllib.request
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from core.git import check_ignore, git_diff_stat, git_status, latest_commit
+from core.index import count_by, latest_handoffs, load_index, resolve_index_path, top_entries
+from core.paths import ROOT, rel
+from core.services import service_status, service_summary
+
 INDEX_PATH = ROOT / "memory" / "graph" / "memory_index.json"
 PROJECT_META = ROOT / ".agent_context" / "PROJECT_META.md"
 USER_CONTEXT = ROOT / ".agent_context" / "secure" / "USER_CONTEXT.md"
 START_CONTEXT = ROOT / ".agent_context" / "START_CONTEXT.md"
 AGENT_INIT = ROOT / ".agent_context" / "agent" / "init.md"
 SECURE_CONTEXT = ROOT / ".agent_context" / "secure" / "SECURE.md"
-REDIS_HOST = os.environ.get("REDIS_HOST", os.environ.get("MEMENTO_REDIS_HOST", "192.168.18.59"))
-REDIS_PORT = int(os.environ.get("REDIS_PORT", os.environ.get("MEMENTO_REDIS_PORT", "6379")))
-SALA_PORT = int(os.environ.get("SALA_PORT", "8767"))
-PANEL_PORT = int(os.environ.get("PANEL_PORT", "8766"))
-PROJECT_PRIORITY: List[str] = []
 
 
 def load_project_priority() -> List[str]:
@@ -54,76 +51,8 @@ def load_project_priority() -> List[str]:
     return priorities
 
 
-def rel(path: Path) -> str:
-    try:
-        return str(path.relative_to(ROOT))
-    except ValueError:
-        return str(path)
-
-
 def now_iso() -> str:
     return datetime.now().isoformat(timespec="seconds")
-
-
-def run_command(args: List[str], timeout: int = 10) -> Dict[str, Any]:
-    try:
-        proc = subprocess.run(
-            args,
-            cwd=str(ROOT),
-            text=True,
-            capture_output=True,
-            timeout=timeout,
-            check=False,
-        )
-        return {
-            "ok": proc.returncode == 0,
-            "stdout": proc.stdout.strip(),
-            "stderr": proc.stderr.strip(),
-            "returncode": proc.returncode,
-        }
-    except Exception as exc:
-        return {"ok": False, "stdout": "", "stderr": str(exc), "returncode": None}
-
-
-def parse_ts(value: str) -> datetime:
-    text = str(value or "")
-    for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d"):
-        try:
-            return datetime.strptime(text[:19], fmt)
-        except ValueError:
-            continue
-    return datetime.min
-
-
-def entry_sort_key(entry: Dict[str, Any]) -> tuple[Any, ...]:
-    ts = parse_ts(str(entry.get("ts", "")))
-    project = str(entry.get("project", ""))
-    entry_type = str(entry.get("type", ""))
-    priorities = PROJECT_PRIORITY or load_project_priority()
-    project_priority = priorities.index(project) if priorities and project in priorities else 99
-    type_priority = {"HANDOFF": 0, "SOURCE": 1, "NOTE": 2, "CONTEXT": 3, "COMPONENT": 4}.get(entry_type, 50)
-    return (ts, -project_priority, -type_priority, str(entry.get("id", "")))
-
-
-def load_index() -> Dict[str, Dict[str, Any]]:
-    if not INDEX_PATH.exists():
-        return {}
-    try:
-        return json.loads(INDEX_PATH.read_text(encoding="utf-8"))
-    except Exception:
-        return {}
-
-
-def top_entries(index: Dict[str, Dict[str, Any]], limit: int, project: Optional[str] = None) -> List[Dict[str, Any]]:
-    entries = list(index.values())
-    if project:
-        entries = [entry for entry in entries if str(entry.get("project")) == project]
-    entries.sort(key=entry_sort_key, reverse=True)
-    return entries[:limit]
-
-
-def latest_handoffs(index: Dict[str, Dict[str, Any]], limit: int = 5) -> List[Dict[str, Any]]:
-    return [entry for entry in top_entries(index, limit * 2) if str(entry.get("type")) == "HANDOFF"][:limit]
 
 
 def read_file(path: Path) -> Dict[str, Any]:
@@ -140,97 +69,23 @@ def read_file(path: Path) -> Dict[str, Any]:
     }
 
 
-def git_check_ignore(path: str) -> Dict[str, Any]:
-    result = run_command(["git", "-C", str(ROOT), "check-ignore", "-v", path])
-    return {"ignored": result["ok"], "rule": result["stdout"].strip(), "error": result["stderr"].strip() if not result["ok"] else ""}
-
-
-def git_state() -> Dict[str, Any]:
-    status = run_command(["git", "-C", str(ROOT), "status", "--short"])
-    diff = run_command(["git", "-C", str(ROOT), "diff", "--stat"])
-    commit = run_command(["git", "-C", str(ROOT), "log", "-1", "--oneline"])
-    changes = [line for line in status.get("stdout", "").splitlines() if line.strip()]
-    commit_parts = commit.get("stdout", "").split(" ", 1)
-    return {
-        "latest_commit": {
-            "hash": commit_parts[0] if commit_parts else "",
-            "message": commit_parts[1] if len(commit_parts) > 1 else "",
-            "raw": commit.get("stdout", ""),
-            "ok": bool(commit.get("ok")),
-        },
-        "status": {
-            "changes": changes,
-            "change_count": len(changes),
-            "raw": status.get("stdout", ""),
-            "ok": bool(status.get("ok")),
-        },
-        "diff_stat": {
-            "text": diff.get("stdout", ""),
-            "ok": bool(diff.get("ok")),
-        },
-    }
-
-
-def redis_ping(timeout: float = 1.0) -> Dict[str, Any]:
-    try:
-        with socket.create_connection((REDIS_HOST, REDIS_PORT), timeout=timeout) as sock:
-            sock.sendall(b"*1\r\n$4\r\nPING\r\n")
-            data = sock.recv(128).decode(errors="replace")
-        return {"ok": "PONG" in data, "detail": data.strip(), "host": REDIS_HOST, "port": REDIS_PORT}
-    except OSError as exc:
-        return {"ok": False, "detail": str(exc), "host": REDIS_HOST, "port": REDIS_PORT}
-
-
-def http_json(url: str, timeout: float = 1.0) -> Dict[str, Any]:
-    try:
-        with urllib.request.urlopen(url, timeout=timeout) as response:
-            raw = response.read().decode("utf-8", errors="replace")
-            try:
-                parsed = json.loads(raw)
-            except json.JSONDecodeError:
-                parsed = {"raw": raw[:500]}
-            return {"ok": 200 <= response.status < 500, "status": response.status, "data": parsed}
-    except (urllib.error.URLError, TimeoutError, OSError) as exc:
-        return {"ok": False, "status": None, "error": str(exc)}
-
-
-def http_text(url: str, timeout: float = 1.0) -> Dict[str, Any]:
-    try:
-        with urllib.request.urlopen(url, timeout=timeout) as response:
-            raw = response.read().decode("utf-8", errors="replace")
-        return {"ok": 200 <= response.status < 500, "status": response.status, "data": raw[:500]}
-    except (urllib.error.URLError, TimeoutError, OSError) as exc:
-        return {"ok": False, "status": None, "error": str(exc)}
-
-
-def services() -> Dict[str, Any]:
-    sala = http_json(f"http://127.0.0.1:{SALA_PORT}/stats")
-    panel = http_json(f"http://127.0.0.1:{PANEL_PORT}/stats")
-    if not panel.get("ok"):
-        panel = http_text(f"http://127.0.0.1:{PANEL_PORT}/")
-    return {
-        "redis": redis_ping(timeout=0.6),
-        "sala": {"ok": bool(sala.get("ok")), "status": sala.get("status"), "data": sala.get("data"), "error": sala.get("error")},
-        "panel": {"ok": bool(panel.get("ok")), "status": panel.get("status"), "data": panel.get("data"), "error": panel.get("error")},
-    }
-
-
-def count_by(entries: List[Dict[str, Any]], field: str) -> Dict[str, int]:
-    counts: Dict[str, int] = {}
-    for entry in entries:
-        value = str(entry.get(field, "unknown") or "unknown")
-        counts[value] = counts.get(value, 0) + 1
-    return dict(sorted(counts.items()))
-
-
-def build_context(limit: int = 8, project: Optional[str] = None, include_files: bool = True) -> Dict[str, Any]:
-    index = load_index()
+def build_context(
+    limit: int = 8,
+    project: Optional[str] = None,
+    include_files: bool = True,
+    index_path: Optional[Path] = None,
+    check_services: bool = True,
+    fresh_health: bool = False,
+) -> Dict[str, Any]:
+    index_file = resolve_index_path(str(index_path) if index_path else None)
+    index = load_index(index_file)
     entries = top_entries(index, limit, project=project)
-    handoffs = latest_handoffs(index, 5)
-    project_meta = read_file(PROJECT_META)
-    user_context = read_file(USER_CONTEXT)
-    start_context = read_file(START_CONTEXT)
-    agent_init = read_file(AGENT_INIT)
+    handoffs = latest_handoffs(index, 5, project=project)
+    project_meta = read_file(PROJECT_META) if include_files else {"exists": PROJECT_META.exists(), "path": rel(PROJECT_META)}
+    user_context = read_file(USER_CONTEXT) if include_files else {"exists": USER_CONTEXT.exists(), "path": rel(USER_CONTEXT)}
+    start_context = read_file(START_CONTEXT) if include_files else {"exists": START_CONTEXT.exists(), "path": rel(START_CONTEXT)}
+    agent_init = read_file(AGENT_INIT) if include_files else {"exists": AGENT_INIT.exists(), "path": rel(AGENT_INIT)}
+    services = service_status(fresh=fresh_health) if check_services else {"checked": False, "reason": "services disabled"}
     return {
         "generated_at": now_iso(),
         "environment": {
@@ -243,21 +98,26 @@ def build_context(limit: int = 8, project: Optional[str] = None, include_files: 
             "user_context": user_context,
             "start_context": start_context,
             "agent_init": agent_init,
-            "user_context_ignored": git_check_ignore(rel(USER_CONTEXT)) if USER_CONTEXT.exists() else {"ignored": False, "rule": ""},
+            "user_context_ignored": check_ignore(rel(USER_CONTEXT)) if USER_CONTEXT.exists() else {"ignored": True, "rule": "optional"},
         },
-        "git": git_state(),
+        "git": {
+            "latest_commit": latest_commit(),
+            "status": git_status(),
+            "diff_stat": git_diff_stat(),
+        },
         "memory": {
-            "index_path": rel(INDEX_PATH),
+            "index_path": rel(index_file),
             "entries": len(index),
-            "by_type": count_by(list(index.values()), "type"),
-            "by_project": count_by(list(index.values()), "project"),
+            "by_type": count_by(index.values(), "type"),
+            "by_project": count_by(index.values(), "project"),
         },
         "top_context": entries,
         "latest_handoffs": handoffs,
-        "services": services(),
+        "services": services,
         "bootstrap_commands": {
             "universal": "python3 tools/bootstrap_context.py --print",
-            "audit": "python3 tools/optimize_agent.py --context",
+            "startup_doctor": "python3 tools/doctor.py --startup",
+            "selftest": "python3 tools/selftest.py",
             "ranked_context": "python3 tools/context_builder.py --limit 12",
         },
     }
@@ -279,8 +139,8 @@ def format_markdown(context: Dict[str, Any]) -> str:
         "",
         "## User and project meta",
         f"- PROJECT_META.md: {'OK' if files.get('project_meta', {}).get('exists') else 'NO'}",
-        f"- USER_CONTEXT.md: {'OK' if files.get('user_context', {}).get('exists') else 'NO'}",
-        f"- START_CONTEXT.md: {'OK' if files.get('start_context', {}).get('exists') else 'NO'}",
+        f"- USER_CONTEXT.md: {'OK' if files.get('user_context', {}).get('exists') else 'OPTIONAL'}",
+        f"- START_CONTEXT.md: {'OK' if files.get('start_context', {}).get('exists') else 'OPTIONAL'}",
         f"- Agent init: {'OK' if files.get('agent_init', {}).get('exists') else 'NO'}",
         f"- USER_CONTEXT ignored by Git: {'OK' if files.get('user_context_ignored', {}).get('ignored') else 'NO'}",
         "",
@@ -288,7 +148,7 @@ def format_markdown(context: Dict[str, Any]) -> str:
         files.get("project_meta", {}).get("summary", "No project meta file found."),
         "",
         "## User context summary",
-        files.get("user_context", {}).get("summary", "No user context file found."),
+        files.get("user_context", {}).get("summary", "No user context file found or optional."),
         "",
         "## Git state",
         f"- Commit: {commit.get('hash', '?')} {commit.get('message', '')}".strip(),
@@ -315,18 +175,25 @@ def format_markdown(context: Dict[str, Any]) -> str:
     for entry in context.get("top_context", []):
         summary = " ".join(str(entry.get("summary", "")).split())[:180]
         lines.append(f"- {entry.get('id', '?')} | {entry.get('type', '?')} | {entry.get('project', '?')} | {entry.get('ts', '?')} | {summary}")
-    redis = services_data.get("redis", {})
-    sala = services_data.get("sala", {})
-    panel = services_data.get("panel", {})
+
+    if services_data.get("checked") is False:
+        lines.extend([
+            "",
+            "## Services",
+            "- Services: not checked",
+        ])
+    else:
+        lines.extend([
+            "",
+            "## Services",
+            service_summary(services_data),
+        ])
     lines.extend([
-        "",
-        "## Services",
-        f"- Redis: {'OK' if redis.get('ok') else 'NO'} at {redis.get('host', '?')}:{redis.get('port', '?')}",
-        f"- Sala: {'OK' if sala.get('ok') else 'NO'} at http://127.0.0.1:{SALA_PORT}",
-        f"- Panel: {'OK' if panel.get('ok') else 'NO'} at http://127.0.0.1:{PANEL_PORT}",
         "",
         "## Bootstrap commands",
         "- python3 tools/bootstrap_context.py --print",
+        "- python3 tools/doctor.py --startup",
+        "- python3 tools/selftest.py",
         "- python3 tools/context_builder.py --limit 12",
         "- python3 tools/quick_scan.py <HANDOFF_PATH>",
         "",
@@ -343,9 +210,19 @@ def main(argv: Optional[List[str]] = None) -> int:
     parser.add_argument("--limit", type=int, default=8, help="Cantidad de entradas de contexto")
     parser.add_argument("--project", default=None, help="Filtrar memoria por proyecto")
     parser.add_argument("--no-files", action="store_true", help="No incluir resúmenes de archivos")
+    parser.add_argument("--index", default=None, help="Ruta del índice de memoria")
+    parser.add_argument("--no-services", action="store_true", help="No verificar servicios locales/remotos")
+    parser.add_argument("--fresh-health", action="store_true", help="Forzar chequeo de servicios sin usar caché")
     args = parser.parse_args(argv or sys.argv[1:])
 
-    context = build_context(limit=args.limit, project=args.project, include_files=not args.no_files)
+    context = build_context(
+        limit=args.limit,
+        project=args.project,
+        include_files=not args.no_files,
+        index_path=Path(args.index) if args.index else None,
+        check_services=not args.no_services,
+        fresh_health=args.fresh_health,
+    )
     if args.json:
         print(json.dumps(context, indent=2, ensure_ascii=False))
     else:

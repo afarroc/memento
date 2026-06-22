@@ -6,11 +6,16 @@ import json
 import math
 import re
 import shutil
+import sys
 from collections import Counter, defaultdict
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Set, Tuple
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from core.index import resolve_index_path
 
 STOPWORDS = {
     "a", "al", "algo", "alguna", "algunas", "alguno", "algunos", "ante", "antes", "como", "con",
@@ -383,7 +388,7 @@ class MementoOptimizer:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Optimiza el índice de memoria MementoBloom")
-    parser.add_argument("--index", default="/Volumes/Macintosh HD - Datos/mementobloom/memory/graph/memory_index.json")
+    parser.add_argument("--index", default=None, help="Ruta del índice de memoria")
     parser.add_argument("--search")
     parser.add_argument("--limit", type=int, default=10)
     parser.add_argument("--rebuild", action="store_true", help="Reconstruye hashes y metadata desde fuentes")
@@ -395,7 +400,8 @@ def main() -> None:
     parser.add_argument("--no-rebuild", action="store_true")
     args = parser.parse_args()
 
-    optimizer = MementoOptimizer(args.index, backup=not args.no_backup)
+    index_path = args.index if args.index else None
+    optimizer = MementoOptimizer(resolve_index_path(index_path), backup=not args.no_backup)
     if args.search:
         results = optimizer.search(args.search, args.limit)
         print(json.dumps(results, indent=2, ensure_ascii=False))

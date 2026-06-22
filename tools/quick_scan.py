@@ -1,82 +1,134 @@
 #!/usr/bin/env python3
-from pathlib import Path
+from __future__ import annotations
+
+import argparse
 import json
 import re
+import sys
+from pathlib import Path
+from typing import Any, Dict, Optional
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from core.index import build_manifest, load_index, resolve_index_path, save_index
+
+HANDOFF_RE = re.compile(r"(\d{4}-\d{2}-\d{2})")
+
 
 class QuickScan:
-    def __init__(self, workspace: str):
-        self.ws = Path(workspace) / "projects"
-        self.output = Path(workspace) / ".memento" / "memory" / "graph"
+    def __init__(self, workspace: Path, index_path: Optional[Path] = None, legacy_index: bool = False):
+        self.workspace = workspace.resolve()
+        self.projects = self.workspace / "projects"
+        self.index_path = resolve_index_path(str(index_path) if index_path else None, workspace=self.workspace, legacy=legacy_index)
+        self.index = load_index(self.index_path)
+        self.new_count = 0
 
-    def scan(self, incremental_path: str = None):
-        print("🜄 Scanning projects...")
-        self.output.mkdir(parents=True, exist_ok=True)
+    def scan(self, incremental_path: Optional[str] = None, build_manifest_output: bool = True) -> Dict[str, Any]:
+        self.projects.mkdir(parents=True, exist_ok=True)
+        self.index_path.parent.mkdir(parents=True, exist_ok=True)
 
-        index = {}
-        idx_file = self.output / "memory_index.json"
-        if idx_file.exists():
-            index = json.loads(idx_file.read_text())
-
-        existing_ids = set(index.keys())
-        new_count = 0
+        existing_ids = set(self.index.keys())
 
         if incremental_path:
             f = Path(incremental_path)
+            if not f.is_absolute():
+                f = self.workspace / f
             if f.name.startswith("HANDOFF") and f.suffix == ".md":
                 entry = self._parse_handoff(f)
                 if entry and entry["id"] not in existing_ids:
-                    index[entry["id"]] = entry
-                    new_count = 1
+                    self.index[entry["id"]] = entry
+                    self.new_count += 1
             elif f.name.endswith("_CONTEXT.md"):
                 entry = self._parse_context(f)
                 if entry and entry["id"] not in existing_ids:
-                    index[entry["id"]] = entry
-                    new_count = 1
+                    self.index[entry["id"]] = entry
+                    self.new_count += 1
         else:
-            for f in self.ws.rglob("HANDOFF*.md"):
+            for f in self.projects.rglob("HANDOFF*.md"):
                 entry = self._parse_handoff(f)
                 if entry and entry["id"] not in existing_ids:
-                    index[entry["id"]] = entry
+                    self.index[entry["id"]] = entry
                     existing_ids.add(entry["id"])
-                    new_count += 1
+                    self.new_count += 1
 
-            for f in self.ws.rglob("*_CONTEXT.md"):
+            for f in self.projects.rglob("*_CONTEXT.md"):
                 entry = self._parse_context(f)
                 if entry and entry["id"] not in existing_ids:
-                    index[entry["id"]] = entry
+                    self.index[entry["id"]] = entry
                     existing_ids.add(entry["id"])
-                    new_count += 1
+                    self.new_count += 1
 
-        (self.output / "memory_index.json").write_text(json.dumps(index, indent=2))
-        print(f"✓ Total: {len(index)} entries (nuevos: {new_count})")
-    
-    def _parse_handoff(self, f):
-        content = f.read_text(encoding='utf-8')[:500]
-        date_m = re.search(r'(\d{4}-\d{2}-\d{2})', f.name)
-        return {"id": f"h_{f.stem}", "type": "HANDOFF", "project": f.parent.name, 
-                "ts": date_m.group(1) if date_m else "unknown", "path": str(f), "summary": content[:100]}
-    
-    def _parse_context(self, f):
-        content = f.read_text(encoding='utf-8')[:500]
-        return {"id": f"c_{f.parent.name}", "type": "CONTEXT", "project": f.parent.parent.name,
-                "ts": "discover", "path": str(f), "summary": content[:100]}
+        saved = save_index(self.index, self.index_path)
+        manifest = None
+        if build_manifest_output:
+            manifest = build_manifest(self.index, self.index_path.parent / "index_manifest.json")
+        return {
+            "ok": True,
+            "index_path": str(saved),
+            "total": len(self.index),
+            "new": self.new_count,
+            "manifest": manifest,
+        }
+
+    def _parse_handoff(self, f: Path) -> Dict[str, Any]:
+        content = f.read_text(encoding="utf-8", errors="replace")[:500]
+        date_m = HANDOFF_RE.search(f.name)
+        return {
+            "id": f"h_{f.stem}",
+            "type": "HANDOFF",
+            "project": f.parent.name,
+            "ts": date_m.group(1) if date_m else "unknown",
+            "path": str(f),
+            "summary": content[:100],
+        }
+
+    def _parse_context(self, f: Path) -> Dict[str, Any]:
+        content = f.read_text(encoding="utf-8", errors="replace")[:500]
+        project = f.parent.parent.name if f.parent.parent != self.workspace else f.parent.name
+        return {
+            "id": f"c_{project}_{f.stem}",
+            "type": "CONTEXT",
+            "project": project,
+            "ts": "discover",
+            "path": str(f),
+            "summary": content[:100],
+        }
+
+
+def detect_workspace() -> Path:
+    script_root = Path(__file__).resolve().parent.parent
+    env = __import__("os").environ.get("MEMENTO_WORKSPACE")
+    if env:
+        return Path(env).resolve()
+    if (script_root / ".git").exists() and (script_root.parent / "projects").exists() and not (script_root / "projects").exists():
+        return script_root.parent.resolve()
+    return script_root.resolve()
+
+
+def main(argv: Optional[list[str]] = None) -> int:
+    parser = argparse.ArgumentParser(description="Escaneo incremental de memoria MementoBloom")
+    parser.add_argument("incremental_path", nargs="?", help="HANDOFF o *_CONTEXT.md a indexar")
+    parser.add_argument("--workspace", default=None, help="Workspace raíz")
+    parser.add_argument("--index", default=None, help="Ruta del índice de memoria")
+    parser.add_argument("--legacy-index", action="store_true", help="Usar .memento/memory/graph/memory_index.json")
+    parser.add_argument("--no-manifest", action="store_true", help="No actualizar index_manifest.json")
+    parser.add_argument("--json", action="store_true", help="Imprimir resultado en JSON")
+    args = parser.parse_args(argv)
+
+    workspace = Path(args.workspace).resolve() if args.workspace else detect_workspace()
+    scanner = QuickScan(workspace=workspace, index_path=Path(args.index) if args.index else None, legacy_index=args.legacy_index)
+    result = scanner.scan(incremental_path=args.incremental_path, build_manifest_output=not args.no_manifest)
+
+    if args.json:
+        print(json.dumps(result, indent=2, ensure_ascii=False))
+    else:
+        print(f"Scanning projects...")
+        print(f"Total: {result['total']} entries (nuevos: {result['new']})")
+        print(f"Index: {result['index_path']}")
+        if result.get("manifest"):
+            print(f"Manifest: {result['manifest']['updated_at']}")
+    return 0
+
 
 if __name__ == "__main__":
-    import sys
-    import os
-    from pathlib import Path
-    script_root = Path(__file__).resolve().parent.parent
-    
-    ws = os.environ.get("MEMENTO_WORKSPACE")
-    if ws:
-        ws = Path(ws).resolve()
-    elif (script_root / ".git").exists():
-        if (script_root.parent / "projects").exists() and not (script_root / "projects").exists():
-            ws = script_root.parent.resolve()
-        else:
-            ws = script_root
-    else:
-        ws = script_root
-    
-    inc_path = sys.argv[1] if len(sys.argv) > 1 else None
-    QuickScan(ws).scan(incremental_path=inc_path)
+    raise SystemExit(main(sys.argv[1:]))

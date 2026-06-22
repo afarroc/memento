@@ -24,6 +24,13 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
 
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from core.git import check_ignore, git_diff_stat as core_git_diff_stat, git_status as core_git_status, latest_commit as core_latest_commit
+from core.index import count_by as core_count_by, load_index as core_load_index, top_entries as core_top_entries
+from core.paths import ROOT
+from core.services import service_status as core_service_status
+
 ROOT = Path(__file__).resolve().parent.parent
 INDEX_PATH = ROOT / "memory" / "graph" / "memory_index.json"
 START_CONTEXT = ROOT / ".agent_context" / "START_CONTEXT.md"
@@ -104,7 +111,7 @@ def load_json(path: Path, default: Any) -> Any:
 
 
 def load_index() -> Dict[str, Dict[str, Any]]:
-    return load_json(INDEX_PATH, {}) if INDEX_PATH.exists() else {}
+    return core_load_index(INDEX_PATH)
 
 
 def parse_ts(value: str) -> datetime:
@@ -143,37 +150,19 @@ def count_by(entries: Iterable[Dict[str, Any]], field: str) -> Dict[str, int]:
 
 
 def git_status() -> Dict[str, Any]:
-    raw = run_command(["git", "-C", str(ROOT), "status", "--short"])
-    lines = [line for line in raw.stdout.splitlines() if line.strip()]
-    return {
-        "ok": raw.ok,
-        "raw": raw.stdout,
-        "changes": lines,
-        "change_count": len(lines),
-        "error": raw.stderr or raw.stdout if not raw.ok else "",
-    }
+    return core_git_status()
 
 
 def git_diff_stat() -> Dict[str, Any]:
-    result = run_command(["git", "-C", str(ROOT), "diff", "--stat"])
-    return {"ok": result.ok, "text": result.stdout, "error": result.stderr if not result.ok else ""}
+    return core_git_diff_stat()
 
 
 def latest_commit() -> Dict[str, Any]:
-    result = run_command(["git", "-C", str(ROOT), "log", "-1", "--oneline"])
-    parts = result.stdout.split(" ", 1) if result.stdout else []
-    return {
-        "ok": result.ok,
-        "hash": parts[0] if parts else "",
-        "message": parts[1] if len(parts) > 1 else "",
-        "raw": result.stdout,
-        "error": result.stderr if not result.ok else "",
-    }
+    return core_latest_commit()
 
 
 def git_check_ignore(path: str) -> Dict[str, Any]:
-    result = run_command(["git", "-C", str(ROOT), "check-ignore", "-v", path])
-    return {"path": path, "ignored": result.ok, "rule": result.stdout.strip(), "error": result.stderr.strip() if not result.ok else ""}
+    return check_ignore(path)
 
 
 def redis_ping(timeout: float = 1.0) -> Dict[str, Any]:
@@ -200,25 +189,7 @@ def http_json(url: str, timeout: float = 1.0) -> Dict[str, Any]:
 
 
 def service_status() -> Dict[str, Any]:
-    sala = http_json(f"http://127.0.0.1:{SALA_PORT}/stats")
-    panel = http_json(f"http://127.0.0.1:{PANEL_PORT}/stats")
-    return {
-        "redis": redis_ping(timeout=0.6),
-        "sala": {
-            "ok": bool(sala.get("ok")),
-            "status": sala.get("status"),
-            "data": sala.get("data"),
-            "error": sala.get("error"),
-            "url": f"http://127.0.0.1:{SALA_PORT}/stats",
-        },
-        "panel": {
-            "ok": bool(panel.get("ok")),
-            "status": panel.get("status"),
-            "data": panel.get("data"),
-            "error": panel.get("error"),
-            "url": f"http://127.0.0.1:{PANEL_PORT}/stats",
-        },
-    }
+    return core_service_status()
 
 
 def agent_seed_audit() -> Dict[str, Any]:
@@ -263,8 +234,8 @@ def agent_seed_audit() -> Dict[str, Any]:
 
 
 def memory_audit(index: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
-    by_type = count_by(index.values(), "type")
-    by_project = count_by(index.values(), "project")
+    by_type = core_count_by(index.values(), "type")
+    by_project = core_count_by(index.values(), "project")
     empty_summaries = sum(1 for entry in index.values() if not str(entry.get("summary", "")).strip())
     missing_paths = []
     for entry in index.values():
@@ -365,7 +336,7 @@ def build_audit(project: Optional[str] = None, context_limit: int = DEFAULT_CONT
     safety = safety_audit()
     user_context = user_context_audit()
     project_meta = project_meta_audit()
-    selected = top_entries(index, context_limit, project=project)
+    selected = core_top_entries(index, context_limit, project=project)
     handoffs = [entry for entry in selected if str(entry.get("type")) == "HANDOFF"]
     findings = secret_scan([AGENT_INIT, AGENT_SEED, ROOT / "optimize_agent.py", USER_CONTEXT])
     return {

@@ -17,6 +17,11 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from core.index import load_index, top_entries as core_top_entries, count_by
+from core.paths import ROOT, rel
+
 ROOT = Path(__file__).resolve().parent.parent  # mementobloom root
 # Detect workspace mode: if mementobloom is subdirectory of a workspace with projects/
 # Use MEMENTO_WORKSPACE env var for explicit control, or detect from script location
@@ -150,11 +155,6 @@ Seguridad operativa:
 """,
  }
 
-
-def load_index():
-    if not INDEX_PATH.exists():
-        return {}
-    return json.loads(INDEX_PATH.read_text(encoding="utf-8"))
 
 
 def file_fingerprint(path: Path) -> str:
@@ -736,12 +736,15 @@ def main():
     parser = argparse.ArgumentParser(description="Prepare the progressive agent seed and local context")
     parser.add_argument("--limit", type=int, default=14)
     parser.add_argument("--project", default=None)  # Por defecto usa el directorio actual
-    parser.add_argument("--print", action="store_true", help="Print context and exit without preparing services")
+    parser.add_argument("--print", action="store_true", help="Print context (read-only by default; use --prepare-seed/--write-start-context to mutate)")
     parser.add_argument("--quick", action="store_true", help="Print a lightweight local-only startup report and exit")
     parser.add_argument("--services", action="store_true", help="Start optional local services after agent/context preparation")
     parser.add_argument("--services-only", action="store_true", help="Start local services and exit")
     parser.add_argument("--no-services", action="store_true", help="Do not start optional local services")
     parser.add_argument("--no-agent-seed", action="store_true", help="Do not prepare the progressive agent seed before building context")
+    parser.add_argument("--no-write-context", action="store_true", help="Do not write .agent_context/START_CONTEXT.md")
+    parser.add_argument("--prepare-seed", action="store_true", help="Explicitly regenerate the progressive agent seed before building context")
+    parser.add_argument("--write-start-context", action="store_true", help="Explicitly write .agent_context/START_CONTEXT.md")
     parser.add_argument("--force-seed", action="store_true", help="Force progressive agent seed regeneration")
     parser.add_argument("--launch-agent", action="store_true", help="Launch external agent command after context preparation")
     parser.add_argument("--agent-command", default=None, help="External agent/CLI command to launch when --launch-agent is used")
@@ -756,9 +759,15 @@ def main():
         print_services(ensure_services())
         return 0
 
-    agent_result = {"status": "skipped", "path": str(AGENT_SEED), "hash": "?"} if args.no_agent_seed else ensure_agent_seed(force=args.force_seed, project=project)
+    if args.no_agent_seed:
+        agent_result = {"status": "skipped", "path": str(AGENT_SEED), "hash": "?"}
+    elif args.prepare_seed or args.force_seed:
+        agent_result = ensure_agent_seed(force=args.force_seed or args.prepare_seed, project=project)
+    else:
+        agent_result = {"status": "skipped", "path": str(AGENT_SEED), "hash": "?"}
     context = build_context(limit=args.limit, project=project, agent_result=agent_result)
-    write_context(context)
+    if args.write_start_context and not args.no_write_context:
+        write_context(context)
     print(context, end="")
     print_agent_seed(agent_result)
     sys.stdout.flush()
