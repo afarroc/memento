@@ -79,11 +79,28 @@ etl/                   # Bitácoras locales (ignorado)
 .env.example           # Variables de entorno de ejemplo
 ```
 
-## Comandos rápidos desde terminal
+## Instalación limpia y diagnóstico
+
+Para validar una instalación mínima sin contexto personalizado, handoffs, Redis, Sala o Panel:
+
 ```bash
-python3 tools/bootstrap_context.py --print
+python3 tools/doctor.py --startup --no-services
+python3 tools/selftest.py
+```
+
+Para preparar un índice de memoria vacío en una instalación limpia:
+
+```bash
+python3 tools/quick_scan.py --index memory/graph/memory_index.json
+```
+
+## Comandos rápidos desde terminal
+
+```bash
+python3 tools/bootstrap_context.py --print --no-services
 python3 tools/session_start.py --quick --limit 8
-python3 tools/optimize_agent.py --context
+python3 tools/doctor.py --startup --no-services
+python3 tools/selftest.py
 python3 tools/agent_prompt.py "pregunta" --limit 10
 # Iniciar el proyecto como agente usando el CLI configurado localmente
 MEMENTO_AGENT_CMD='<agent-cli> run --dir .' python3 tools/session_start.py --print --launch-agent
