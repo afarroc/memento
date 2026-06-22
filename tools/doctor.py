@@ -10,7 +10,9 @@ from typing import Any, Dict, List, Optional
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from core.health import ensure_memory_manifest, startup_health
-from core.paths import ROOT, rel
+from core.paths import ROOT, rel, workspace_root
+
+WS_ROOT = workspace_root()
 
 
 def format_startup(report: Dict[str, Any]) -> str:
@@ -22,8 +24,8 @@ def format_startup(report: Dict[str, Any]) -> str:
     lines = [
         "MementoBloom Doctor",
         f"Status: {status}",
-        f"Project: {ROOT.name}",
-        f"Working directory: {ROOT}",
+        f"Project: {WS_ROOT.name}",
+        f"Working directory: {WS_ROOT}",
         "",
         "Checks:",
     ]
