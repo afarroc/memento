@@ -102,6 +102,55 @@ def test_no_hardcoded_workspace_in_core_tools() -> Dict[str, Any]:
     }
 
 
+def test_context_retriever_search() -> Dict[str, Any]:
+    from tools.context_retriever import ContextRetriever
+    with tempfile.TemporaryDirectory() as tmp:
+        ws = Path(tmp)
+        index_path = ws / "memory" / "graph" / "memory_index.json"
+        index_path.parent.mkdir(parents=True, exist_ok=True)
+        test_index = {
+            "h_HANDOFF_2026-06-22_test": {
+                "id": "h_HANDOFF_2026-06-22_test",
+                "type": "HANDOFF",
+                "project": "mementobloom",
+                "ts": "2026-06-22",
+                "path": "projects/mementobloom/HANDOFF_2026-06-22_test.md",
+                "summary": "HANDOFF - Optimización de arranque completada exitosamente",
+                "keywords": ["mementobloom", "startup", "optimization", "arranque"]
+            },
+            "h_HANDOFF_2026-06-22_other": {
+                "id": "h_HANDOFF_2026-06-22_other",
+                "type": "HANDOFF",
+                "project": "otro",
+                "ts": "2026-06-21",
+                "path": "projects/otro/HANDOFF_2026-06-22_other.md",
+                "summary": "Otro proyecto sin relación con la búsqueda",
+                "keywords": ["otro", "proyecto", "aleatorio"]
+            }
+        }
+        save_index(test_index, index_path)
+
+        retriever = ContextRetriever(graph_index_path=str(index_path), workspace=ws)
+        
+        # Test sin query (fallback a top_entries)
+        context_no_query = retriever.get_context("", limit=5)
+        ok_no_query = "# CONTEXT_COMPACT" in context_no_query and "h_HANDOFF_2026-06-22_test" in context_no_query
+
+        # Test con query "optimization"
+        context_query = retriever.get_context("optimization", limit=5)
+        ok_query = "# CONTEXT_COMPACT" in context_query and "h_HANDOFF_2026-06-22_test" in context_query and "h_HANDOFF_2026-06-22_other" not in context_query
+
+        # Test con query vacía
+        context_empty = retriever.get_context("   ", limit=5)
+        ok_empty = "# CONTEXT_COMPACT" in context_empty
+
+        return {
+            "name": "context_retriever_search",
+            "ok": ok_no_query and ok_query and ok_empty,
+            "detail": {"no_query": ok_no_query, "with_query": ok_query, "empty_query": ok_empty},
+        }
+
+
 def main() -> int:
     tests = [
         test_quick_scan_empty_workspace,
@@ -110,6 +159,7 @@ def main() -> int:
         test_index_manifest,
         test_gitignore_rules,
         test_no_hardcoded_workspace_in_core_tools,
+        test_context_retriever_search,
     ]
     results = [test() for test in tests]
     failures = [result for result in results if not result.get("ok")]

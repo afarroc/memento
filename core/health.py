@@ -1,27 +1,29 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from typing import Any, Dict, Optional
 
 from core.git import check_ignore, git_diff_stat, git_status, latest_commit
 from core.index import build_manifest, count_by, default_index_path, load_index, resolve_index_path, top_entries
-from core.paths import ROOT, rel
-from core.services import service_status
+from core.paths import ROOT, rel, workspace_root
 
-PROJECT_META = ROOT / ".agent_context" / "PROJECT_META.md"
-USER_CONTEXT = ROOT / ".agent_context" / "secure" / "USER_CONTEXT.md"
-START_CONTEXT = ROOT / ".agent_context" / "START_CONTEXT.md"
-AGENT_INIT = ROOT / ".agent_context" / "agent" / "init.md"
-AGENT_SEED = ROOT / ".agent_context" / "agent" / "agent-main.md"
+WS_ROOT = workspace_root()
+
+PROJECT_META = WS_ROOT / ".agent_context" / "PROJECT_META.md"
+USER_CONTEXT = WS_ROOT / ".agent_context" / "secure" / "USER_CONTEXT.md"
+START_CONTEXT = WS_ROOT / ".agent_context" / "START_CONTEXT.md"
+AGENT_INIT = WS_ROOT / ".agent_context" / "agent" / "init.md"
+AGENT_SEED = WS_ROOT / ".agent_context" / "agent" / "agent-main.md"
 
 
 def startup_health(index_path: Optional[Path] = None, check_services: bool = True, fresh_health: bool = False) -> Dict[str, Any]:
-    index_file = resolve_index_path(str(index_path) if index_path else None)
+    index_file = resolve_index_path(str(index_path) if index_path else None, workspace=WS_ROOT)
     index = load_index(index_file)
     services = service_status(fresh=fresh_health) if check_services else {"checked": False, "reason": "services disabled"}
 
-    project_meta_ignored = check_ignore(rel(PROJECT_META)) if PROJECT_META.exists() else {"ignored": False, "rule": ""}
-    user_context_ignored = check_ignore(rel(USER_CONTEXT)) if USER_CONTEXT.exists() else {"ignored": True, "rule": "optional"}
+    project_meta_ignored = check_ignore(rel(PROJECT_META), root=WS_ROOT) if PROJECT_META.exists() else {"ignored": False, "rule": ""}
+    user_context_ignored = check_ignore(rel(USER_CONTEXT), root=WS_ROOT) if USER_CONTEXT.exists() else {"ignored": True, "rule": "optional"}
 
     health = {
         "project_meta_exists": PROJECT_META.exists(),
@@ -47,9 +49,9 @@ def startup_health(index_path: Optional[Path] = None, check_services: bool = Tru
         "ok": health["ok"],
         "health": health,
         "git": {
-            "latest": latest_commit(),
-            "status": git_status(),
-            "diff_stat": git_diff_stat(),
+            "latest": latest_commit(root=WS_ROOT),
+            "status": git_status(root=WS_ROOT),
+            "diff_stat": git_diff_stat(root=WS_ROOT),
         },
         "memory": {
             "index_path": rel(index_file),
@@ -63,6 +65,6 @@ def startup_health(index_path: Optional[Path] = None, check_services: bool = Tru
 
 
 def ensure_memory_manifest(index_path: Optional[Path] = None) -> Dict[str, Any]:
-    index_file = resolve_index_path(str(index_path) if index_path else None)
+    index_file = resolve_index_path(str(index_path) if index_path else None, workspace=WS_ROOT)
     index = load_index(index_file)
     return build_manifest(index, index_file.parent / "index_manifest.json")

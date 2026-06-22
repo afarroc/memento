@@ -6,19 +6,26 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
 
-from core.paths import ROOT, ensure_dir, rel
+from core.paths import ROOT, ensure_dir, rel, workspace_root
 
-DEFAULT_INDEX_PATH = ROOT / "memory" / "graph" / "memory_index.json"
-LEGACY_INDEX_PATH = ROOT / ".memento" / "memory" / "graph" / "memory_index.json"
-MANIFEST_PATH = ROOT / "memory" / "graph" / "index_manifest.json"
+
+def _client_index_paths():
+    """Get client workspace index paths dynamically based on MEMENTO_WORKSPACE."""
+    ws = workspace_root()
+    return {
+        "client_index": ws / "memory" / "graph" / "memory_index.json",
+        "client_legacy": ws / ".memento" / "memory" / "graph" / "memory_index.json",
+        "manifest": ws / "memory" / "graph" / "index_manifest.json",
+    }
 
 
 def default_index_path() -> Path:
-    if DEFAULT_INDEX_PATH.exists():
-        return DEFAULT_INDEX_PATH
-    if LEGACY_INDEX_PATH.exists():
-        return LEGACY_INDEX_PATH
-    return DEFAULT_INDEX_PATH
+    paths = _client_index_paths()
+    if paths["client_index"].exists():
+        return paths["client_index"]
+    if paths["client_legacy"].exists():
+        return paths["client_legacy"]
+    return paths["client_index"]
 
 
 def resolve_index_path(index: Optional[str] = None, workspace: Optional[Path] = None, legacy: bool = False) -> Path:
@@ -113,7 +120,8 @@ def build_manifest(index: Dict[str, Dict[str, Any]], path: Optional[Path] = None
             for entry in latest_handoffs(index, 5)
         ],
     }
-    manifest_path = path or MANIFEST_PATH
+    paths = _client_index_paths()
+    manifest_path = path or paths["manifest"]
     ensure_dir(manifest_path.parent)
     manifest_path.write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     return manifest

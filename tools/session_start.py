@@ -20,16 +20,10 @@ from typing import Dict, List, Optional, Tuple
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from core.index import load_index, top_entries as core_top_entries, count_by
-from core.paths import ROOT, rel
+from core.paths import ROOT, rel, workspace_root
 
-ROOT = Path(__file__).resolve().parent.parent  # mementobloom root
-# Use MEMENTO_WORKSPACE env var for explicit control, or use script location as workspace
-_ws_env = os.environ.get("MEMENTO_WORKSPACE")
-if _ws_env:
-    WS_ROOT = Path(_ws_env).resolve()
-else:
-    WS_ROOT = Path(__file__).resolve().parent.parent.resolve()
-CONTEXT_ROOT = WS_ROOT if WS_ROOT != ROOT else ROOT
+WS_ROOT = workspace_root()
+CONTEXT_ROOT = WS_ROOT
 AGENT_TEMPLATE_ROOT = ROOT / ".agent_context" / "agent"
 INDEX_PATH = WS_ROOT / ".memento" / "memory" / "graph" / "memory_index.json"
 START_CONTEXT = WS_ROOT / ".agent_context" / "START_CONTEXT.md"
@@ -468,7 +462,7 @@ def start_service(name: str, cmd: list[str], port: int | None = None, health_url
     log_file = log_path.open("ab")
     proc = subprocess.Popen(
         cmd,
-        cwd=str(ROOT),
+        cwd=str(WS_ROOT),
         stdout=log_file,
         stderr=subprocess.STDOUT,
         start_new_session=True,
@@ -546,7 +540,7 @@ def agent_seed_status() -> dict:
 def git_status_summary() -> str:
     try:
         out = subprocess.check_output(
-            ["git", "-C", str(ROOT), "status", "--short"],
+            ["git", "-C", str(WS_ROOT), "status", "--short"],
             text=True,
             stderr=subprocess.DEVNULL,
             timeout=3,
@@ -561,13 +555,13 @@ def git_status_summary() -> str:
 
 def rel(path: Path) -> str:
     try:
-        return str(path.relative_to(ROOT))
+        return str(path.relative_to(WS_ROOT))
     except ValueError:
         return str(path)
 
 
 def quick_startup_report(limit: int = 8, project: str | None = None) -> str:
-    index = load_index()
+    index = load_index(resolve_index_path(workspace=WS_ROOT))
     entries = list(index.values())
     if project:
         entries = [e for e in entries if e.get("project") == project]
@@ -695,7 +689,7 @@ def _run_command_safe(command: str) -> int:
         print(f"WARN: command rejected ({reason}): {command!r}")
         return 1
     try:
-        result = subprocess.run(argv, cwd=str(ROOT), check=False)
+        result = subprocess.run(argv, cwd=str(WS_ROOT), check=False)
         return result.returncode
     except FileNotFoundError:
         print(f"ERROR: CLI not found: {argv[0]}")

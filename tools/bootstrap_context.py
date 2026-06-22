@@ -21,15 +21,16 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from core.git import check_ignore, git_diff_stat, git_status, latest_commit
 from core.index import count_by, latest_handoffs, load_index, resolve_index_path, top_entries
-from core.paths import ROOT, rel
+from core.paths import ROOT, rel, workspace_root
 from core.services import service_status, service_summary
 
-INDEX_PATH = ROOT / "memory" / "graph" / "memory_index.json"
-PROJECT_META = ROOT / ".agent_context" / "PROJECT_META.md"
-USER_CONTEXT = ROOT / ".agent_context" / "secure" / "USER_CONTEXT.md"
-START_CONTEXT = ROOT / ".agent_context" / "START_CONTEXT.md"
-AGENT_INIT = ROOT / ".agent_context" / "agent" / "init.md"
-SECURE_CONTEXT = ROOT / ".agent_context" / "secure" / "SECURE.md"
+WS_ROOT = workspace_root()
+INDEX_PATH = WS_ROOT / "memory" / "graph" / "memory_index.json"
+PROJECT_META = WS_ROOT / ".agent_context" / "PROJECT_META.md"
+USER_CONTEXT = WS_ROOT / ".agent_context" / "secure" / "USER_CONTEXT.md"
+START_CONTEXT = WS_ROOT / ".agent_context" / "START_CONTEXT.md"
+AGENT_INIT = WS_ROOT / ".agent_context" / "agent" / "init.md"
+SECURE_CONTEXT = WS_ROOT / ".agent_context" / "secure" / "SECURE.md"
 
 
 def load_project_priority() -> List[str]:
@@ -77,7 +78,7 @@ def build_context(
     check_services: bool = True,
     fresh_health: bool = False,
 ) -> Dict[str, Any]:
-    index_file = resolve_index_path(str(index_path) if index_path else None)
+    index_file = resolve_index_path(str(index_path) if index_path else None, workspace=WS_ROOT)
     index = load_index(index_file)
     entries = top_entries(index, limit, project=project)
     handoffs = latest_handoffs(index, 5, project=project)
@@ -89,9 +90,9 @@ def build_context(
     return {
         "generated_at": now_iso(),
         "environment": {
-            "working_directory": str(ROOT),
-            "workspace_root": str(ROOT),
-            "project": ROOT.name,
+            "working_directory": str(WS_ROOT),
+            "workspace_root": str(WS_ROOT),
+            "project": WS_ROOT.name,
         },
         "files": {
             "project_meta": project_meta,
@@ -119,6 +120,7 @@ def build_context(
             "startup_doctor": "python3 tools/doctor.py --startup",
             "selftest": "python3 tools/selftest.py",
             "ranked_context": "python3 tools/context_builder.py --limit 12",
+            "quick_scan": "python3 tools/quick_scan.py <HANDOFF_PATH>",
         },
     }
 
