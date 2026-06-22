@@ -102,9 +102,9 @@ def build_context(
             "user_context_ignored": check_ignore(rel(USER_CONTEXT)) if USER_CONTEXT.exists() else {"ignored": True, "rule": "optional"},
         },
         "git": {
-            "latest_commit": latest_commit(),
-            "status": git_status(),
-            "diff_stat": git_diff_stat(),
+            "latest_commit": latest_commit(root=WS_ROOT),
+            "status": git_status(root=WS_ROOT),
+            "diff_stat": git_diff_stat(root=WS_ROOT),
         },
         "memory": {
             "index_path": rel(index_file),
