@@ -27,6 +27,7 @@ uploads/
 # === AGENT FILES ===
 .agent_context/agent/memento-curador.md
 .agent_context/agent/memento-onboarding.md
+.agent_context/agent/agent-main.md
 .agent_context/secure/
 .panel_messages.json
 .chat_waiter_state.json
