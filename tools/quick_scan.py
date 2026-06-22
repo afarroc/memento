@@ -96,13 +96,10 @@ class QuickScan:
 
 
 def detect_workspace() -> Path:
-    script_root = Path(__file__).resolve().parent.parent
     env = __import__("os").environ.get("MEMENTO_WORKSPACE")
     if env:
         return Path(env).resolve()
-    if (script_root / ".git").exists() and (script_root.parent / "projects").exists() and not (script_root / "projects").exists():
-        return script_root.parent.resolve()
-    return script_root.resolve()
+    return Path(__file__).resolve().parent.parent.resolve()
 
 
 def main(argv: Optional[list[str]] = None) -> int:

@@ -9,7 +9,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
-WS_ROOT = ROOT.parent if (ROOT / "projects").exists() else ROOT
+WS_ROOT = ROOT
 sys.path.insert(0, str(ROOT))
 
 from tools.quick_scan import QuickScan

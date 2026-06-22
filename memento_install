@@ -145,6 +145,46 @@ ensure_agent_context_dirs() {
    ok "Directorio de contexto local listo: $ROOT/.agent_context"
 }
 
+cleanse_inherited_data() {
+   log "Saneamiento de instalación limpia: eliminando datos heredados"
+   local cleansed=0
+
+   if [[ -d "$ROOT/projects" ]]; then
+      find "$ROOT/projects" -mindepth 1 -maxdepth 1 -exec rm -rf {} + 2>/dev/null || true
+      ok "Directorio projects/ saneado (datos heredados eliminados)"
+      cleansed=1
+   fi
+
+   if [[ -d "$ROOT/memory" ]]; then
+      rm -rf "$ROOT/memory"
+      mkdir -p "$ROOT/memory/graph"
+      echo '{}' > "$ROOT/memory/graph/memory_index.json"
+      ok "Memoria reinicializada en estado vacío (amnesia limpia)"
+      cleansed=1
+   fi
+
+   if [[ -d "$ROOT/.memento" ]]; then
+      rm -rf "$ROOT/.memento"
+      mkdir -p "$ROOT/.memento/memory/graph"
+      ok "Directorio .memento/ saneado"
+      cleansed=1
+   fi
+
+   if [[ -d "$ROOT/.memento_runtime" ]]; then
+      rm -rf "$ROOT/.memento_runtime"
+      cleansed=1
+   fi
+
+   if [[ -d "$ROOT/uploads" ]]; then
+      rm -rf "$ROOT/uploads"
+      cleansed=1
+   fi
+
+   if [[ $cleansed -eq 0 ]]; then
+      ok "No se detectaron datos heredados para limpiar"
+   fi
+}
+
 configure_user_context() {
   if [[ -f "$USER_CONTEXT" ]]; then
     ok "Contexto de usuario existente: $USER_CONTEXT"
@@ -344,6 +384,7 @@ main() {
   check_repo
   check_python
   ensure_agent_context_dirs
+  cleanse_inherited_data
   setup_venv
   install_requirements
   configure_user_context

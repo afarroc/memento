@@ -342,7 +342,7 @@ def build_audit(project: Optional[str] = None, context_limit: int = DEFAULT_CONT
     return {
         "generated_at": now_iso(),
         "workspace": str(ROOT),
-        "root_workspace": str(ROOT.parent),
+        "root_workspace": str(ROOT),
         "project": ROOT.name,
         "requested_project": project,
         "agent": {
@@ -419,7 +419,7 @@ def environment_details_block() -> str:
         "<environment_details>",
         f"Current time: {now_iso()}",
         f"Working directory: {ROOT}",
-        f"Workspace root folder: {ROOT.parent}",
+        f"Workspace root folder: {ROOT}",
         "</environment_details>",
         "",
     ])

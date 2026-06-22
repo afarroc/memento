@@ -90,7 +90,7 @@ def build_context(
         "generated_at": now_iso(),
         "environment": {
             "working_directory": str(ROOT),
-            "workspace_root": str(ROOT.parent),
+            "workspace_root": str(ROOT),
             "project": ROOT.name,
         },
         "files": {

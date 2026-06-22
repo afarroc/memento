@@ -15,7 +15,7 @@
 # === SESSION, CONTEXT & RUNTIME DATA (DO NOT UPLOAD) ===
 session_record.json
 sessions/
-memory/sessions/
+memory/
 .memento_runtime/
 uploads/
 <body>.html
@@ -28,10 +28,6 @@ uploads/
 .agent_context/agent/memento-curador.md
 .agent_context/agent/memento-onboarding.md
 .agent_context/secure/
-.memento/memory/graph/*.json
-.memento/memory/graph/*.bak_*
-memory/graph/*.json
-memory/graph/*.bak_*
 .panel_messages.json
 .chat_waiter_state.json
 tools/secure_context.py
