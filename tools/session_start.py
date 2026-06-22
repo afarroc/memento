@@ -19,7 +19,7 @@ from typing import Dict, List, Optional, Tuple
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from core.index import load_index, top_entries as core_top_entries, count_by
+from core.index import load_index, top_entries as core_top_entries, count_by, resolve_index_path
 from core.paths import ROOT, rel, workspace_root
 
 WS_ROOT = workspace_root()
