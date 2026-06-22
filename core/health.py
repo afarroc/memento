@@ -31,7 +31,7 @@ def startup_health(index_path: Optional[Path] = None, check_services: bool = Tru
         "agent_init_exists": AGENT_INIT.exists(),
         "agent_seed_exists": AGENT_SEED.exists(),
         "memory_index_exists": index_file.exists(),
-        "memory_has_entries": bool(index),
+        "memory_index_empty": not bool(index),
         "services_checked": bool(check_services),
     }
     health["ok"] = all(

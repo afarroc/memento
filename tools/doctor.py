@@ -35,7 +35,7 @@ def format_startup(report: Dict[str, Any]) -> str:
         ("Agent init exists", health.get("agent_init_exists")),
         ("Agent seed exists", health.get("agent_seed_exists")),
         ("Memory index exists", health.get("memory_index_exists")),
-        ("Memory has entries", health.get("memory_has_entries")),
+        ("Memory index empty (clean install)", health.get("memory_index_empty")),
     ]
     # Services are optional; only report if checked
     if health.get("services_checked") is True:
@@ -44,9 +44,15 @@ def format_startup(report: Dict[str, Any]) -> str:
         checks.append(("Services optional", True))
     for name, value in checks:
         if value is True:
-            state = "OK"
+            if name == "Memory index empty (clean install)":
+                state = "OK (vacío)"
+            else:
+                state = "OK"
         elif value is False:
-            state = "FAIL"
+            if name == "Memory index empty (clean install)":
+                state = "OK (con entradas)"
+            else:
+                state = "FAIL"
         else:
             state = "OPTIONAL"
         lines.append(f"  - {name}: {state}")
