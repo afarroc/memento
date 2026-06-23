@@ -719,9 +719,9 @@ def launch_external_agent(command: str | None = None) -> int:
     ws = workspace_root()
     if "kilo run" in agent_command:
         if "--dir ." in agent_command:
-            agent_command = agent_command.replace("--dir .", f"--dir {ws}")
+            agent_command = agent_command.replace("--dir .", f'--dir "{ws}"')
         elif "--dir" not in agent_command:
-            agent_command = agent_command.replace("kilo run", f"kilo run --dir {ws}")
+            agent_command = agent_command.replace("kilo run", f'kilo run --dir "{ws}"')
 
     print("\nLaunching external agent:")
     print(f"  {agent_command}")
