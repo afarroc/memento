@@ -514,14 +514,10 @@ create_client_start_script() {
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PARENT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-if [[ -d "$PARENT_DIR/.git" ]]; then
-  export MEMENTO_WORKSPACE="${MEMENTO_WORKSPACE:-$PARENT_DIR}"
-else
-  export MEMENTO_WORKSPACE="${MEMENTO_WORKSPACE:-$SCRIPT_DIR}"
-fi
+MEMENTO_DIR="$SCRIPT_DIR/mementobloom"
+export MEMENTO_WORKSPACE="$SCRIPT_DIR"
 
-cd "$SCRIPT_DIR"
+cd "$MEMENTO_DIR"
 exec python3 tools/session_start.py "$@"
 EOSCRIPT
 
