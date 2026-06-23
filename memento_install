@@ -472,7 +472,7 @@ launch_agent_optional() {
     return 0
   fi
 
-  "$PYTHON_BIN" tools/session_start.py --print --no-services --limit 14 --launch-agent
+  "$PYTHON_BIN" "$MEMENTO_DIR/tools/session_start.py" --print --no-services --limit 14 --launch-agent
 }
 
 print_next_steps() {
