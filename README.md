@@ -7,49 +7,61 @@ Sistema de registro y autorreferencia para interacciones con modelos de IA.
 pip install -r requirements.txt
 ```
 
-## Uso rápido
+## Uso como herramienta de memoria (Workspace Cliente Independiente)
 
-### Instalador guiado para primera instalación
+Cuando mementobloom es **herramienta de memoria** para un proyecto cliente:
 
+### Setup del cliente
 ```bash
-./memento_install
+# 1. Clonar proyecto cliente
+git clone https://github.com/afarroc/adherence /ruta/proyecto_cliente
+
+# 2. Clonar mementobloom como subdirectorio
+cd /ruta/proyecto_cliente
+git clone https://github.com/afarroc/memento.git mementobloom
+
+# 3. Configurar estructura de memoria del cliente
+mkdir -p .agent_context/agent/instructions .agent_context/secure .memento/memory/graph
+cp mementobloom/.agent_context/PROJECT_META.md .agent_context/
+cp mementobloom/.agent_context/agent/init.md .agent_context/agent/
+cp mementobloom/.agent_context/agent/instructions/*.md .agent_context/agent/instructions/
+echo '{}' > .memento/memory/graph/memory_index.json
+
+# 4. Verificar estructura
+ls -la .memento/memory/graph/
 ```
 
-El instalador valida Python, crea entorno virtual opcional, instala dependencias,
-configura contexto local y permite iniciar el proyecto como agente usando el CLI
-que el usuario elija.
-
-### Comandos directos
-
+### Uso con CLI externo (ej: kilo)
 ```bash
-python3 tools/context_builder.py
+cd /ruta/proyecto_cliente
+export MEMENTO_WORKSPACE=$(pwd)
+export PYTHONPATH="$(pwd)/mementobloom"
 
-# Servidor principal (sala interactiva)
-python3 tools/sala.py  # :8767
+# Ver contexto del cliente
+python3 mementobloom/tools/bootstrap_context.py --print --no-services
 
-# Escaneo incremental
-python3 tools/quick_scan.py
+# Diagnóstico
+python3 mementobloom/tools/doctor.py --startup --no-services
 
-# Optimizar índice
-python3 tools/optimize_memento.py --rebuild --compact
+# Iniciar agente
+export MEMENTO_AGENT_CMD="kilo run --dir . --agent agent-main -i \"$(python3 mementobloom/tools/bootstrap_context.py --print --no-services)\""
+python3 mementobloom/tools/session_start.py --launch-agent
+```
 
-# Búsqueda
-python3 tools/optimize_memento.py --search "ubigeo" --limit 5
+### Comandos del cliente
+```bash
+# Indexar handoffs del cliente
+python3 mementobloom/tools/quick_scan.py .memento/projects/
 
-# Preparar seed y contexto local de sesión, sin trackear contexto
-python3 tools/session_start.py --quick --limit 8
-# Compatibilidad con el launcher anterior
-./memento_start --quick --limit 8
-
-# Iniciar como agente externo configurado localmente
-export MEMENTO_AGENT_CMD='<agent-cli> run --dir .'
-./memento_start --print --no-services --limit 14 --launch-agent
-
-# Contexto universal modelo-agnóstico para cualquier modelo, CLI o asistente
-python3 tools/bootstrap_context.py --print
-
-# Auditoría y optimización del agente
-python3 tools/optimize_agent.py --context
+# Búsqueda en memoria del cliente
+python3 -c "
+from pathlib import Path
+import sys
+sys.path.insert(0, 'mementobloom')
+from tools.context_retriever import ContextRetriever
+cr = ContextRetriever(workspace=Path('.'))
+print(cr.get_context('query', limit=5))
+"
 ```
 
 # Contexto y continuidad de sesión
@@ -94,7 +106,7 @@ Para preparar un índice de memoria vacío en una instalación limpia:
 python3 tools/quick_scan.py --index memory/graph/memory_index.json
 ```
 
-## Comandos rápidos desde terminal
+### Comandos rápidos desde terminal
 
 ```bash
 python3 tools/bootstrap_context.py --print --no-services
