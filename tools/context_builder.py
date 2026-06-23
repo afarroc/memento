@@ -75,12 +75,13 @@ if __name__ == "__main__":
     import argparse
     import os
     from pathlib import Path
+    from core.paths import workspace_root
     parser = argparse.ArgumentParser(description="MementoBloom Context Builder")
     parser.add_argument("--ready", action="store_true", help="Show ready status only")
     parser.add_argument("--limit", type=int, default=20, help="Limit entries")
     args = parser.parse_args()
 
-    ws_root = Path(__file__).resolve().parent.parent
+    ws_root = workspace_root()
     index_path = ws_root / "memory" / "graph" / "memory_index.json"
 
     cb = ContextBuilder(str(index_path))

@@ -9,8 +9,11 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
-WS_ROOT = ROOT
 sys.path.insert(0, str(ROOT))
+
+from core.paths import workspace_root
+
+WS_ROOT = workspace_root()
 
 from tools.quick_scan import QuickScan
 from tools.context_builder import ContextBuilder

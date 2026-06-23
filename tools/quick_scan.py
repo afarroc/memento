@@ -11,6 +11,7 @@ from typing import Any, Dict, Optional
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from core.index import build_manifest, load_index, resolve_index_path, save_index
+from core.paths import detect_workspace_root
 
 HANDOFF_RE = re.compile(r"(\d{4}-\d{2}-\d{2})")
 
@@ -96,10 +97,7 @@ class QuickScan:
 
 
 def detect_workspace() -> Path:
-    env = __import__("os").environ.get("MEMENTO_WORKSPACE")
-    if env:
-        return Path(env).resolve()
-    return Path(__file__).resolve().parent.parent.resolve()
+    return detect_workspace_root()
 
 
 def main(argv: Optional[list[str]] = None) -> int:

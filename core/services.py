@@ -9,13 +9,13 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-from core.paths import ROOT, ensure_dir
+from core.paths import ROOT, ensure_dir, workspace_root
 
 REDIS_HOST = os.environ.get("REDIS_HOST", os.environ.get("MEMENTO_REDIS_HOST", "192.168.18.59"))
 REDIS_PORT = int(os.environ.get("REDIS_PORT", os.environ.get("MEMENTO_REDIS_PORT", "6379")))
 SALA_PORT = int(os.environ.get("SALA_PORT", "8767"))
 PANEL_PORT = int(os.environ.get("PANEL_PORT", "8766"))
-HEALTH_CACHE_PATH = ROOT / ".memento_runtime" / "health_cache.json"
+HEALTH_CACHE_PATH = workspace_root() / ".memento_runtime" / "health_cache.json"
 
 
 def redis_ping(host: str = REDIS_HOST, port: int = REDIS_PORT, timeout: float = 0.6) -> Dict[str, Any]:

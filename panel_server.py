@@ -8,11 +8,16 @@ import subprocess
 import sys
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from pathlib import Path
-from dataclasses import dataclass
-from typing import Dict, Any, List
+from typing import Any, Dict, List, Optional
+import json
+import os
+import subprocess
+import urllib.error
+import urllib.request
 
-ROOT = Path(__file__).resolve().parent
-PORT = int(os.environ.get("PANEL_PORT", "8766"))
+from core.paths import ROOT, workspace_root
+from core.services import check_tcp
+
 CONFIG_FILE = ROOT / "config" / "services.json"
 
 
@@ -94,7 +99,8 @@ def get_all_services_status() -> Dict[str, Any]:
     return {name: get_service_status(name) for name in SERVICES}
 
 def get_handoffs_list(limit: int = 20) -> List[Dict[str, Any]]:
-    handoff_dir = ROOT / "projects" / "mementobloom"
+    ws = workspace_root()
+    handoff_dir = ws / "projects" / ws.name
     handoffs = []
     if not handoff_dir.exists():
         return handoffs
@@ -102,13 +108,16 @@ def get_handoffs_list(limit: int = 20) -> List[Dict[str, Any]]:
         try:
             content = path.read_text()
             first_line = content.split('\n')[0] if content else ""
-            handoffs.append({"path": str(path.relative_to(ROOT)), "name": path.stem, "preview": first_line[:80]})
+            handoffs.append({"path": str(path.relative_to(ws)), "name": path.stem, "preview": first_line[:80]})
         except:
             pass
     return handoffs
 
 def get_memory_stats():
-    idx_path = ROOT / "memory" / "graph" / "memory_index.json"
+    ws = workspace_root()
+    idx_path = ws / ".memento" / "memory" / "graph" / "memory_index.json"
+    if not idx_path.exists():
+        idx_path = ws / "memory" / "graph" / "memory_index.json"
     try:
         data = json.loads(idx_path.read_text())
         by_type = {}
@@ -121,7 +130,8 @@ def get_memory_stats():
 
 def get_git_status():
     try:
-        result = subprocess.run(["git", "-C", str(ROOT), "status", "--short"], capture_output=True, text=True, timeout=5)
+        ws = workspace_root()
+        result = subprocess.run(["git", "-C", str(ws), "status", "--short"], capture_output=True, text=True, timeout=5)
         return {"clean": len(result.stdout.strip()) == 0, "raw": result.stdout.strip()}
     except:
         return {"clean": False, "raw": ""}
@@ -266,7 +276,8 @@ class PanelHandler(BaseHTTPRequestHandler):
             
         elif self.path.startswith("/handoffs/HANDOFF_"):
             name = self.path.split("/")[-1]
-            path = ROOT / "projects" / "mementobloom" / f"{name}.md"
+            ws = workspace_root()
+            path = ws / "projects" / ws.name / f"{name}.md"
             if path.exists():
                 content = path.read_text().replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
                 self._send_html(render_page(f'<h2 style="color:#e5e7eb;margin-bottom:12px">{name}</h2><pre style="white-space:pre-wrap;word-wrap:break-word">{content}</pre>', name))

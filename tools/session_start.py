@@ -20,14 +20,14 @@ from typing import Dict, List, Optional, Tuple
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from core.git import git_status as core_git_status, latest_commit as core_latest_commit
-from core.index import load_index, top_entries as core_top_entries, count_by, resolve_index_path
+from core.index import load_index, top_entries as core_top_entries, count_by, default_index_path, resolve_index_path
 from core.paths import ROOT, rel, workspace_root
 from core.services import service_status as core_service_status, service_summary as core_service_summary
 
 WS_ROOT = workspace_root()
 CONTEXT_ROOT = WS_ROOT
 AGENT_TEMPLATE_ROOT = ROOT / ".agent_context" / "agent"
-INDEX_PATH = WS_ROOT / ".memento" / "memory" / "graph" / "memory_index.json"
+INDEX_PATH = default_index_path()
 START_CONTEXT = WS_ROOT / ".agent_context" / "START_CONTEXT.md"
 PROJECT_META = WS_ROOT / ".agent_context" / "PROJECT_META.md"
 USER_CONTEXT = WS_ROOT / ".agent_context" / "secure" / "USER_CONTEXT.md"
@@ -279,19 +279,22 @@ def build_agent_content(project: str | None = None) -> tuple[str, str]:
                 item["path"] = ROOT.name
         enriched_memory.append(item)
 
+    active_project = project or WS_ROOT.name
     lines = [
         "---",
         "description: Curador de memoria histórica del proyecto",
+        f"project: {active_project}",
         "mode: primary",
         "model: any",
         "steps: 25",
         "---",
         f"<!-- generated-hash: {signature} -->",
         "",
-        "# Agente Seed",
+        f"# Agente de Memoria — Proyecto: {active_project}",
         "",
-        "Agente construido progresivamente desde `.agent_context/agent/init.md`.",
-        "La semilla inicial carga instrucciones adicionales y memoria compacta hasta formar un agente robusto.",
+        f"Eres el agente de memoria histórica del proyecto **{active_project}**.",
+        "Tu función es mantener continuidad de contexto, memoria y estado entre sesiones.",
+        "Todas las instrucciones, entradas de memoria y handoffs pertenecen exclusivamente a este proyecto.",
         "",
         "Accesos recomendados:",
         "- Configuración pública del proyecto: `.agent_context/PROJECT_META.md`.",
@@ -305,10 +308,16 @@ def build_agent_content(project: str | None = None) -> tuple[str, str]:
 
     for path, content, ok in loaded:
         label = str(path.relative_to(ROOT) if path.is_relative_to(ROOT) else path)
+        instruction_content = content.strip()
+        if path.name == "00-core.md":
+            instruction_content = instruction_content.replace(
+                "Eres el agente principal del proyecto.",
+                f"Eres el agente principal del proyecto **{active_project}**."
+            )
         lines.extend([
             "",
             f"### {label} {'OK' if ok else 'MISSING'}",
-            content.strip(),
+            instruction_content,
         ])
 
     lines.extend([
@@ -333,6 +342,7 @@ def build_agent_content(project: str | None = None) -> tuple[str, str]:
         "- Usa `Path(__file__).resolve().parent.parent` para rutas base del repo.",
         "- No uses rutas absolutas hardcodeadas.",
         f"- Entorno limpio: {(rel(SECURE_CONTEXT) if SECURE_CONTEXT.exists() else '.agent_context/secure/SECURE.md')} define preferencias locales.",
+        f"- Aislamiento estricto: este agente pertenece exclusivamente al proyecto **{active_project}**. No mezcles contexto de otros proyectos.",
     ])
     lines.extend(user_context_short(limit=4))
     return "\n".join(lines), signature
@@ -703,7 +713,9 @@ def _run_command_safe(command: str) -> int:
         print(f"WARN: command rejected ({reason}): {command!r}")
         return 1
     try:
-        result = subprocess.run(argv, cwd=str(WS_ROOT), check=False)
+        env = os.environ.copy()
+        env.setdefault("MEMENTO_WORKSPACE", str(workspace_root()))
+        result = subprocess.run(argv, cwd=str(workspace_root()), check=False, env=env)
         return result.returncode
     except FileNotFoundError:
         print(f"ERROR: CLI not found: {argv[0]}")
@@ -718,12 +730,19 @@ def launch_external_agent(command: str | None = None) -> int:
         print("Example: MEMENTO_AGENT_CMD='<agent-cli> run --dir .' python3 tools/session_start.py --print --launch-agent")
         return 0
 
+    ws = workspace_root()
+    if "kilo run" in agent_command:
+        if "--dir ." in agent_command:
+            agent_command = agent_command.replace("--dir .", f"--dir {ws}")
+        elif "--dir" not in agent_command:
+            agent_command = agent_command.replace("kilo run", f"kilo run --dir {ws}")
+
     print("\nLaunching external agent:")
     print(f"  {agent_command}")
     sys.stdout.flush()
     return_code = _run_command_safe(agent_command)
     if "agent-onboarding" in agent_command and return_code == 0:
-        marker = ROOT / ".agent_context" / "secure" / "ONBOARDED"
+        marker = WS_ROOT / ".agent_context" / "secure" / "ONBOARDED"
         marker.parent.mkdir(parents=True, exist_ok=True)
         marker.touch(exist_ok=True)
         print("\nOnboarding marked as completed: .agent_context/secure/ONBOARDED")

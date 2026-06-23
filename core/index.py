@@ -36,7 +36,7 @@ def resolve_index_path(index: Optional[str] = None, workspace: Optional[Path] = 
             path = root / path
         return path.resolve()
     if legacy:
-        return LEGACY_INDEX_PATH.resolve()
+        return (workspace or ROOT) / ".memento" / "memory" / "graph" / "memory_index.json"
     return default_index_path().resolve()
 
 

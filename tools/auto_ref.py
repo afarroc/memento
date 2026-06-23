@@ -6,7 +6,7 @@ import re
 class AutoRefEngine:
     def __init__(self, workspace: str):
         self.ws = Path(workspace)
-        self.graph_index = self.ws / "mementobloom" / "memory" / "graph"
+        self.graph_index = self.ws / "memory" / "graph"
     
     def find_next_memory(self, processed_count: int, max_batch: int = 10) -> List[Dict]:
         """Busca siguiente lote de entradas sin procesar."""
@@ -22,13 +22,12 @@ class AutoRefEngine:
                     return entries
         
         for f in self.ws.rglob("*_CONTEXT.md"):
-            if "mementobloom" not in str(f):
-                entry = self._parse_context(f)
-                if entry and entry["id"] not in seen_ids:
-                    entries.append(entry)
-                    seen_ids.add(entry["id"])
-                    if len(entries) >= max_batch:
-                        return entries
+            entry = self._parse_context(f)
+            if entry and entry["id"] not in seen_ids:
+                entries.append(entry)
+                seen_ids.add(entry["id"])
+                if len(entries) >= max_batch:
+                    return entries
         
         return entries
         """Busca siguiente lote de entradas sin procesar."""
@@ -42,10 +41,9 @@ class AutoRefEngine:
         
         # Contexts
         for f in self.ws.rglob("*_CONTEXT.md"):
-            if "mementobloom" not in str(f):
-                entry = self._parse_context(f)
-                if entry and not self._exists(entry["id"]):
-                    entries.append(entry)
+            entry = self._parse_context(f)
+            if entry and not self._exists(entry["id"]):
+                entries.append(entry)
         
         return entries[:max_batch]
     

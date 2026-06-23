@@ -28,19 +28,19 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from core.git import check_ignore, git_diff_stat as core_git_diff_stat, git_status as core_git_status, latest_commit as core_latest_commit
 from core.index import count_by as core_count_by, load_index as core_load_index, top_entries as core_top_entries
-from core.paths import ROOT
+from core.paths import ROOT, workspace_root
 from core.services import service_status as core_service_status
 
-ROOT = Path(__file__).resolve().parent.parent
-INDEX_PATH = ROOT / "memory" / "graph" / "memory_index.json"
-START_CONTEXT = ROOT / ".agent_context" / "START_CONTEXT.md"
-PROJECT_META = ROOT / ".agent_context" / "PROJECT_META.md"
-USER_CONTEXT = ROOT / ".agent_context" / "secure" / "USER_CONTEXT.md"
-AGENT_DIR = ROOT / ".agent_context" / "agent"
+WS = workspace_root()
+INDEX_PATH = WS / "memory" / "graph" / "memory_index.json"
+START_CONTEXT = WS / ".agent_context" / "START_CONTEXT.md"
+PROJECT_META = WS / ".agent_context" / "PROJECT_META.md"
+USER_CONTEXT = WS / ".agent_context" / "secure" / "USER_CONTEXT.md"
+AGENT_DIR = WS / ".agent_context" / "agent"
 AGENT_INIT = AGENT_DIR / "init.md"
 AGENT_SEED = AGENT_DIR / "agent-main.md"
 INSTRUCTION_DIR = AGENT_DIR / "instructions"
-HANDOFF_DIR = ROOT / "projects" / ROOT.name
+HANDOFF_DIR = WS / "projects" / WS.name
 REDIS_HOST = os.environ.get("REDIS_HOST", os.environ.get("MEMENTO_REDIS_HOST", "192.168.18.59"))
 REDIS_PORT = int(os.environ.get("REDIS_PORT", os.environ.get("MEMENTO_REDIS_PORT", "6379")))
 SALA_PORT = int(os.environ.get("SALA_PORT", "8767"))
@@ -88,7 +88,7 @@ def run_command(args: List[str], timeout: int = 10) -> CommandResult:
     try:
         proc = subprocess.run(
             args,
-            cwd=str(ROOT),
+            cwd=str(WS),
             text=True,
             capture_output=True,
             timeout=timeout,
@@ -195,11 +195,11 @@ def service_status() -> Dict[str, Any]:
 def agent_seed_audit() -> Dict[str, Any]:
     missing: List[str] = []
     if not AGENT_INIT.exists():
-        missing.append(str(AGENT_INIT.relative_to(ROOT)))
+        missing.append(str(AGENT_INIT.relative_to(WS)))
     if not AGENT_SEED.exists():
-        missing.append(str(AGENT_SEED.relative_to(ROOT)))
+        missing.append(str(AGENT_SEED.relative_to(WS)))
     if not INSTRUCTION_DIR.exists():
-        missing.append(str(INSTRUCTION_DIR.relative_to(ROOT)))
+        missing.append(str(INSTRUCTION_DIR.relative_to(WS)))
 
     includes: List[str] = []
     if AGENT_INIT.exists():
@@ -215,16 +215,16 @@ def agent_seed_audit() -> Dict[str, Any]:
             path = (AGENT_DIR / clean).resolve()
         instruction_status.append({
             "include": clean,
-            "path": str(path.relative_to(ROOT) if path.is_relative_to(ROOT) else path),
+            "path": str(path.relative_to(WS) if path.is_relative_to(WS) else path),
             "exists": path.exists(),
         })
         if not path.exists():
-            missing.append(str(path.relative_to(ROOT) if path.is_relative_to(ROOT) else path))
+            missing.append(str(path.relative_to(WS) if path.is_relative_to(WS) else path))
 
-    start_context_rule = git_check_ignore(str(START_CONTEXT.relative_to(ROOT)))
+    start_context_rule = git_check_ignore(str(START_CONTEXT.relative_to(WS)))
     return {
-        "agent_init": str(AGENT_INIT.relative_to(ROOT)),
-        "agent_seed": str(AGENT_SEED.relative_to(ROOT)),
+        "agent_init": str(AGENT_INIT.relative_to(WS)),
+        "agent_seed": str(AGENT_SEED.relative_to(WS)),
         "missing": missing,
         "includes": includes,
         "instructions": instruction_status,
@@ -243,7 +243,7 @@ def memory_audit(index: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
         if path and not Path(str(path)).exists() and str(entry.get("type")) == "HANDOFF":
             missing_paths.append(str(path))
     return {
-        "index_path": str(INDEX_PATH.relative_to(ROOT)),
+        "index_path": str(INDEX_PATH.relative_to(WS)),
         "exists": INDEX_PATH.exists(),
         "entries": len(index),
         "by_type": by_type,
@@ -254,7 +254,7 @@ def memory_audit(index: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
 
 
 def safety_audit() -> Dict[str, Any]:
-    gitignore = ROOT / ".gitignore"
+    gitignore = WS / ".gitignore"
     text = gitignore.read_text(encoding="utf-8", errors="replace") if gitignore.exists() else ""
     ignored = []
     missing_rules = []
@@ -264,7 +264,7 @@ def safety_audit() -> Dict[str, Any]:
         else:
             missing_rules.append(rule)
     return {
-        "gitignore": str(gitignore.relative_to(ROOT)),
+        "gitignore": str(gitignore.relative_to(WS)),
         "ignored_rules_present": ignored,
         "ignored_rules_missing": missing_rules,
         "destructive_redis_guard": "FLUSHALL" not in text or "FLUSHALL" in text,
@@ -274,7 +274,7 @@ def safety_audit() -> Dict[str, Any]:
 def local_context_file(path: Path) -> Dict[str, Any]:
     if not path.exists():
         return {
-            "path": str(path.relative_to(ROOT)),
+            "path": str(path.relative_to(WS)),
             "exists": False,
             "lines": 0,
             "chars": 0,
@@ -284,7 +284,7 @@ def local_context_file(path: Path) -> Dict[str, Any]:
     lines = [line for line in text.splitlines() if line.strip() and not line.strip().startswith("#")]
     summary = " ".join(" ".join(lines).split())[:500]
     return {
-        "path": str(path.relative_to(ROOT)),
+        "path": str(path.relative_to(WS)),
         "exists": True,
         "lines": len(text.splitlines()),
         "chars": len(text),
@@ -294,13 +294,13 @@ def local_context_file(path: Path) -> Dict[str, Any]:
 
 def user_context_audit() -> Dict[str, Any]:
     info = local_context_file(USER_CONTEXT)
-    info["ignored"] = git_check_ignore(str(USER_CONTEXT.relative_to(ROOT))).get("ignored", False)
+    info["ignored"] = git_check_ignore(str(USER_CONTEXT.relative_to(WS))).get("ignored", False)
     return info
 
 
 def project_meta_audit() -> Dict[str, Any]:
     info = local_context_file(PROJECT_META)
-    info["tracked"] = not git_check_ignore(str(PROJECT_META.relative_to(ROOT))).get("ignored", False)
+    info["tracked"] = not git_check_ignore(str(PROJECT_META.relative_to(WS))).get("ignored", False)
     return info
 
 
@@ -318,7 +318,7 @@ def secret_scan(paths: List[Path], max_bytes: int = 250_000) -> List[Dict[str, A
             for match in pattern.finditer(text):
                 line = text.count("\n", 0, match.start()) + 1
                 findings.append({
-                    "path": str(path.relative_to(ROOT)),
+                    "path": str(path.relative_to(WS)),
                     "type": name,
                     "line": line,
                     "preview": text[max(0, match.start() - 30): match.end() + 30].replace("\n", " "),
@@ -341,9 +341,9 @@ def build_audit(project: Optional[str] = None, context_limit: int = DEFAULT_CONT
     findings = secret_scan([AGENT_INIT, AGENT_SEED, ROOT / "optimize_agent.py", USER_CONTEXT])
     return {
         "generated_at": now_iso(),
-        "workspace": str(ROOT),
+        "workspace": str(WS),
         "root_workspace": str(ROOT),
-        "project": ROOT.name,
+        "project": WS.name,
         "requested_project": project,
         "agent": {
             "name": AGENT_SEED.stem,
@@ -418,8 +418,9 @@ def environment_details_block() -> str:
     return "\n".join([
         "<environment_details>",
         f"Current time: {now_iso()}",
-        f"Working directory: {ROOT}",
-        f"Workspace root folder: {ROOT}",
+        f"Working directory: {WS}",
+        f"Workspace root folder: {WS}",
+        f"Tool installation: {ROOT}",
         "</environment_details>",
         "",
     ])

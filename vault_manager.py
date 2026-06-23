@@ -49,7 +49,6 @@ def init_vault():
         "version": "1.0",
         "created": datetime.now().isoformat(),
         "sources": {
-            "vscode": {"workspace": "/Volumes/Macintosh HD - Datos/mementobloom"},
             "local_dev": {"host": "localhost", "port": 8000, "protocol": "http"},
             "ollama": {"host": "http://localhost:11434"},
             "aws_s3": {"bucket": None, "region": "us-east-1"},

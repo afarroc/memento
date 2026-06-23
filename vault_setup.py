@@ -9,7 +9,6 @@ VAULT_PATH = Path.home() / ".memento" / "vault.json"
 
 SOURCES = {
     "ollama": {"host": "http://localhost:11434"},
-    "vscode": {"workspace": "/Volumes/Macintosh HD - Datos/mementobloom"},
     "local_dev": {"host": "localhost", "port": 8000, "description": "Django dev server"},
     "aws": {"bucket": "your-bucket", "region": "us-east-1", "description": "S3 storage"},
     "gdrive": {"folder_id": "your-folder-id", "description": "Google Drive"},

@@ -9,7 +9,7 @@ class SeedBuilder:
         self.seed = {}
     
     def build(self) -> Dict:
-        seed_file = self.ws / "mementobloom" / "memory" / "seeds" / "system_seed.md"
+        seed_file = self.ws / "memory" / "seeds" / "system_seed.md"
         seed_file.parent.mkdir(parents=True, exist_ok=True)
         
         raw = seed_file.read_text(encoding='utf-8') if seed_file.exists() else ""
@@ -27,8 +27,7 @@ class SeedBuilder:
         for p in self.ws.glob("*/HANDOFF*.md"):
             projects.append({"name": p.parent.name, "path": str(p), "type": "handoff"})
         for p in self.ws.glob("*/*_CONTEXT.md"):
-            if p.parent.name != "mementobloom":
-                projects.append({"name": p.parent.parent.name, "path": str(p), "type": "context"})
+            projects.append({"name": p.parent.parent.name, "path": str(p), "type": "context"})
         return list({p["name"]: p for p in projects}.values())
 
 class SymbolCompressor:

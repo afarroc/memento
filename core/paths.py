@@ -23,6 +23,11 @@ def workspace_root() -> Path:
     return detect_workspace_root()
 
 
+def detect_project_name() -> str:
+    ws = workspace_root()
+    return ws.name
+
+
 def rel(path: Path, base: Optional[Path] = None) -> str:
     base = (base or ROOT).resolve()
     try:

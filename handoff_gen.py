@@ -4,8 +4,10 @@
 from pathlib import Path
 from datetime import datetime
 
-def generate_handoff(project: str, problem: str, solution: str, workspace: str = "/Volumes/Macintosh HD - Datos/projects"):
-    ws = Path(workspace) / project
+def generate_handoff(project: str, problem: str, solution: str, workspace: str = None):
+    if workspace is None:
+        workspace = str(Path(__file__).resolve().parent.parent)
+    ws = Path(workspace) / "projects" / project
     ws.mkdir(parents=True, exist_ok=True)
     
     today = datetime.now().strftime("%Y-%m-%d")

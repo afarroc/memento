@@ -2,7 +2,24 @@
 set -euo pipefail
 
 MEMENTO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="${MEMENTO_WORKSPACE:-$MEMENTO_DIR}"
+
+if [[ -n "${MEMENTO_WORKSPACE:-}" ]]; then
+  ROOT="$MEMENTO_WORKSPACE"
+elif [[ -d "$MEMENTO_DIR/.git" ]]; then
+  ROOT="$MEMENTO_DIR"
+else
+  ROOT="$(cd "$MEMENTO_DIR/.." && pwd)"
+fi
+
+AUTO_MODE=0
+for arg in "$@"; do
+  case "$arg" in
+    --auto|-y)
+      AUTO_MODE=1
+      ;;
+  esac
+done
+export AUTO_MODE
 
 PYTHON_BIN="${PYTHON_BIN:-python3}"
 VENV_DIR="${VENV_DIR:-$ROOT/venv}"
@@ -39,6 +56,15 @@ confirm() {
     prompt="$prompt [y/N]"
   fi
 
+  if [[ "$AUTO_MODE" -eq 1 ]]; then
+    printf '%s -> %s (auto)\n' "$prompt" "$default"
+    if [[ "$default" == "y" ]]; then
+      return 0
+    else
+      return 1
+    fi
+  fi
+
   printf '%s ' "$prompt"
   read -r answer
 
@@ -63,7 +89,13 @@ read_line() {
     printf '%s ' "$prompt"
   fi
 
-  read -r value
+  if [[ "$AUTO_MODE" -eq 1 ]]; then
+    printf '%s (auto)\n' "$default"
+    value="$default"
+  else
+    read -r value
+  fi
+
   if [[ -z "$value" ]]; then
     value="$default"
   fi
@@ -109,16 +141,16 @@ check_python() {
 }
 
 setup_venv() {
-  if [[ -x "$VENV_DIR/bin/python" ]]; then
-    ok "Entorno virtual existente: $VENV_DIR"
-    PYTHON_BIN="$VENV_DIR/bin/python"
+  if [[ -x "$ROOT/venv/bin/python" ]]; then
+    ok "Entorno virtual existente: $ROOT/venv"
+    PYTHON_BIN="$ROOT/venv/bin/python"
     return 0
   fi
 
-  if confirm "¿Crear entorno virtual en '$VENV_DIR'?" "y"; then
-    "$PYTHON_BIN" -m venv "$VENV_DIR"
-    PYTHON_BIN="$VENV_DIR/bin/python"
-    ok "Entorno virtual creado: $VENV_DIR"
+  if confirm "¿Crear entorno virtual en '$ROOT/venv'?" "y"; then
+    "$PYTHON_BIN" -m venv "$ROOT/venv"
+    PYTHON_BIN="$ROOT/venv/bin/python"
+    ok "Entorno virtual creado: $ROOT/venv"
   else
     warn "Se usará Python del sistema: $PYTHON_BIN"
   fi
@@ -139,9 +171,55 @@ install_requirements() {
   fi
 }
 
+install_mementobloom_package() {
+  if [[ ! -d "$MEMENTO_DIR" ]]; then
+    warn "No se encontró el directorio fuente de mementobloom en $MEMENTO_DIR"
+    return 1
+  fi
+
+  local venv_pip="$VENV_DIR/bin/pip"
+  if [[ ! -x "$venv_pip" ]]; then
+    warn "No se encontró pip en $venv_pip; instala el venv primero."
+    return 1
+  fi
+
+  if confirm "¿Instalar mementobloom como paquete editable en el venv del cliente?" "y"; then
+    "$venv_pip" install -e "$MEMENTO_DIR"
+    ok "Paquete mementobloom instalado en $VENV_DIR"
+  else
+    warn "Instalación del paquete mementobloom omitida."
+  fi
+}
+
+create_client_wrappers() {
+  local bin_dir="$ROOT/.memento/bin"
+  mkdir -p "$bin_dir"
+
+  local modules=("bootstrap_context" "doctor" "selftest" "quick_scan" "context_builder" "session_start" "optimize_agent" "export_memory" "init_project" "clean_workspace")
+  for mod in "${modules[@]}"; do
+    local wrapper="$bin_dir/memento-$mod"
+    cat > "$wrapper" <<EOSCRIPT
+#!/bin/bash
+set -euo pipefail
+SCRIPT_DIR="\$(cd "\$(dirname "\${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="\$(cd "\$SCRIPT_DIR/.." && pwd)"
+export MEMENTO_WORKSPACE="\$ROOT_DIR"
+if [[ -x "\$ROOT_DIR/venv/bin/python" ]]; then
+  exec "\$ROOT_DIR/venv/bin/python" -m mementobloom.tools.$mod "\$@"
+else
+  exec python3 -m mementobloom.tools.$mod "\$@"
+fi
+EOSCRIPT
+    chmod +x "$wrapper"
+  done
+
+  ok "Wrappers creados en $bin_dir"
+}
+
 ensure_agent_context_dirs() {
    mkdir -p "$ROOT/.agent_context/secure"
    mkdir -p "$ROOT/.memento/memory/graph"
+   mkdir -p "$ROOT/.memento/bin"
    ok "Directorio de contexto local listo: $ROOT/.agent_context"
 }
 
@@ -227,13 +305,13 @@ EOF
 detect_agent_cli() {
   log "Detección de CLI/agente externo"
   local detected=""
-  if command_exists kilo; then
+  if command_exists "kilo"; then
     detected="kilo"
     ok "CLI detectado: kilo ($(command -v kilo))"
-  elif command_exists claude; then
+  elif command_exists "claude"; then
     detected="claude"
     ok "CLI detectado: claude ($(command -v claude))"
-  elif command_exists code; then
+  elif command_exists "code"; then
     detected="code"
     ok "CLI detectado: code ($(command -v code))"
   else
@@ -241,13 +319,35 @@ detect_agent_cli() {
   fi
 
   if [[ -n "$detected" ]]; then
+    if [[ "$AUTO_MODE" -eq 1 ]]; then
+      printf '%s\n' "$detected"
+      return 0
+    fi
     if confirm "¿Usar '$detected' como CLI de agente?" "y"; then
-      printf '%s' "$detected"
+      printf '%s\n' "$detected"
       return 0
     fi
   fi
 
   return 1
+}
+
+select_agent() {
+  if [[ -f "$ONBOARD_MARKER" ]]; then
+    printf 'agent-main\n'
+    return 0
+  fi
+
+  if [[ "$AUTO_MODE" -eq 1 ]]; then
+    printf 'agent-main\n'
+    return 0
+  fi
+
+  if confirm "¿Ejecutar agente de configuración inicial (solo primera vez)?" "y"; then
+    printf 'agent-onboarding\n'
+  else
+    printf 'agent-main\n'
+  fi
 }
 
 setup_agent_files() {
@@ -283,9 +383,20 @@ configure_agent_command() {
   printf '1) Usar un CLI detectado (kilo, claude, code...)\n'
   printf '2) Ingresar comando personalizado del agente\n'
   printf '3) No configurar agente ahora; solo preparar contexto\n'
-  printf 'Opción [1]: '
-  read -r option
-  option="${option:-1}"
+
+  if [[ "$AUTO_MODE" -eq 1 ]]; then
+    local cli=""
+    cli="$(detect_agent_cli || true)"
+    if [[ -n "$cli" ]]; then
+      printf 'Auto-seleccionando opción 1 (CLI detectado: %s)\n' "$cli"
+      option="1"
+    else
+      printf 'Auto-seleccionando opción 3 (sin CLI detectado)\n'
+      option="3"
+    fi
+  else
+    option="$(read_line "Opción" "1")"
+  fi
 
   case "$option" in
     1)
@@ -317,8 +428,7 @@ local cmd="$cli run --dir '$ROOT'${flags}${model_flag} --auto \"\$(MEMENTO_WORKS
       printf 'Escribe el comando completo que inicia tu agente. Ejemplo:\n'
       printf '  <cli> run --dir . -i "$(python3 tools/bootstrap_context.py --print)"\n'
       local cmd
-      printf 'Comando MEMENTO_AGENT_CMD: '
-      read -r cmd
+      cmd="$(read_line "Comando MEMENTO_AGENT_CMD" "")"
       if [[ -z "$cmd" ]]; then
         warn "No se configuró comando de agente."
         return 0
@@ -328,7 +438,7 @@ local cmd="$cli run --dir '$ROOT'${flags}${model_flag} --auto \"\$(MEMENTO_WORKS
       ok "Comando de agente guardado en $AGENT_CMD_FILE"
       ;;
     *)
-      warn "No se configuró agente. Podrás ejecutar ./memento_start --print --no-services --limit 14 más tarde."
+      warn "No se configuró agente. Podrás ejecutar ./memento-start más tarde."
       ;;
   esac
 }
@@ -364,19 +474,114 @@ launch_agent_optional() {
 }
 
 print_next_steps() {
-  cat <<EOF
+   cat <<EOF
 
-Próximos comandos útiles:
+ Próximos comandos útiles (ejecuta desde la raíz del cliente):
 
-  ./memento_start --quick --limit 8
-  ./memento_start --print --no-services --limit 14
-  ./memento_start --services --launch-agent
-  python3 tools/bootstrap_context.py --print
+   ./memento-start --quick --limit 8
+   ./memento-start --print --no-services --limit 14
+   ./memento-start --services --launch-agent
 
-Si editaste .agent_context/secure/AGENT_CMD.env manualmente, recárgalo así:
+ O usa los comandos de la toolbelt (después de activar el venv o desde \$PATH):
 
-  export MEMENTO_AGENT_CMD="\$(cat .agent_context/secure/AGENT_CMD.env)"
+   memento-bootstrap --print
+   memento-doctor --startup
+   memento-selftest
+   memento-quick-scan <PATH>
+   memento-session-start --prepare-seed
+
+ Si editaste .agent_context/secure/AGENT_CMD.env manualmente, recárgalo así:
+
+   export MEMENTO_AGENT_CMD="\$(cat .agent_context/secure/AGENT_CMD.env)"
+
+ Nota: mementobloom está instalado como paquete editable en el venv del cliente.
+ Los ejecutables están en .memento/bin/ y venv/bin/.
+ El código fuente de mementobloom/ está ignorado en .gitignore del cliente.
+ EOF
+}
+
+create_client_start_script() {
+  local script_path="$ROOT/memento-start"
+  if [[ -f "$script_path" ]]; then
+    ok "Script de inicio de cliente ya existe: $script_path"
+    return 0
+  fi
+
+  cat > "$script_path" <<'EOSCRIPT'
+#!/bin/bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+BIN_DIR="$SCRIPT_DIR/.memento/bin"
+
+export MEMENTO_WORKSPACE="${MEMENTO_WORKSPACE:-$SCRIPT_DIR}"
+
+if [[ -d "$BIN_DIR" ]]; then
+  export PATH="$BIN_DIR:$PATH"
+fi
+
+seed="$SCRIPT_DIR/.agent_context/agent/agent-main.md"
+if [[ ! -f "$seed" ]]; then
+  memento-session-start --prepare-seed
+fi
+
+scan_globs=()
+for d in "$SCRIPT_DIR"/projects/*/; do
+  [[ -d "$d" ]] || continue
+  scan_globs+=("$d"HANDOFF_*.md)
+done
+
+if [[ ${#scan_globs[@]} -gt 0 ]]; then
+  memento-quick-scan "${scan_globs[@]}" || true
+fi
+
+if [[ -n "${MEMENTO_AGENT_CMD:-}" ]]; then
+  memento-session-start --launch-agent
+else
+  memento-session-start --print
+fi
+EOSCRIPT
+
+  chmod +x "$script_path"
+  ok "Script de inicio de cliente creado: $script_path"
+}
+
+update_client_gitignore() {
+  local gitignore="$ROOT/.gitignore"
+  local entries=(
+    ".agent_context/secure/"
+    ".agent_context/START_CONTEXT.md"
+    "memory/"
+    "projects/"
+    ".memento/"
+    "venv/"
+    "mementobloom/"
+    "*.pyc"
+    "__pycache__/"
+    ".env"
+  )
+
+  if [[ ! -f "$gitignore" ]]; then
+    cat > "$gitignore" <<'EOF'
 EOF
+  fi
+
+  local current
+  current="$(grep -E -v '^$|^#' "$gitignore" || true)"
+
+  local added=0
+  for entry in "${entries[@]}"; do
+    if ! grep -qxF "$entry" "$gitignore" 2>/dev/null; then
+      echo "$entry" >> "$gitignore"
+      added=$((added + 1))
+    fi
+  done
+
+  if [[ $added -gt 0 ]]; then
+    ok "Actualizado $gitignore (+$added reglas)"
+  else
+    ok "$gitignore ya contenía las reglas de exclusión"
+  fi
 }
 
 main() {
@@ -387,8 +592,12 @@ main() {
   cleanse_inherited_data
   setup_venv
   install_requirements
+  install_mementobloom_package
+  create_client_wrappers
   configure_user_context
   configure_agent_command
+  update_client_gitignore
+  create_client_start_script
   start_services_optional
   prepare_context
   launch_agent_optional

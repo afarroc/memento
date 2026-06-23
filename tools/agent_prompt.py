@@ -13,8 +13,9 @@ import json
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent
-INDEX_PATH = ROOT / "memory" / "graph" / "memory_index.json"
+from core.paths import workspace_root
+
+INDEX_PATH = workspace_root() / "memory" / "graph" / "memory_index.json"
 
 
 def load_context(limit: int) -> str:

@@ -4,9 +4,11 @@
 import json
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent
-MEMENTO = ROOT / ".memento" / "memory" / "graph" / "memory_index.json"
-MEMORY = ROOT / "memory" / "graph" / "memory_index.json"
+from core.paths import workspace_root
+
+WS = workspace_root()
+MEMENTO = WS / ".memento" / "memory" / "graph" / "memory_index.json"
+MEMORY = WS / "memory" / "graph" / "memory_index.json"
 
 def load(path):
     with open(path) as f:
