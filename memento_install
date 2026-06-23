@@ -5,9 +5,11 @@ MEMENTO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 if [[ -n "${MEMENTO_WORKSPACE:-}" ]]; then
   ROOT="$MEMENTO_WORKSPACE"
-elif [[ -d "$MEMENTO_DIR/.git" ]]; then
+elif [[ -d "$MEMENTO_DIR/.git" ]] && [[ ! -d "$(cd "$MEMENTO_DIR/.." && pwd)/.git" ]]; then
+  # Current dir has .git, parent doesn't -> development mode
   ROOT="$MEMENTO_DIR"
 else
+  # Client mode: parent directory is the workspace
   ROOT="$(cd "$MEMENTO_DIR/.." && pwd)"
 fi
 
@@ -497,7 +499,7 @@ print_next_steps() {
  Nota: mementobloom está instalado como paquete editable en el venv del cliente.
  Los ejecutables están en .memento/bin/ y venv/bin/.
  El código fuente de mementobloom/ está ignorado en .gitignore del cliente.
- EOF
+EOF
 }
 
 create_client_start_script() {
@@ -512,34 +514,15 @@ create_client_start_script() {
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-BIN_DIR="$SCRIPT_DIR/.memento/bin"
-
-export MEMENTO_WORKSPACE="${MEMENTO_WORKSPACE:-$SCRIPT_DIR}"
-
-if [[ -d "$BIN_DIR" ]]; then
-  export PATH="$BIN_DIR:$PATH"
-fi
-
-seed="$SCRIPT_DIR/.agent_context/agent/agent-main.md"
-if [[ ! -f "$seed" ]]; then
-  memento-session-start --prepare-seed
-fi
-
-scan_globs=()
-for d in "$SCRIPT_DIR"/projects/*/; do
-  [[ -d "$d" ]] || continue
-  scan_globs+=("$d"HANDOFF_*.md)
-done
-
-if [[ ${#scan_globs[@]} -gt 0 ]]; then
-  memento-quick-scan "${scan_globs[@]}" || true
-fi
-
-if [[ -n "${MEMENTO_AGENT_CMD:-}" ]]; then
-  memento-session-start --launch-agent
+PARENT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+if [[ -d "$PARENT_DIR/.git" ]]; then
+  export MEMENTO_WORKSPACE="${MEMENTO_WORKSPACE:-$PARENT_DIR}"
 else
-  memento-session-start --print
+  export MEMENTO_WORKSPACE="${MEMENTO_WORKSPACE:-$SCRIPT_DIR}"
 fi
+
+cd "$SCRIPT_DIR"
+exec python3 tools/session_start.py "$@"
 EOSCRIPT
 
   chmod +x "$script_path"
@@ -562,8 +545,7 @@ update_client_gitignore() {
   )
 
   if [[ ! -f "$gitignore" ]]; then
-    cat > "$gitignore" <<'EOF'
-EOF
+    : > "$gitignore"
   fi
 
   local current

@@ -290,20 +290,6 @@ def build_agent_content(project: str | None = None) -> tuple[str, str]:
         "---",
         f"<!-- generated-hash: {signature} -->",
         "",
-        f"# Agente de Memoria — Proyecto: {active_project}",
-        "",
-        f"Eres el agente de memoria histórica del proyecto **{active_project}**.",
-        "Tu función es mantener continuidad de contexto, memoria y estado entre sesiones.",
-        "Todas las instrucciones, entradas de memoria y handoffs pertenecen exclusivamente a este proyecto.",
-        "",
-        "Accesos recomendados:",
-        "- Configuración pública del proyecto: `.agent_context/PROJECT_META.md`.",
-        "- Contexto local sensible (no compartir): `.agent_context/secure/USER_CONTEXT.md`.",
-        "",
-        "## Semilla inicial",
-        init.strip(),
-        "",
-        "## Instrucciones progresivas cargadas",
     ]
 
     for path, content, ok in loaded:
