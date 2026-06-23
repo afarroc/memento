@@ -7,6 +7,7 @@ from typing import Any, Dict, Optional
 from core.git import check_ignore, git_diff_stat, git_status, latest_commit
 from core.index import build_manifest, count_by, default_index_path, load_index, resolve_index_path, top_entries
 from core.paths import ROOT, rel, workspace_root
+from core.services import service_status
 
 WS_ROOT = workspace_root()
 
