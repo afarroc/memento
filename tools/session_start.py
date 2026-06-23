@@ -19,8 +19,10 @@ from typing import Dict, List, Optional, Tuple
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from core.git import git_status as core_git_status, latest_commit as core_latest_commit
 from core.index import load_index, top_entries as core_top_entries, count_by, resolve_index_path
 from core.paths import ROOT, rel, workspace_root
+from core.services import service_status as core_service_status, service_summary as core_service_summary
 
 WS_ROOT = workspace_root()
 CONTEXT_ROOT = WS_ROOT
@@ -390,6 +392,18 @@ def build_context(limit: int, project: str | None = None, agent_result: dict | N
         )
     lines.extend([
         "",
+        "## Git state",
+        f"- {git_status_summary()}",
+        "",
+        "## Services",
+    ])
+    try:
+        services_data = core_service_status(fresh=False)
+        lines.append(core_service_summary(services_data))
+    except Exception as exc:
+        lines.append(f"- Services: error ({exc})")
+    lines.extend([
+        "",
         "## Safe next-session commands",
         f"- `python3 tools/session_start.py --quick --limit 8` (proyecto por defecto: {ROOT.name})",
         "- `python3 tools/bootstrap_context.py --print` imprime contexto universal para cualquier modelo.",
@@ -750,12 +764,10 @@ def main():
 
     if args.no_agent_seed:
         agent_result = {"status": "skipped", "path": str(AGENT_SEED), "hash": "?"}
-    elif args.prepare_seed or args.force_seed:
-        agent_result = ensure_agent_seed(force=args.force_seed or args.prepare_seed, project=project)
     else:
-        agent_result = {"status": "skipped", "path": str(AGENT_SEED), "hash": "?"}
+        agent_result = ensure_agent_seed(force=args.force_seed or args.prepare_seed, project=project)
     context = build_context(limit=args.limit, project=project, agent_result=agent_result)
-    if args.write_start_context and not args.no_write_context:
+    if not args.no_write_context:
         write_context(context)
     print(context, end="")
     print_agent_seed(agent_result)
