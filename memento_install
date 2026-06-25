@@ -194,29 +194,29 @@ install_mementobloom_package() {
 }
 
 create_client_wrappers() {
-  local bin_dir="$ROOT/.memento/bin"
-  mkdir -p "$bin_dir"
+   local bin_dir="$ROOT/.memento/bin"
+   mkdir -p "$bin_dir"
 
-  local modules=("bootstrap_context" "doctor" "selftest" "quick_scan" "context_builder" "session_start" "optimize_agent" "export_memory" "init_project" "clean_workspace")
-  for mod in "${modules[@]}"; do
-    local wrapper="$bin_dir/memento-$mod"
-    cat > "$wrapper" <<EOSCRIPT
+   local modules=("bootstrap_context" "doctor" "selftest" "quick_scan" "context_builder" "session_start" "optimize_agent" "export_memory" "init_project" "clean_workspace")
+   for mod in "${modules[@]}"; do
+     local wrapper="$bin_dir/memento-$mod"
+     cat > "$wrapper" <<EOSCRIPT
 #!/bin/bash
 set -euo pipefail
 SCRIPT_DIR="\$(cd "\$(dirname "\${BASH_SOURCE[0]}")" && pwd)"
-ROOT_DIR="\$(cd "\$SCRIPT_DIR/.." && pwd)"
+ROOT_DIR="\$(cd "\$SCRIPT_DIR/../.." && pwd)"
 export MEMENTO_WORKSPACE="\$ROOT_DIR"
 if [[ -x "\$ROOT_DIR/venv/bin/python" ]]; then
-  exec "\$ROOT_DIR/venv/bin/python" -m mementobloom.tools.$mod "\$@"
+  exec "\$ROOT_DIR/venv/bin/python" -m tools.$mod "\$@"
 else
-  exec python3 -m mementobloom.tools.$mod "\$@"
+  exec python3 -m tools.$mod "\$@"
 fi
 EOSCRIPT
-    chmod +x "$wrapper"
-  done
+     chmod +x "$wrapper"
+   done
 
-  ok "Wrappers creados en $bin_dir"
-}
+   ok "Wrappers creados en $bin_dir"
+ }
 
 ensure_agent_context_dirs() {
    mkdir -p "$ROOT/.agent_context/secure"
