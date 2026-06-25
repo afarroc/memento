@@ -10,4 +10,10 @@ requires-python = ">=3.9"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["core*", "tools*"]
+include = ["core*", "tools*", "memento*"]
+
+[project.scripts]
+memento-bootstrap = "tools.bootstrap_context:main"
+memento-doctor = "tools.doctor:main"
+memento-session-start = "tools.session_start:main"
+memento-quick-scan = "tools.quick_scan:main"

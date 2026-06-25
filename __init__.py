@@ -1,6 +1,10 @@
-from .core.seed_builder import SeedBuilder
-from .core.auto_ref import AutoRefEngine
-from .core.context_retriever import ContextRetriever
-from .models.memory_graph import MemoryGraph, MemoryNode
+"""MementoBloom - Sistema de Memoria Histórica IA.
+
+Este paquete proporciona herramientas de memoria y contexto.
+Cuando se instala como dependencia, actúa como una capa de servicios sin acoplamiento.
+"""
 
 __version__ = "0.1.0"
+
+# Nota: memento/ es un paquete hermano, no un submódulo.
+# Los imports relativos (from .memento) no funcionan aquí.

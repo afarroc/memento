@@ -17,14 +17,28 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+# Resolve workspace first before importing core modules
+MEMENTO_WORKSPACE = os.environ.get("MEMENTO_WORKSPACE")
+SCRIPT_ROOT = Path(__file__).resolve().parent.parent  # mementobloom/ directory
+
+# Determine correct paths based on execution context:
+# - Client mode: MEMENTO_WORKSPACE is the client workspace, core/ is in mementobloom/
+# - Dev mode: Running directly from mementobloom repo, no MEMENTO_WORKSPACE
+if MEMENTO_WORKSPACE:
+    WS_ROOT = Path(MEMENTO_WORKSPACE).expanduser().resolve()
+    MEMENTO_ROOT = WS_ROOT / "mementobloom"  # Client has mementobloom/ subdir
+else:
+    WS_ROOT = SCRIPT_ROOT  # Running from mementobloom repo directly
+    MEMENTO_ROOT = WS_ROOT  # Same directory in dev mode
+
+# Add mementobloom directory to path for core imports
+sys.path.insert(0, str(MEMENTO_ROOT))
 
 from core.git import check_ignore, git_diff_stat, git_status, latest_commit
 from core.index import count_by, latest_handoffs, load_index, resolve_index_path, top_entries
-from core.paths import ROOT, rel, workspace_root
+from core.paths import rel
 from core.services import service_status, service_summary
 
-WS_ROOT = workspace_root()
 INDEX_PATH = WS_ROOT / "memory" / "graph" / "memory_index.json"
 PROJECT_META = WS_ROOT / ".agent_context" / "PROJECT_META.md"
 USER_CONTEXT = WS_ROOT / ".agent_context" / "secure" / "USER_CONTEXT.md"
