@@ -134,7 +134,7 @@ Conclusión operativa: la fuente fiable es la respuesta directa de `doctor.py` e
 | T2.3 | Dockerfile + docker-compose.yml de referencia | pending | 2 |
 | T2.4 | Lockfiles y procedimiento de reproducible build | pending | 2 |
 | MB-Auth | Definir estrategia auth para escritura en `/api/v1/` (POST/PATCH) | pending | — |
-| MB-Docs | Actualizar este documento para reflejar nueva estructura | pending | — |
+| MB-Docs | Actualizar este documento para reflejar nueva estructura | completed | — |
 
 > `MB-Redis` fue resuelto y **ya no es bloqueador**.
 
