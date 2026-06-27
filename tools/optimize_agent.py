@@ -28,7 +28,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from core.git import check_ignore, git_diff_stat as core_git_diff_stat, git_status as core_git_status, latest_commit as core_latest_commit
 from core.index import count_by as core_count_by, load_index as core_load_index, top_entries as core_top_entries
-from core.paths import ROOT, workspace_root
+from core.paths import ROOT, workspace_root, detect_project_name
 from core.services import service_status as core_service_status
 
 WS = workspace_root()

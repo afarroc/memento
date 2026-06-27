@@ -13,7 +13,7 @@ M360 es el **gestor de proyectos oficial** de MementoBloom desde Junio 2026. Tod
 
 ### 1.1 Reglas transversales
 
-- Proyecto M360: **ID 60** "Memento desarrollo de si mismo" (`http://localhost:8000/events/projects/panel/60/`)
+- Proyecto M360: **ID 78** "MementoBloom - S-27-06" (`http://localhost:8000/events/projects/panel/78/`)
 - Credenciales M360: ver `.env` (`M360_USERNAME`, `M360_PASSWORD`) o vault_manager.py
 - Endpoints base: `http://127.0.0.1:8000/events/...`
 - M360 es la herramienta de ejecución; MementoBloom es la fuente de verdad de la planificación.
@@ -38,7 +38,7 @@ M360 es el **gestor de proyectos oficial** de MementoBloom desde Junio 2026. Tod
 
 ### 2.2 Estructura M360 en el proyecto
 
-- **Panel de proyectos:** `http://localhost:8000/events/projects/panel/60/`
+- **Panel de proyectos:** `http://localhost:8000/events/projects/panel/78/`
 - **Tablero Kanban:** `http://localhost:8000/events/kanban/`
 - **Inbox:** `http://localhost:8000/events/inbox/`
 - **Tareas:** `http://localhost:8000/events/tasks/`
@@ -54,7 +54,7 @@ M360 es el **gestor de proyectos oficial** de MementoBloom desde Junio 2026. Tod
 1. Planificación en MementoBloom: documento `docs/FASE_3_FLUJO_OPERATIVO.md` + `gtd_memento/03_templates/sprint_templates.csv`.
 2. Sincronización con M360:
    ```bash
-   python3 tools/sync_sprint.py --sprint SPRINT_X --project-id 60
+   python3 tools/sync_sprint.py --sprint SPRINT_X --project-id 78
    ```
 3. Ejecución en M360:
    - Tareas / Kanban / Eventos / Recordatorios son gestionados por el equipo en interfaz M360.
@@ -66,7 +66,7 @@ M360 es el **gestor de proyectos oficial** de MementoBloom desde Junio 2026. Tod
 
 | ID | Tipo | Descripción | Estado M360 | Criterios de aceptación |
 |----|------|-------------|-------------|--------------------------|
-| SPRINT_0 | Proyecto/tareas/evento | Corregir panel_server.py, paths y Redis | Sincronizado | `sync_sprint.py --sprint SPRINT_0 --project-id 60` ok=7 |
+| SPRINT_0 | Proyecto/tareas/evento | Corregir panel_server.py, paths y Redis | Sincronizado | `sync_sprint.py --sprint SPRINT_0 --project-id 78` ok=7 |
 | SPRINT_1 | Tareas | Namespacing Redis + detección de puertos | Pendiente | Sincronizar y validar en Kanban |
 | SPRINT_2 | Tareas | Portabilidad de instalador + Dockerfile | Pendiente | Sincronizar y validar |
 | SPRINT_3 | Tareas | Seguridad + vault + .gitignore | Pendiente | Sincronizar y validar |
@@ -81,7 +81,7 @@ M360 es el **gestor de proyectos oficial** de MementoBloom desde Junio 2026. Tod
 
 - **ID:** 60
 - **Nombre:** Memento desarrollo de si mismo
-- **URL:** `http://localhost:8000/events/projects/panel/60/`
+- **URL:** `http://localhost:8000/events/projects/panel/78/`
 - **Regla:** todas las tareas de MementoBloom deben asociarse a este proyecto salvo que se cree uno nuevo formalmente.
 
 ### 4.2 Kanban
@@ -108,12 +108,7 @@ M360 es el **gestor de proyectos oficial** de MementoBloom desde Junio 2026. Tod
 
 | Comando | Propósito | Frecuencia |
 |---------|-----------|------------|
-| `python3 tools/sync_sprint.py --sprint SPRINT_X --project-id 60` | Sincronizar un sprint completo | Al final de planning y al cerrar sprint |
-| `python3 tools/session_start.py --services-only` | Verificar salud de servicios | Al inicio de cada sesión |
-| `python3 tools/selftest.py` | Ejecutar pruebas locales | Tras cambios en bridge/core |
-| `python3 tools/doctor.py --startup` | Diagnóstico local | Tras cambios de configuración |
-
-### 5.2 Flujo de sincronización
+| `python3 tools/sync_sprint.py --sprint SPRINT_X --project-id 78` | Sincronizar un sprint completo | Al final de planning y al cerrar sprint |
 
 ```
 [M365] gtd_memento                        [M360]
@@ -193,7 +188,7 @@ Todo cambio relevante debe cerrar sesión con:
 1. Validar sincronización de **SPRINT_0** completada (`ok=7, errors=0`)
 2. Ejecutar SPROUT_1:
    ```bash
-   python3 tools/sync_sprint.py --sprint SPRINT_1 --project-id 60
+    python3 tools/sync_sprint.py --sprint SPRINT_1 --project-id 78
    ```
 3. Actualizar `gtd_memento/04_sprints/SPRINT_1_PLAN.md`
 4. Ejecutar selftest y doctor local
