@@ -3,24 +3,21 @@
     "project": "mementobloom",
     "role": "asistente-gtd",
     "workspace": "/Volumes/Macintosh HD - Datos/mementobloom",
-    "last_event_time": "2026-06-27T17:40:36.816104",
+    "last_event_time": "2026-06-27T18:32:30.221918",
     "last_event_type": "bootstrap",
-    "last_event_summary": "fix(gitignore): allow PROJECT_CONTEXT.md while keeping START/USER_CONTEXT.md ignored, sync PROJECT_CONTEXT.md and SESSION.md",
+    "last_event_summary": "chore(auth): add m360 auth test tool and update session status",
     "git_branch": "master",
-    "git_commit": "01e8f7f",
-    "generated_at": "2026-06-27T17:40:36.816104",
-    "next_review": "2026-06-28T17:40:41.547732"
+    "git_commit": "caebe43",
+    "generated_at": "2026-06-27T18:32:30.221918",
+    "next_review": "2026-06-28T18:32:33.894516"
   },
   "state": {
     "git": {
       "branch": "master",
-      "commit_hash": "01e8f7f",
-      "commit_message": "fix(gitignore): allow PROJECT_CONTEXT.md while keeping START/USER_CONTEXT.md ignored, sync PROJECT_CONTEXT.md and SESSION.md",
-      "pending_count": 5,
+      "commit_hash": "caebe43",
+      "commit_message": "chore(auth): add m360 auth test tool and update session status",
+      "pending_count": 2,
       "pending": [
-        "M .env.example",
-        " M SESSION.md",
-        " M tools/m360_bridge/client.py",
         "?? gtd_memento/",
         "?? projects/m360/context/"
       ]
@@ -32,7 +29,7 @@
     },
     "memory": {
       "indexed_entries": 161,
-      "manifest_ts": "2026-06-27T17:40:41"
+      "manifest_ts": "2026-06-27T18:32:33"
     }
   },
   "pending_tasks": [
@@ -63,12 +60,12 @@
     {
       "id": "MB-Auth",
       "description": "Definir estrategia auth para escritura en /api/v1/ (POST/PATCH)",
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "MB-Redis",
       "description": "Resolver disponibilidad de Redis para panel/sala",
-      "status": "blocked"
+      "status": "completed"
     },
     {
       "id": "MB-Docs",
