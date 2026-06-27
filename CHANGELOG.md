@@ -38,12 +38,6 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
-## [Unreleased]
-### Pendiente
-- Commit de cambios locales de Management360 pendientes de versionar
-
----
-
 ## 2026-06-27 — Integración M360 API v1
 - API genérica `/api/v1/` implementada y verificada en Management360 (projects, tasks, events, reminders, inbox)
 - Serializers extendidos con campos escribibles (`project_status_id`, `host_id`, `assigned_to_id`, `task_status_id`, `event_status_id`)
@@ -51,6 +45,12 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 - Evolución de `tools/sync_sprint.py` para consumir `/api/v1/` (project+tareas+eventos+recordatorios)
 - Sincronización de sprint verificada: `ok=7 errors=0` (proyecto + 3 tareas + 2 eventos + recordatorio)
 - Documentación actualizada en M360 (`docs/ESTADO_PROYECTO.md`) y handoff creado
+
+## 2026-06-27 — `f8dae41`
+feat: herramienta project_status.py para reporte consolidado de estado
+
+## 2026-06-27 — `0b9ec58`
+docs: actualizar NEXT_SESSION.md con estado post Sprint 1 y herramientas backup/personalidad
 
 ## 2026-06-27 — `ed924ef`
 docs: agregar CHANGELOG.md con historial de cambios versionados
