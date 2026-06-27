@@ -3,24 +3,22 @@
     "project": "mementobloom",
     "role": "asistente-gtd",
     "workspace": "/Volumes/Macintosh HD - Datos/mementobloom",
-    "last_event_time": "2026-06-27T17:01:23.409877",
+    "last_event_time": "2026-06-27T17:14:33.484921",
     "last_event_type": "bootstrap",
-    "last_event_summary": "fix(panel): use SALA_HOST env in sala endpoint and stats URL",
+    "last_event_summary": "cierre: panel env fix, service_status host env, session refresh",
     "git_branch": "master",
-    "git_commit": "0cf47fc",
-    "generated_at": "2026-06-27T17:01:23.409877",
-    "next_review": "2026-06-28T17:01:25.351000"
+    "git_commit": "df74636",
+    "generated_at": "2026-06-27T17:14:33.484921",
+    "next_review": "2026-06-28T17:14:36.586062"
   },
   "state": {
     "git": {
       "branch": "master",
-      "commit_hash": "0cf47fc",
-      "commit_message": "fix(panel): use SALA_HOST env in sala endpoint and stats URL",
-      "pending_count": 4,
+      "commit_hash": "df74636",
+      "commit_message": "cierre: panel env fix, service_status host env, session refresh",
+      "pending_count": 2,
       "pending": [
         "M SESSION.md",
-        " M core/services.py",
-        " M tools/project_status.py",
         "?? gtd_memento/"
       ]
     },
@@ -30,8 +28,8 @@
       "redis": "OK"
     },
     "memory": {
-      "indexed_entries": 111,
-      "manifest_ts": "2026-06-27T17:01:25"
+      "indexed_entries": 159,
+      "manifest_ts": "2026-06-27T17:14:36"
     }
   },
   "pending_tasks": [
