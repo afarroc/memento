@@ -80,7 +80,7 @@ def read_file(path: Path) -> Dict[str, Any]:
         "path": rel(path),
         "lines": len(text.splitlines()),
         "chars": len(text),
-        "summary": " ".join(summary.split())[:700],
+        "summary": " ".join(summary.split()),
     }
 
 
