@@ -219,6 +219,52 @@ def format_markdown(context: Dict[str, Any]) -> str:
     return "\n".join(lines) + "\n"
 
 
+def write_session_md(context: Dict[str, Any]) -> None:
+    session_file = WS_ROOT / "SESSION.md"
+    git = context.get("git", {})
+    services_data = context.get("services", {})
+    memory = context.get("memory", {})
+    session = {
+        "session": {
+            "project": context.get("environment", {}).get("project", "mementobloom"),
+            "role": "asistente-gtd",
+            "workspace": str(WS_ROOT),
+            "last_event_time": context.get("generated_at"),
+            "last_event_type": "bootstrap",
+            "last_event_summary": git.get("latest_commit", {}).get("message", "Bootstrap ejecutado"),
+            "git_branch": git.get("latest_commit", {}).get("branch", "unknown"),
+            "git_commit": git.get("latest_commit", {}).get("hash", "unknown"),
+            "generated_at": context.get("generated_at"),
+        },
+        "state": {
+            "git": {
+                "branch": git.get("latest_commit", {}).get("branch", "unknown"),
+                "commit_hash": git.get("latest_commit", {}).get("hash", "unknown"),
+                "commit_message": git.get("latest_commit", {}).get("message", "unknown"),
+                "pending_count": git.get("status", {}).get("change_count", 0),
+            },
+            "services": {
+                "sala": services_data.get("sala", "NO"),
+                "panel": services_data.get("panel", "NO"),
+                "redis": services_data.get("redis", "NO"),
+            },
+            "memory": {
+                "indexed_entries": memory.get("entries", 0),
+                "manifest_ts": memory.get("manifest_ts", ""),
+            },
+        },
+        "forbidden_paths": [
+            ".agent_context/secure/*",
+            "memory/**/*.json",
+            "*.env",
+            ".memento/**",
+            "archive/**",
+        ],
+        "entrypoint": "python3 tools/session_bootstrap.py",
+    }
+    session_file.write_text(json.dumps(session, indent=2, ensure_ascii=False), encoding="utf-8")
+
+
 def main(argv: Optional[List[str]] = None) -> int:
     parser = argparse.ArgumentParser(description="Imprime contexto universal modelo-agnóstico para MementoBloom")
     parser.add_argument("--print", action="store_true", help="Imprime contexto en Markdown")
@@ -239,6 +285,9 @@ def main(argv: Optional[List[str]] = None) -> int:
         check_services=not args.no_services,
         fresh_health=args.fresh_health,
     )
+
+    write_session_md(context)
+
     if args.json:
         print(json.dumps(context, indent=2, ensure_ascii=False))
     else:

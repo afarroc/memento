@@ -27,18 +27,18 @@ Ver `.agent_context/secure/USER_CONTEXT.md` para configuración contextual espec
 Arquitectura de continuidad:
 
 ```text
-PROJECT_META.md → USER_CONTEXT.md → memory/personality/user_personality.md → START_CONTEXT.md → tools/bootstrap_context.py → handoffs → memory_index.json → IA
+SESSION.md → PROJECT_META.md → USER_CONTEXT.md → memory/personality/user_personality.md → tools/session_bootstrap.py → handoffs → memory_index.json → IA
 ```
 
 Archivos críticos:
 
+- `SESSION.md`: estado canónico de sesión, generado automáticamente, no trackeable.
 - `.agent_context/PROJECT_META.md`: meta del proyecto, trackeable.
 - `.agent_context/secure/USER_CONTEXT.md`: contexto local del usuario, no trackeable.
 - `memory/personality/user_personality.md`: memoria de personalidad del usuario, no trackeable.
-- `.agent_context/START_CONTEXT.md`: contexto local regenerable, no trackeable.
 - `memory/graph/memory_index.json`: memoria compacta, no trackeable.
 - `projects/*/HANDOFF_*.md`: handoffs locales del proyecto activo, no trackeables.
-- `tools/bootstrap_context.py`: bootstrap universal para cualquier modelo, CLI o agente.
+- `tools/session_bootstrap.py`: bootstrap universal para cualquier modelo, CLI o agente.
 - `tools/context_builder.py`: contexto ranked para revisión más profunda.
 
 ## Personalidad del agente

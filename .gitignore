@@ -18,6 +18,7 @@ session_record.json
 sessions/
 memory/
 .memento_runtime/
+SESSION_REPORT.md
 uploads/
 <body>.html
 *HANDOFF*.md
