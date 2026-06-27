@@ -167,7 +167,7 @@ class M360Client:
         except (urllib.error.URLError, TimeoutError, OSError) as exc:
             return {"network_error": str(exc)}
 
-    def _request_json(self, path: str, payload: Optional[Dict[str, Any]] = None, method: str = "POST") -> Dict[str, Any]:
+    def _request_json(self, path: str, payload: Optional[Dict[str, Any]] = None, method: str = "POST", _retry: bool = False) -> Dict[str, Any]:
         url = f"{self.base_url}{path}"
         if self._csrf is None:
             self._init_session()
@@ -196,6 +196,11 @@ class M360Client:
             if exc.code in (301, 302, 303, 307, 308) and "Location" in exc.headers:
                 result["redirect"] = exc.headers["Location"]
                 result["ok"] = True
+            if exc.code in (401, 403) and not _retry:
+                self._csrf = None
+                self._session_user = None
+                self._init_session()
+                return self._request_json(path, payload, method, _retry=True)
             return result
         except (urllib.error.URLError, TimeoutError, OSError) as exc:
             return {"network_error": str(exc)}
@@ -371,6 +376,7 @@ class M360Client:
             "remind_at": remind_at,
             "title": kwargs.get("title") or "Sprint reminder",
             "reminder_type": kwargs.get("reminder_type", "email"),
+            "created_by_id": kwargs.get("created_by_id", self._current_user_id() or 1),
         }
         if kwargs.get("reminder_type") == "sprint":
             payload["reminder_type"] = "email"
