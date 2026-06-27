@@ -3,24 +3,24 @@
     "project": "mementobloom",
     "role": "asistente-gtd",
     "workspace": "/Volumes/Macintosh HD - Datos/mementobloom",
-    "last_event_time": "2026-06-27T15:35:12.472976",
+    "last_event_time": "2026-06-27T17:01:23.409877",
     "last_event_type": "bootstrap",
-    "last_event_summary": "feat(contract): Fase 4 - tools/session_diff.py para delta semántico",
+    "last_event_summary": "fix(panel): use SALA_HOST env in sala endpoint and stats URL",
     "git_branch": "master",
-    "git_commit": "d3458f0",
-    "generated_at": "2026-06-27T15:35:12.472976",
-    "next_review": "2026-06-28T15:35:16.178050"
+    "git_commit": "0cf47fc",
+    "generated_at": "2026-06-27T17:01:23.409877",
+    "next_review": "2026-06-28T17:01:25.351000"
   },
   "state": {
     "git": {
       "branch": "master",
-      "commit_hash": "d3458f0",
-      "commit_message": "feat(contract): Fase 4 - tools/session_diff.py para delta semántico",
+      "commit_hash": "0cf47fc",
+      "commit_message": "fix(panel): use SALA_HOST env in sala endpoint and stats URL",
       "pending_count": 4,
       "pending": [
         "M SESSION.md",
         " M core/services.py",
-        " M tools/session_bootstrap.py",
+        " M tools/project_status.py",
         "?? gtd_memento/"
       ]
     },
@@ -30,8 +30,8 @@
       "redis": "OK"
     },
     "memory": {
-      "indexed_entries": 110,
-      "manifest_ts": "2026-06-27T15:35:16"
+      "indexed_entries": 111,
+      "manifest_ts": "2026-06-27T17:01:25"
     }
   },
   "pending_tasks": [

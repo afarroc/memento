@@ -81,14 +81,24 @@ def _memory_info() -> Dict[str, Any]:
 def _services_info() -> Dict[str, Any]:
     doctor = _run("python3 tools/doctor.py --startup")
     services = {"redis": "NO", "sala": "NO", "panel": "NO"}
+    # Parse doctor output using case-insensitive matching for each service marker
     for line in doctor.splitlines():
         low = line.lower()
         if "redis:" in low:
-            services["redis"] = line.split(":", 1)[1].strip().split()[0]
+            # Extract the status word after "redis:"
+            parts = line.split(":", 1)
+            if len(parts) > 1:
+                status = parts[1].strip().split()[0].upper()
+                if status in {"OK", "PONG"}:
+                    services["redis"] = "OK"
+                else:
+                    services["redis"] = "NO"
         if "sala:" in low:
-            services["sala"] = "OK" if "ok" in low else "NO"
+            status = line.split(":", 1)[1].strip().split()[0].upper()
+            services["sala"] = "OK" if status == "OK" else "NO"
         if "panel:" in low:
-            services["panel"] = "OK" if "ok" in low else "NO"
+            status = line.split(":", 1)[1].strip().split()[0].upper()
+            services["panel"] = "OK" if status == "OK" else "NO"
     return services
 
 
