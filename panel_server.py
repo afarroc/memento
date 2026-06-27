@@ -54,7 +54,7 @@ SERVICES = {
         ServiceEndpoint("local", "localhost", 5037, "local"),
     ],
     "sala": [
-        ServiceEndpoint("local", "127.0.0.1", int(os.environ.get("SALA_PORT", "8767")), "local"),
+        ServiceEndpoint("local", os.environ.get("SALA_HOST", "127.0.0.1"), int(os.environ.get("SALA_PORT", "8767")), "local"),
     ],
 }
 
@@ -135,10 +135,11 @@ def get_git_status():
         return {"clean": False, "raw": ""}
 
 def get_sala_stats():
+    sala_host = os.environ.get("SALA_HOST", "127.0.0.1")
     sala_port = int(os.environ.get("SALA_PORT", "8767"))
     try:
         import urllib.request
-        with urllib.request.urlopen(f"http://127.0.0.1:{sala_port}/stats", timeout=2) as resp:
+        with urllib.request.urlopen(f"http://{sala_host}:{sala_port}/stats", timeout=2) as resp:
             return json.loads(resp.read().decode())
     except:
         return {"error": "sala no disponible"}
