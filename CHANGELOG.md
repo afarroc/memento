@@ -40,6 +40,32 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ## [Unreleased]
 ### Pendiente
-- API genérica `/api/v1/` para Management360 (M360-1 a M360-4)
-- Evolución de `tools/m360_bridge/client.py` y `tools/sync_sprint.py` para consumo de `/api/v1/`
 - Commit de cambios locales de Management360 pendientes de versionar
+
+---
+
+## 2026-06-27 — Integración M360 API v1
+- API genérica `/api/v1/` implementada y verificada en Management360 (projects, tasks, events, reminders, inbox)
+- Serializers extendidos con campos escribibles (`project_status_id`, `host_id`, `assigned_to_id`, `task_status_id`, `event_status_id`)
+- Evolución de `tools/m360_bridge/client.py` con métodos API v1 (`_request_json`, `api_v1_*`)
+- Evolución de `tools/sync_sprint.py` para consumir `/api/v1/` (project+tareas+eventos+recordatorios)
+- Sincronización de sprint verificada: `ok=7 errors=0` (proyecto + 3 tareas + 2 eventos + recordatorio)
+- Documentación actualizada en M360 (`docs/ESTADO_PROYECTO.md`) y handoff creado
+
+## 2026-06-27 — `ed924ef`
+docs: agregar CHANGELOG.md con historial de cambios versionados
+
+## 2026-06-27 — `4778b3a`
+docs: actualizar NEXT_SESSION.md con Sprint 0-1 completados y API M360 pendiente
+
+## 2026-06-27 — `0626740`
+chore: excluir gtd_memento/ y saneada config.yaml
+
+## 2026-06-27 — `7a2e355`
+feat(release): completar Sprint 0 y Sprint 1 con saneamiento de seguridad
+
+## 2026-06-27 — `b2fc124`
+fix: correct client wrapper paths in memento_install
+
+## 2026-06-27 — `4746eb1`
+feat: complete dual architecture support for mementobloom package

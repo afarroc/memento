@@ -187,12 +187,9 @@ class M360Sync:
         if project_id is not None:
             result.add_ok(f"usando proyecto existente id={project_id}")
         else:
-            project_resp = self.client.create_project(
-                name=spec.project_name,
+            project_resp = self.client.api_v1_create_project(
+                title=spec.project_name,
                 description=spec.project_description,
-                start_date=spec.project_start,
-                end_date=spec.project_end,
-                status=spec.project_status,
             )
             project_id = self._extract_id(project_resp)
             if project_id is None and not project_resp.get("ok"):
@@ -208,13 +205,10 @@ class M360Sync:
         task_id_map: Dict[str, int] = {}
         if spec.tasks:
             for task in spec.tasks:
-                task_resp = self.client.create_task(
+                task_resp = self.client.api_v1_create_task(
                     title=task.title,
                     project_id=project_id,
                     description=task.description,
-                    task_status=task.status if isinstance(task.status, int) else 1,
-                    assigned_to=1,
-                    ticket_price=0,
                 )
                 new_task_id = self._extract_id(task_resp)
                 if new_task_id is None and not task_resp.get("ok"):
@@ -230,15 +224,9 @@ class M360Sync:
 
         if spec.events:
             for event in spec.events:
-                event_resp = self.client.create_event(
+                event_resp = self.client.api_v1_create_event(
                     title=event.title,
-                    start_date=event.start_date,
-                    end_date=event.end_date,
-                    status=event.status,
-                    category=event.category,
                     description=event.description,
-                    price=event.price,
-                    capacity=event.capacity,
                 )
                 if not event_resp.get("ok") and "http_error" in event_resp and str(event_resp.get("http_error")).startswith("4"):
                     result.add_error("event", f"Error creando {event.id}: {event_resp}")
@@ -248,11 +236,11 @@ class M360Sync:
         if spec.reminders:
             for reminder in spec.reminders:
                 resolved_task_id = task_id_map.get(reminder.task_id) if reminder.task_id else None
-                reminder_resp = self.client.create_reminder(
+                reminder_resp = self.client.api_v1_create_reminder(
                     remind_at=reminder.remind_at,
+                    reminder_type=reminder.reminder_type,
                     task_id=resolved_task_id,
                     project_id=project_id,
-                    reminder_type=reminder.reminder_type,
                 )
                 if not reminder_resp.get("ok") and "http_error" in reminder_resp and str(reminder_resp.get("http_error")).startswith("4"):
                     result.add_error("reminder", f"Error creando recordatorio {reminder.id}: {reminder_resp}")
