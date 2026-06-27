@@ -22,7 +22,9 @@ SESSION_REPORT.md
 uploads/
 <body>.html
 *HANDOFF*.md
-*_CONTEXT.md
+# *_CONTEXT.md removido para permitir PROJECT_CONTEXT.md; START/USER se excluyen explícitamente abajo
+START_CONTEXT.md
+USER_CONTEXT.md
 .agent_context/START_CONTEXT.md
 .agent_context/USER_CONTEXT.md
 

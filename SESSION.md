@@ -3,19 +3,19 @@
     "project": "mementobloom",
     "role": "asistente-gtd",
     "workspace": "/Volumes/Macintosh HD - Datos/mementobloom",
-    "last_event_time": "2026-06-27T17:14:33.484921",
+    "last_event_time": "2026-06-27T17:21:53.650995",
     "last_event_type": "bootstrap",
-    "last_event_summary": "cierre: panel env fix, service_status host env, session refresh",
+    "last_event_summary": "feat(status): converge panel/sala service reporting and purge stale cache",
     "git_branch": "master",
-    "git_commit": "df74636",
-    "generated_at": "2026-06-27T17:14:33.484921",
-    "next_review": "2026-06-28T17:14:36.586062"
+    "git_commit": "e22e51a",
+    "generated_at": "2026-06-27T17:21:53.650995",
+    "next_review": "2026-06-28T17:21:57.828282"
   },
   "state": {
     "git": {
       "branch": "master",
-      "commit_hash": "df74636",
-      "commit_message": "cierre: panel env fix, service_status host env, session refresh",
+      "commit_hash": "e22e51a",
+      "commit_message": "feat(status): converge panel/sala service reporting and purge stale cache",
       "pending_count": 2,
       "pending": [
         "M SESSION.md",
@@ -29,7 +29,7 @@
     },
     "memory": {
       "indexed_entries": 159,
-      "manifest_ts": "2026-06-27T17:14:36"
+      "manifest_ts": "2026-06-27T17:21:57"
     }
   },
   "pending_tasks": [
