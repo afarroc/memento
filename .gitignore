@@ -83,8 +83,11 @@ build/
 .agent_context/node_modules/
 .agent_context/package-lock.json
 
-# === GTD / DATOS LOCALES DEL USUARIO ===
-gtd_memento/
+# === BACKUPS LOCALES (NO VERSIONAR) ===
+.backups/
+
+# === PERSONALIDAD ===
+memory/personality/user_personality.md
 
 # === KILO CLI CONFIG (LOCAL ONLY) ===
 .kilo/

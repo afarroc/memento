@@ -65,6 +65,7 @@ Comandos base:
 python3 tools/bootstrap_context.py --print
 python3 tools/context_builder.py --limit 12
 python3 tools/quick_scan.py <HANDOFF_PATH>
+python3 tools/backup_local.py backup
 ```
 
 Comandos opcionales:

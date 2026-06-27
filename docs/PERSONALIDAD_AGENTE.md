@@ -12,23 +12,42 @@ La personalidad opera en dos capas:
 
 | Capa | Ruta | Naturaleza | Propósito |
 |------|------|------------|-----------|
-| Especificación | `.agent_context/agent/instructions/10-personality.md` | Trackeada | Define valores, tono y reglas de comportamiento del agente |
+| Template | `memory/personality/user_personality.example.md` | Trackeable | Estructura base y ejemplo de personalidad |
 | Memoria viva | `memory/personality/user_personality.md` | No trackeada | Perfil dinámico del usuario (preferencias, estilo, contexto operativo) |
 
 ---
 
-## 2. Comportamiento base del agente
+## 2. Inicialización
+
+Ejecutar una sola vez después de instalar:
+
+```bash
+python3 tools/init_personality.py
+```
+
+Esto copia el template a `user_personality.md`. El archivo resultante está en `.gitignore` y nunca se sube al repositorio.
+
+Para sobrescribir:
+```bash
+python3 tools/init_personality.py --force
+```
+
+---
+
+## 3. Comportamiento base del agente
 
 - **Tono:** directo, técnico, sin relleno, orientado a ejecución.
 - **Valores:** claridad, trazabilidad, acción, respeto por lo existente.
 - **Estilo:** frases cortas, bullets, resultados verificables. Evita conversational filler y disclaimers.
 - **Identidad:** Kilo — curador de memoria y ejecutor del proyecto.
+- **Calibración:** lee `memory/personality/user_personality.md` al inicio de cada sesión.
 
 ---
 
-## 3. Memoria de personalidad del usuario
+## 4. Memoria de personalidad del usuario
 
-Archivo: `memory/personality/user_personality.md`
+Template: `memory/personality/user_personality.example.md`  
+Archivo local: `memory/personality/user_personality.md` (no versionado)
 
 Campos esperados:
 - Nombre y alias
@@ -45,27 +64,28 @@ Reglas:
 
 ---
 
-## 4. Integración con el flujo de arranque
+## 5. Integración con el flujo de arranque
 
 1. Leer `PROJECT_META.md`
 2. Leer `USER_CONTEXT.md` (si existe)
-3. Leer `memory/personality/user_personality.md`
+3. Leer `memory/personality/user_personality.md` (si existe)
 4. Leer `START_CONTEXT.md`
 5. Ejecutar `bootstrap_context.py --print`
 6. Cargar handoffs recientes desde `projects/`
 
 ---
 
-## 5. Relación con otros sistemas
+## 6. Relación con otros sistemas
 
 - **Memoria histórica:** `memory/graph/memory_index.json` (índice compacto)
 - **Contexto operativo:** `.agent_context/START_CONTEXT.md` (regenerable)
+- **Template personalidad:** `memory/personality/user_personality.example.md`
 - **Proyectos externos:** `projects/{m360,ventas_porta,mementobloom}/`
 - **GTD local:** `gtd_memento/` (dato local del usuario, no versionado)
 
 ---
 
-## 6. Evolución permitida
+## 7. Evolución permitida
 
 El agente puede ajustar:
 - Tono y formato de respuesta
@@ -76,3 +96,29 @@ El agente NO puede:
 - Eliminar memoria sin instrucción explícita
 - Exponer secretos o credenciales
 - Modificar configuración de seguridad sin confirmación
+- Hacer commit de `user_personality.md` (está en `.gitignore`)
+
+---
+
+## 8. Backup automático
+
+Herramienta: `tools/backup_local.py`
+
+```bash
+# Crear backup manual
+python3 tools/backup_local.py backup
+
+# Crear backup comprimido
+python3 tools/backup_local.py backup --compress
+
+# Restaurar (dry-run)
+python3 tools/backup_local.py restore 20260627_131520 --dry-run
+
+# Restaurar (efectivo)
+python3 tools/backup_local.py restore 20260627_131520
+```
+
+Los backups se guardan en `.backups/<YYYYMMDD_HHMMSS>/` (ignorado por git).
+Incluye: `.agent_context/START_CONTEXT.md`, `.env`, `gtd_memento/`, `memory/personality/`, `projects/m360/`, `projects/ventas_porta/`.
+
+Regla: ejecutar backup antes de cambios estructurales en `.gitignore`, `projects/`, `memory/` o `tools/`.
