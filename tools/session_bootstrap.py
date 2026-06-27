@@ -21,9 +21,14 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, Optional
 
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from core.paths import workspace_root
+
 WS = Path(__file__).resolve().parent.parent
-SESSION_FILE = WS / "SESSION.md"
-SESSION_REPORT_FILE = WS / "SESSION_REPORT.md"
+WS_ROOT = workspace_root()
+SESSION_FILE = WS_ROOT / "SESSION.md"
+SESSION_REPORT_FILE = WS_ROOT / "SESSION_REPORT.md"
 
 
 def _run(cmd: str, cwd: Path = WS, timeout: int = 15) -> str:
@@ -106,7 +111,7 @@ def build_session() -> Dict[str, Any]:
         "session": {
             "project": "mementobloom",
             "role": "asistente-gtd",
-            "workspace": str(WS),
+            "workspace": str(WS_ROOT),
             "last_event_time": now,
             "last_event_type": "bootstrap",
             "last_event_summary": git.get("commit_message", "Sesión iniciada"),
@@ -129,10 +134,7 @@ def build_session() -> Dict[str, Any]:
             {"id": "MB-Redis", "description": "Resolver disponibilidad de Redis para panel/sala", "status": "blocked"},
             {"id": "MB-Docs", "description": "Actualizar docs/PROJECT_CONTEXT.md para reflejar nueva estructura", "status": "pending"},
         ],
-        "blockers": existing.get("blockers") or [
-            "Redis no disponible localmente (localhost:6379)",
-            "Múltiples scripts de arranque (requiere consolidación)"
-        ],
+        "blockers": existing.get("blockers") or [],
         "forbidden_paths": [
             ".agent_context/secure/*",
             "memory/**/*.json",

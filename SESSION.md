@@ -3,35 +3,35 @@
     "project": "mementobloom",
     "role": "asistente-gtd",
     "workspace": "/Volumes/Macintosh HD - Datos/mementobloom",
-    "last_event_time": "2026-06-27T14:55:47.661607",
+    "last_event_time": "2026-06-27T15:35:12.472976",
     "last_event_type": "bootstrap",
-    "last_event_summary": "feat(contract): Fase 2 SESSION_CONTRACT - vistas derivadas y limpieza",
+    "last_event_summary": "feat(contract): Fase 4 - tools/session_diff.py para delta semántico",
     "git_branch": "master",
-    "git_commit": "a3573d1",
-    "generated_at": "2026-06-27T14:55:47.661607",
-    "next_review": "2026-06-28T14:55:50.939332"
+    "git_commit": "d3458f0",
+    "generated_at": "2026-06-27T15:35:12.472976",
+    "next_review": "2026-06-28T15:35:16.178050"
   },
   "state": {
     "git": {
       "branch": "master",
-      "commit_hash": "a3573d1",
-      "commit_message": "feat(contract): Fase 2 SESSION_CONTRACT - vistas derivadas y limpieza",
+      "commit_hash": "d3458f0",
+      "commit_message": "feat(contract): Fase 4 - tools/session_diff.py para delta semántico",
       "pending_count": 4,
       "pending": [
-        "M .agent_context/START_CONTEXT.md",
-        " M SESSION.md",
-        " M tools/session_render.py",
+        "M SESSION.md",
+        " M core/services.py",
+        " M tools/session_bootstrap.py",
         "?? gtd_memento/"
       ]
     },
     "services": {
       "sala": "OK",
-      "panel": "NO",
-      "redis": "NO"
+      "panel": "OK",
+      "redis": "OK"
     },
     "memory": {
       "indexed_entries": 110,
-      "manifest_ts": "2026-06-27T14:55:50"
+      "manifest_ts": "2026-06-27T15:35:16"
     }
   },
   "pending_tasks": [
@@ -75,10 +75,7 @@
       "status": "pending"
     }
   ],
-  "blockers": [
-    "Redis no disponible localmente (localhost:6379)",
-    "Múltiples scripts de arranque (requiere consolidación)"
-  ],
+  "blockers": [],
   "forbidden_paths": [
     ".agent_context/secure/*",
     "memory/**/*.json",

@@ -11,7 +11,28 @@ from typing import Any, Dict, Optional
 
 from core.paths import ROOT, detect_project_name, ensure_dir, workspace_root
 
-REDIS_HOST = os.environ.get("REDIS_HOST", os.environ.get("MEMENTO_REDIS_HOST", "localhost"))
+
+def _load_env() -> None:
+    """Carga variables desde .env en la raíz del workspace si existe."""
+    env_path = workspace_root() / ".env"
+    if not env_path.exists():
+        return
+    for raw_line in env_path.read_text(encoding="utf-8", errors="replace").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        key = key.strip()
+        value = value.strip().strip("\"'")
+        if key and key not in os.environ:
+            os.environ[key] = value
+
+
+_load_env()
+
+# REDIS_HOST must be explicitly set – the service only operates against an external
+# Redis instance. No localhost fallback is provided.
+REDIS_HOST = os.environ["REDIS_HOST"]
 REDIS_PORT = int(os.environ.get("REDIS_PORT", os.environ.get("MEMENTO_REDIS_PORT", "6379")))
 SALA_PORT = int(os.environ.get("SALA_PORT", "8767"))
 PANEL_PORT = int(os.environ.get("PANEL_PORT", "8766"))
