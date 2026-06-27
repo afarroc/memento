@@ -16,6 +16,7 @@ class M360Client:
         self.username = username
         self.password = password
         self._timeout = int(os.environ.get("M360_TIMEOUT", "10"))
+        self._api_key = os.environ.get("M360_API_KEY")
         self._jar = http.cookiejar.CookieJar()
         self._opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(self._jar))
         self._csrf: Optional[str] = None
@@ -88,14 +89,14 @@ class M360Client:
             self._init_session()
         payload = dict(payload or {})
         csrf = self._current_csrf()
-        if csrf:
-            payload.setdefault("csrfmiddlewaretoken", csrf)
         encoded = urllib.parse.urlencode(payload).encode("utf-8")
         req = urllib.request.Request(url, data=encoded, method=method)
         req.add_header("Content-Type", "application/x-www-form-urlencoded")
         req.add_header("Referer", f"{self.base_url}{path}")
         if csrf:
             req.add_header("X-CSRFToken", csrf)
+        if self._api_key and method in {"POST", "PATCH", "PUT", "DELETE"}:
+            req.add_header("Authorization", f"Bearer {self._api_key}")
         try:
             with self._opener.open(req, timeout=self._timeout) as resp:
                 final_url = resp.geturl()
@@ -179,6 +180,8 @@ class M360Client:
         req.add_header("Referer", self.base_url)
         if csrf:
             req.add_header("X-CSRFToken", csrf)
+        if self._api_key and method in {"POST", "PATCH", "PUT", "DELETE"}:
+            req.add_header("Authorization", f"Bearer {self._api_key}")
         try:
             with self._opener.open(req, timeout=self._timeout) as resp:
                 body = resp.read().decode("utf-8", errors="replace")
