@@ -83,5 +83,8 @@ build/
 .agent_context/node_modules/
 .agent_context/package-lock.json
 
+# === GTD / DATOS LOCALES DEL USUARIO ===
+gtd_memento/
+
 # === KILO CLI CONFIG (LOCAL ONLY) ===
 .kilo/
