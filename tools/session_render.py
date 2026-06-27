@@ -14,7 +14,7 @@ from pathlib import Path
 
 WS = Path(__file__).resolve().parent.parent
 DEFAULT_SESSION = WS / "SESSION.md"
-DEFAULT_OUTPUT = WS / "SESSION.md"
+DEFAULT_OUTPUT = WS / "SESSION_REPORT.md"
 
 
 def render_markdown(session: Dict[str, Any]) -> str:
