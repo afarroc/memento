@@ -9,10 +9,14 @@ ENV_WORKSPACE = os.environ.get("MEMENTO_WORKSPACE")
 
 
 def detect_workspace_root() -> Path:
-    """Detecta la raíz del workspace sin depender de rutas absolutas hardcodeadas."""
+    """Detecta la raíz del workspace buscando hacia arriba .agent_context o projects/."""
     if ENV_WORKSPACE:
         return Path(ENV_WORKSPACE).expanduser().resolve()
-    return ROOT.resolve()
+    current = Path.cwd().resolve()
+    for parent in [current] + list(current.parents):
+        if (parent / ".agent_context").exists() or (parent / "projects").exists():
+            return parent
+    return ROOT.resolve().parent
 
 
 def project_root() -> Path:

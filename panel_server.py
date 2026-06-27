@@ -6,19 +6,17 @@ import os
 import socket
 import subprocess
 import sys
+from dataclasses import dataclass
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from pathlib import Path
 from typing import Any, Dict, List, Optional
-import json
-import os
-import subprocess
-import urllib.error
-import urllib.request
 
-from core.paths import ROOT, workspace_root
-from core.services import check_tcp
+from core.paths import ROOT, detect_project_name, workspace_root
+from core.services import find_free_port
 
 CONFIG_FILE = ROOT / "config" / "services.json"
+PANEL_PORT = int(os.environ.get("PANEL_PORT", "8766"))
+PORT = PANEL_PORT
 
 
 def load_services_config():
@@ -41,18 +39,18 @@ class ServiceEndpoint:
 SERVICES = {
     "redis": [
         ServiceEndpoint("local", "localhost", int(os.environ.get("REDIS_PORT", "6379")), "local"),
-        ServiceEndpoint("lan", os.environ.get("REDIS_HOST", "192.168.18.59"), int(os.environ.get("REDIS_PORT", "6379")), "lan"),
+        ServiceEndpoint("lan", os.environ.get("REDIS_HOST", "localhost"), int(os.environ.get("REDIS_PORT", "6379")), "lan"),
     ],
     "mariadb": [
-        ServiceEndpoint("lan", os.environ.get("MARIADB_HOST", "192.168.18.59"), int(os.environ.get("MARIADB_PORT", "3306")), "lan"),
+        ServiceEndpoint("lan", os.environ.get("MARIADB_HOST", "localhost"), int(os.environ.get("MARIADB_PORT", "3306")), "lan"),
         ServiceEndpoint("local", "localhost", int(os.environ.get("MARIADB_LOCAL_PORT", "3306")), "local"),
     ],
     "ssh": [
-        ServiceEndpoint("lan", os.environ.get("SSH_HOST", "192.168.18.59"), int(os.environ.get("SSH_PORT", "22")), "lan"),
+        ServiceEndpoint("lan", os.environ.get("SSH_HOST", "localhost"), int(os.environ.get("SSH_PORT", "22")), "lan"),
         ServiceEndpoint("local", "localhost", 22, "local"),
     ],
     "adb": [
-        ServiceEndpoint("lan", os.environ.get("ADB_HOST", "192.168.18.59"), int(os.environ.get("ADB_PORT", "5037")), "lan"),
+        ServiceEndpoint("lan", os.environ.get("ADB_HOST", "localhost"), int(os.environ.get("ADB_PORT", "5037")), "lan"),
         ServiceEndpoint("local", "localhost", 5037, "local"),
     ],
     "sala": [
@@ -60,7 +58,7 @@ SERVICES = {
     ],
 }
 
-REDIS_KEY = os.environ.get("REDIS_KEY", "memento_panel_items")
+REDIS_KEY = os.environ.get("REDIS_KEY", f"memento_panel_items:{detect_project_name()}")
 
 def check_tcp(host: str, port: int, timeout: float = 1.0) -> bool:
     try:
@@ -348,5 +346,13 @@ class PanelHandler(BaseHTTPRequestHandler):
         pass
 
 if __name__ == "__main__":
-    print(f"panel :: http://127.0.0.1:{PORT}")
-    HTTPServer(("0.0.0.0", PORT), PanelHandler).serve_forever()
+    port = PANEL_PORT
+    if len(sys.argv) > 1:
+        try:
+            port = int(sys.argv[1])
+        except ValueError:
+            pass
+    else:
+        port = find_free_port(port)
+    print(f"panel :: http://127.0.0.1:{port}")
+    HTTPServer(("0.0.0.0", port), PanelHandler).serve_forever()

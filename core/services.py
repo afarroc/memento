@@ -9,12 +9,13 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-from core.paths import ROOT, ensure_dir, workspace_root
+from core.paths import ROOT, detect_project_name, ensure_dir, workspace_root
 
-REDIS_HOST = os.environ.get("REDIS_HOST", os.environ.get("MEMENTO_REDIS_HOST", "192.168.18.59"))
+REDIS_HOST = os.environ.get("REDIS_HOST", os.environ.get("MEMENTO_REDIS_HOST", "localhost"))
 REDIS_PORT = int(os.environ.get("REDIS_PORT", os.environ.get("MEMENTO_REDIS_PORT", "6379")))
 SALA_PORT = int(os.environ.get("SALA_PORT", "8767"))
 PANEL_PORT = int(os.environ.get("PANEL_PORT", "8766"))
+REDIS_KEY = os.environ.get("REDIS_KEY", f"memento_panel_items:{detect_project_name()}")
 HEALTH_CACHE_PATH = workspace_root() / ".memento_runtime" / "health_cache.json"
 
 
@@ -26,6 +27,19 @@ def redis_ping(host: str = REDIS_HOST, port: int = REDIS_PORT, timeout: float = 
         return {"ok": "PONG" in data, "detail": data.strip(), "host": host, "port": port}
     except OSError as exc:
         return {"ok": False, "detail": str(exc), "host": host, "port": port}
+
+
+def find_free_port(start_port: int, max_tries: int = 10) -> int:
+    port = start_port
+    for _ in range(max_tries):
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            try:
+                s.bind(("0.0.0.0", port))
+                return port
+            except OSError:
+                port += 1
+    return start_port
 
 
 def http_json(url: str, timeout: float = 0.6) -> Dict[str, Any]:

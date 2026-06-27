@@ -5,6 +5,7 @@
 ~/.memento/vault.json
 .memento/
 .memento/vault.json
+.env
 *.env
 .env.local
 .env.dev

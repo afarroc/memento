@@ -7,10 +7,12 @@ import socket
 import os
 from pathlib import Path
 
+from core.paths import detect_project_name
+
 BODY_HTML = Path(__file__).resolve().parent.parent / "<body>.html"
-REDIS_HOST = os.environ.get("REDIS_HOST", "192.168.18.59")
+REDIS_HOST = os.environ.get("REDIS_HOST", "localhost")
 REDIS_PORT = int(os.environ.get("REDIS_PORT", "6379"))
-REDIS_KEY = os.environ.get("REDIS_KEY", "memento_panel_items")
+REDIS_KEY = os.environ.get("REDIS_KEY", f"memento_panel_items:{detect_project_name()}")
 
 
 def redis_cmd(args, host=None, port=None):

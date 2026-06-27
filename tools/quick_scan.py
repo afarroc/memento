@@ -11,7 +11,7 @@ from typing import Any, Dict, Optional
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from core.index import build_manifest, load_index, resolve_index_path, save_index
-from core.paths import detect_workspace_root
+from core.paths import detect_workspace_root, rel
 
 HANDOFF_RE = re.compile(r"(\d{4}-\d{2}-\d{2})")
 
@@ -79,7 +79,7 @@ class QuickScan:
             "type": "HANDOFF",
             "project": f.parent.name,
             "ts": date_m.group(1) if date_m else "unknown",
-            "path": str(f),
+            "path": rel(f, self.workspace),
             "summary": content[:100],
         }
 
@@ -91,7 +91,7 @@ class QuickScan:
             "type": "CONTEXT",
             "project": project,
             "ts": "discover",
-            "path": str(f),
+            "path": rel(f, self.workspace),
             "summary": content[:100],
         }
 

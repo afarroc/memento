@@ -12,10 +12,12 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 from pathlib import Path
 from urllib.parse import unquote, quote
 
+from core.paths import detect_project_name
+
 HTML = Path(__file__).parent / "templates" / "sala.html"
 REDIS_HOST = os.environ.get("REDIS_HOST", "localhost")
 REDIS_PORT = int(os.environ.get("REDIS_PORT", "6379"))
-REDIS_KEY = os.environ.get("REDIS_KEY", "memento_panel_items")
+REDIS_KEY = os.environ.get("REDIS_KEY", f"memento_panel_items:{detect_project_name()}")
 UPLOAD_DIR = Path(__file__).resolve().parent / "uploads"
 MAX_UPLOAD_SIZE = int(os.environ.get("MEMENTO_MAX_UPLOAD_SIZE", str(10 * 1024 * 1024)))
 redis_ok = False
@@ -546,11 +548,13 @@ class H(BaseHTTPRequestHandler):
 
 
 if __name__ == "__main__":
+    from core.services import find_free_port
     redis_init()
     try:
         pong = redis_cmd(["PING"])
         redis_ok = pong.get("ok") and isinstance(pong.get("out"), str) and "PONG" in pong["out"]
     except Exception:
         redis_ok = False
-    print(f"sala v2-redis :: http://localhost:8767 | redis={'ok' if redis_ok else 'offline'}")
-    HTTPServer(("0.0.0.0", 8767), H).serve_forever()
+    sala_port = find_free_port(8767)
+    print(f"sala v2-redis :: http://localhost:{sala_port} | redis={'ok' if redis_ok else 'offline'}")
+    HTTPServer(("0.0.0.0", sala_port), H).serve_forever()

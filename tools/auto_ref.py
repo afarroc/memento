@@ -3,6 +3,8 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 import re
 
+from core.paths import rel
+
 class AutoRefEngine:
     def __init__(self, workspace: str):
         self.ws = Path(workspace)
@@ -56,7 +58,7 @@ class AutoRefEngine:
         return {
             "id": entry_id,
             "type": "HANDOFF",
-            "path": str(filepath),
+            "path": rel(filepath, self.ws),
             "project": proj,
             "ts": date_m.group(1) if date_m else "unknown",
             "summary": content.split('\n')[3] if len(content) > 3 else ""
@@ -70,7 +72,7 @@ class AutoRefEngine:
         return {
             "id": entry_id,
             "type": "CONTEXT",
-            "path": str(filepath),
+            "path": rel(filepath, self.ws),
             "project": proj,
             "ts": "discover",
             "summary": content[:200]
