@@ -34,7 +34,9 @@ _load_env()
 # Redis instance. No localhost fallback is provided.
 REDIS_HOST = os.environ["REDIS_HOST"]
 REDIS_PORT = int(os.environ.get("REDIS_PORT", os.environ.get("MEMENTO_REDIS_PORT", "6379")))
+SALA_HOST = os.environ.get("SALA_HOST", "127.0.0.1")
 SALA_PORT = int(os.environ.get("SALA_PORT", "8767"))
+PANEL_HOST = os.environ.get("PANEL_HOST", "127.0.0.1")
 PANEL_PORT = int(os.environ.get("PANEL_PORT", "8766"))
 REDIS_KEY = os.environ.get("REDIS_KEY", f"memento_panel_items:{detect_project_name()}")
 HEALTH_CACHE_PATH = workspace_root() / ".memento_runtime" / "health_cache.json"
@@ -115,10 +117,10 @@ def service_status(fresh: bool = False, cache_ttl: int = 30) -> Dict[str, Any]:
     if not fresh and _cache_valid(cache, cache_ttl):
         return {**cache, "from_cache": True}
 
-    sala = http_json(f"http://127.0.0.1:{SALA_PORT}/stats")
-    panel = http_json(f"http://127.0.0.1:{PANEL_PORT}/stats")
+    sala = http_json(f"http://{SALA_HOST}:{SALA_PORT}/stats")
+    panel = http_json(f"http://{PANEL_HOST}:{PANEL_PORT}/stats")
     if not panel.get("ok"):
-        panel = http_text(f"http://127.0.0.1:{PANEL_PORT}/")
+        panel = http_text(f"http://{PANEL_HOST}:{PANEL_PORT}/")
 
     result = {
         "checked_at": datetime.now().isoformat(timespec="seconds"),
@@ -129,14 +131,14 @@ def service_status(fresh: bool = False, cache_ttl: int = 30) -> Dict[str, Any]:
             "status": sala.get("status"),
             "data": sala.get("data"),
             "error": sala.get("error"),
-            "url": f"http://127.0.0.1:{SALA_PORT}/stats",
+            "url": f"http://{SALA_HOST}:{SALA_PORT}/stats",
         },
         "panel": {
             "ok": bool(panel.get("ok")),
             "status": panel.get("status"),
             "data": panel.get("data"),
             "error": panel.get("error"),
-            "url": f"http://127.0.0.1:{PANEL_PORT}/",
+            "url": f"http://{PANEL_HOST}:{PANEL_PORT}/",
         },
     }
     _save_cache(result)
@@ -150,6 +152,6 @@ def service_summary(services: Dict[str, Any]) -> str:
     cache_note = " cache" if services.get("from_cache") else ""
     return (
         f"Redis {'OK' if redis.get('ok') else 'NO'} at {redis.get('host', '?')}:{redis.get('port', '?')} | "
-        f"Sala {'OK' if sala.get('ok') else 'NO'} at http://127.0.0.1:{SALA_PORT} | "
-        f"Panel {'OK' if panel.get('ok') else 'NO'} at http://127.0.0.1:{PANEL_PORT}{cache_note}"
+        f"Sala {'OK' if sala.get('ok') else 'NO'} at http://{SALA_HOST}:{SALA_PORT} | "
+        f"Panel {'OK' if panel.get('ok') else 'NO'} at http://{PANEL_HOST}:{PANEL_PORT}{cache_note}"
     )
