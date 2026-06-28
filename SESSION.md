@@ -3,18 +3,18 @@
     "project": "mementobloom",
     "role": "asistente-gtd",
     "workspace": "/Volumes/Macintosh HD - Datos/mementobloom",
-    "last_event_time": "2026-06-28T02:48:05",
+    "last_event_time": "2026-06-28T03:03:34",
     "last_event_type": "bootstrap",
-    "last_event_summary": "feat: enrich session startup with quick_scan, doctor, and ranked context",
+    "last_event_summary": "session: refresh state after enriched startup integration",
     "git_branch": "unknown",
-    "git_commit": "f7b08f9",
-    "generated_at": "2026-06-28T02:48:05"
+    "git_commit": "aa3cae5",
+    "generated_at": "2026-06-28T03:03:34"
   },
   "state": {
     "git": {
       "branch": "unknown",
-      "commit_hash": "f7b08f9",
-      "commit_message": "feat: enrich session startup with quick_scan, doctor, and ranked context",
+      "commit_hash": "aa3cae5",
+      "commit_message": "session: refresh state after enriched startup integration",
       "pending_count": 1
     },
     "services": {
@@ -42,7 +42,7 @@
       }
     },
     "memory": {
-      "indexed_entries": 169,
+      "indexed_entries": 170,
       "manifest_ts": ""
     }
   },
