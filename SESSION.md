@@ -3,33 +3,35 @@
     "project": "mementobloom",
     "role": "asistente-gtd",
     "workspace": "/Volumes/Macintosh HD - Datos/mementobloom",
-    "last_event_time": "2026-06-27T18:35:25.354876",
+    "last_event_time": "2026-06-27T19:01:36.509978",
     "last_event_type": "bootstrap",
-    "last_event_summary": "chore(session): mark MB-Auth and MB-Redis as completed",
+    "last_event_summary": "docs: mark MB-Docs completed and refresh session state",
     "git_branch": "master",
-    "git_commit": "d8b1f75",
-    "generated_at": "2026-06-27T18:35:25.354876",
-    "next_review": "2026-06-28T18:35:28.486324"
+    "git_commit": "3152cf2",
+    "generated_at": "2026-06-27T19:01:36.509978",
+    "next_review": "2026-06-28T19:01:43.054170"
   },
   "state": {
     "git": {
       "branch": "master",
-      "commit_hash": "d8b1f75",
-      "commit_message": "chore(session): mark MB-Auth and MB-Redis as completed",
-      "pending_count": 2,
+      "commit_hash": "3152cf2",
+      "commit_message": "docs: mark MB-Docs completed and refresh session state",
+      "pending_count": 4,
       "pending": [
+        "M SESSION.md",
+        " M tools/m360_bridge/client.py",
         "?? gtd_memento/",
         "?? projects/m360/context/"
       ]
     },
     "services": {
       "sala": "OK",
-      "panel": "OK",
+      "panel": "NO",
       "redis": "OK"
     },
     "memory": {
-      "indexed_entries": 161,
-      "manifest_ts": "2026-06-27T18:35:28"
+      "indexed_entries": 162,
+      "manifest_ts": "2026-06-27T19:01:42"
     }
   },
   "pending_tasks": [

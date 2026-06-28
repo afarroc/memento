@@ -355,7 +355,16 @@ class M360Client:
         return self._request_json("/api/v1/tasks/", payload, method="POST")
 
     def api_v1_update_task_status(self, task_id: int, status: str) -> Dict[str, Any]:
-        return self._request_json(f"/api/v1/tasks/{task_id}/status/", {"status": status}, method="POST")
+        status_map = {
+            "To Do": 1,
+            "In Progress": 2,
+            "In Review": 3,
+            "Completed": 4,
+        }
+        task_status_id = status_map.get(status)
+        if task_status_id is None:
+            return {"http_error": 400, "reason": f"Unknown status: {status}"}
+        return self._request_json(f"/api/v1/tasks/{task_id}/status/", {"task_status_id": task_status_id}, method="POST")
 
     def api_v1_list_events(self, **params: Any) -> Dict[str, Any]:
         qs = urllib.parse.urlencode({k: v for k, v in params.items() if v not in (None, "")})
