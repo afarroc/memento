@@ -11,6 +11,32 @@
 |------|------------|-------------|
 | Core | `core/` | Módulos compartidos: paths, git, index, services, health |
 | Tools | `tools/` | CLI tools: session_start, bootstrap_context, quick_scan, doctor, configure, m360_bridge, sync_sprint |
+
+### Uso correcto de la API M360 (`/api/v1/`)
+
+**Base URL:** `http://127.0.0.1:8000`  
+**Auth:**  
+- Lectura (`GET`): abierta.  
+- Escritura (`POST`/`PATCH`/`PUT`/`DELETE`): requiere header `Authorization: Bearer <M360_API_KEY>`  
+  - `M360_API_KEY` se carga desde `.env`  
+  - Si no existe, la escritura es rechazada con `403`
+
+**Cliente recomendado:** `tools/m360_bridge/client.py`  
+- Carga automáticamente credenciales y API key desde `.env`  
+- Inyecta el Bearer token solo en operaciones de escritura  
+- Maneja CSRF/Session para endpoints que lo requieran
+
+**Notas técnicas:**
+- Para marcar una tarea como completada, usar `client.api_v1_update_task_status(id, "Completed")`  
+  - Internamente envía `task_status_id=4` (campo writable en `TaskSerializer`)  
+- El campo `done` es escribible en M360 v1 (`api/v1/serializers.py`) y alimenta `stats.tasks_completed`  
+- No hardcodear `127.0.0.1` ni puertos; usar variables `M360_BASE_URL`, `SALA_HOST`, `PANEL_HOST`, `REDIS_HOST`
+
+**Verificación rápida:**
+```bash
+python3 tools/m360_auth_test.py
+python3 tools/project_status.py
+```
 | Panel | `panel_server.py` | Dashboard HTTP (8766) |
 | Sala | `sala.py` | Sala de mensajes HTTP+Redis (8767) |
 | Vault | `vault_*.py` | Gestión de credenciales |
