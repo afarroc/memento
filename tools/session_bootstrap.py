@@ -93,29 +93,53 @@ def _get_memory() -> Dict[str, Any]:
     return {"indexed_entries": entries, "manifest_ts": manifest_ts}
 
 
-def _load_existing_session() -> Optional[Dict[str, Any]]:
-    if not SESSION_FILE.exists():
-        # Fallback a git cuando no existe archivo local (sesion nueva)
-        recovered = _recover_from_git()
-        if recovered:
-            return recovered
-        return {}
+def _load_canonical_backup() -> Optional[Dict[str, Any]]:
+    """Carga el backup canónico local inmutable (.memento_runtime/session_canonical.json)."""
     try:
-        raw = SESSION_FILE.read_text(encoding="utf-8").strip()
-        if not raw:
-            return {}
-        data = json.loads(raw)
-        if not isinstance(data, dict):
-            return {}
-        # Si es un esqueleto vacío (solo session/state sin tareas), preferir git
-        has_tasks = bool(data.get("pending_tasks") or data.get("completed_tasks") or data.get("blockers"))
-        if not has_tasks:
-            recovered = _recover_from_git()
-            if recovered and (recovered.get("pending_tasks") or recovered.get("completed_tasks") or recovered.get("blockers")):
-                data = recovered
-        return data
+        canonical_path = WS_ROOT / ".memento_runtime" / "session_canonical.json"
+        if not canonical_path.exists():
+            return None
+        data = json.loads(canonical_path.read_text(encoding="utf-8"))
+        if isinstance(data, dict) and data.get("completed_tasks"):
+            return data
     except Exception:
-        return _recover_from_git() or {}
+        pass
+    return None
+
+
+def _load_existing_session() -> Optional[Dict[str, Any]]:
+    """Carga estado con fallback jerárquico: SESSION.md -> canonical backup -> Git (último recurso)."""
+    # 1. Intentar SESSION.md
+    if SESSION_FILE.exists():
+        try:
+            raw = SESSION_FILE.read_text(encoding="utf-8").strip()
+            if raw:
+                data = json.loads(raw)
+                if isinstance(data, dict) and data.get("completed_tasks"):
+                    return data
+        except Exception:
+            pass
+
+    # 2. Fallback a backup canónico local
+    canonical = _load_canonical_backup()
+    if canonical:
+        return canonical
+
+    # 3. Git como último recurso extremo
+    return _recover_from_git() or {}
+
+
+def _update_canonical_backup(session: Dict[str, Any]) -> None:
+    """Actualiza el backup canónico local con el estado actual de la sesión."""
+    try:
+        canonical_path = WS_ROOT / ".memento_runtime" / "session_canonical.json"
+        canonical_path.parent.mkdir(parents=True, exist_ok=True)
+        backup = dict(session)
+        backup["canonical_version"] = 1
+        backup["last_verified"] = datetime.now().isoformat(timespec="seconds")
+        canonical_path.write_text(json.dumps(backup, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    except Exception:
+        pass  # Non-fatal
 
 
 def _atomic_write_text(path: Path, text: str) -> None:
@@ -273,6 +297,9 @@ def main() -> int:
 
     # Escribir SESSION.md (canónico JSON)
     _atomic_write_text(SESSION_FILE, render_json(session))
+
+    # Actualizar backup canónico local (fuente de verdad inmutable)
+    _update_canonical_backup(session)
 
     # Validación post-escritura
     try:

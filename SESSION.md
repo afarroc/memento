@@ -3,22 +3,22 @@
     "project": "mementobloom",
     "role": "asistente-gtd",
     "workspace": "/Volumes/Macintosh HD - Datos/mementobloom",
-    "last_event_time": "2026-06-28T02:14:20.371170",
+    "last_event_time": "2026-06-28T02:26:02.553968",
     "last_event_type": "bootstrap",
-    "last_event_summary": "session: final state after recontextualization, selftest 7/7",
+    "last_event_summary": "fix: recover canonical session from git when SESSION.md missing",
     "git_branch": "master",
-    "git_commit": "95df4c8",
-    "generated_at": "2026-06-28T02:14:20.371170",
-    "next_review": "2026-06-29T02:14:23.959518"
+    "git_commit": "213fc18",
+    "generated_at": "2026-06-28T02:26:02.553968",
+    "next_review": "2026-06-29T02:26:06.707835"
   },
   "state": {
     "git": {
       "branch": "master",
-      "commit_hash": "95df4c8",
-      "commit_message": "session: final state after recontextualization, selftest 7/7",
+      "commit_hash": "213fc18",
+      "commit_message": "fix: recover canonical session from git when SESSION.md missing",
       "pending_count": 2,
       "pending": [
-        "D SESSION.md",
+        "MM SESSION.md",
         " M tools/session_bootstrap.py"
       ]
     },
@@ -48,7 +48,7 @@
     },
     "memory": {
       "indexed_entries": 169,
-      "manifest_ts": "2026-06-28T02:14:23"
+      "manifest_ts": "2026-06-28T02:26:06"
     }
   },
   "pending_tasks": [
