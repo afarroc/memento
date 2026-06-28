@@ -1,9 +1,9 @@
 # MementoBloom Startup Context
 
-Generated: 2026-06-27T19:58:05
+Generated: 2026-06-27T21:42:34
 Workspace: /Volumes/Macintosh HD - Datos/mementobloom
 Project: mementobloom
-Index entries: 162
+Index entries: 165
 
 ## Startup instruction
 Prepara la semilla progresiva del agente, lee el contexto inicial y continúa desde el último handoff relevante sin pedir información ya registrada.
@@ -35,6 +35,12 @@ Prepara la semilla progresiva del agente, lee el contexto inicial y continúa de
 - - `.agent_context/secure/USER_CONTEXT.md`
 
 ## Top recent memory
+- h_HANDOFF_2026-06-27_213600_sprint3_plan | HANDOFF | project=mementobloom | ts=2026-06-27 | path=projects/mementobloom/HANDOFF_2026-06-27_213600_sprint3_plan.md
+  # HANDOFF - Plan Sprint 3: Seguridad y configuración sensible ## Datos básicos - Proyecto: mementobl
+- h_HANDOFF_2026-06-27_213100_cierre_sesion_sprint2 | HANDOFF | project=mementobloom | ts=2026-06-27 | path=projects/mementobloom/HANDOFF_2026-06-27_213100_cierre_sesion_sprint2.md
+  # HANDOFF - Cierre de sesión: Sprint 2 completado ## Datos básicos - Proyecto: mementobloom - Fecha/
+- h_HANDOFF_2026-06-27_212700_cleanup_sprint2_cierre | HANDOFF | project=mementobloom | ts=2026-06-27 | path=projects/mementobloom/HANDOFF_2026-06-27_212700_cleanup_sprint2_cierre.md
+  # HANDOFF - Cleanup Sprint 2 y cierre de sesión ## Datos básicos - Proyecto: mementobloom - Fecha/ho
 - h_HANDOFF_2026-06-27_183500_cierre_sesion | HANDOFF | project=mementobloom | ts=2026-06-27 | path=projects/mementobloom/HANDOFF_2026-06-27_183500_cierre_sesion.md
   # HANDOFF - Cierre de sesión ## Datos básicos - Proyecto: mementobloom - Fecha/hora: 2026-06-27T18:3
 - h_HANDOFF_2026-06-27_173306_cierre_sesion | HANDOFF | project=mementobloom | ts=2026-06-27 | path=projects/mementobloom/HANDOFF_2026-06-27_173306_cierre_sesion.md
@@ -57,18 +63,12 @@ Prepara la semilla progresiva del agente, lee el contexto inicial y continúa de
   # HANDOFF - M360 API v1 + Memoria sincronizada ## Datos básicos - Proyecto: mementobloom - Fecha/ho
 - h_HANDOFF_2026-06-26_verificacion_recreacion | HANDOFF | project=mementobloom | ts=2026-06-26 | path=projects/mementobloom/HANDOFF_2026-06-26_verificacion_recreacion.md
   # HANDOFF - Verificación y Recreación Proyecto 60 ## Datos básicos - **Proyecto:** mementobloom - *
-- h_HANDOFF_2026-06-26_verificacion_m360_fix_signal | HANDOFF | project=mementobloom | ts=2026-06-26 | path=projects/mementobloom/HANDOFF_2026-06-26_verificacion_m360_fix_signal.md
-  # HANDOFF - Verificacion M360 y fix signal inbox ## Datos básicos - **Proyecto:** mementobloom - **
-- h_HANDOFF_2026-06-26_sincronizacion_sprint0 | HANDOFF | project=mementobloom | ts=2026-06-26 | path=projects/mementobloom/HANDOFF_2026-06-26_sincronizacion_sprint0.md
-  # HANDOFF - Sincronización de memoria y estado Sprint 0 ## Datos básicos - **Proyecto:** mementoblo
-- h_HANDOFF_2026-06-26_marcado_tareas_hechas | HANDOFF | project=mementobloom | ts=2026-06-26 | path=projects/mementobloom/HANDOFF_2026-06-26_marcado_tareas_hechas.md
-  # HANDOFF - Marcado de tareas hechas en M360 ## Datos básicos - **Proyecto:** mementobloom - **Fech
 
 ## Git state
-- 4 cambio(s): M .agent_context/START_CONTEXT.md,  M tools/session_start.py, ?? gtd_memento/, ?? projects/m360/context/
+- 3 cambio(s): M .agent_context/START_CONTEXT.md,  M SESSION.md, ?? .kilo.backup.20260627/
 
 ## Services
-Redis OK at 192.168.18.59:6379 | Sala OK at http://127.0.0.1:8767 | Panel OK at http://127.0.0.1:8766
+Redis OK at 192.168.18.59:6379 | Sala NO at http://127.0.0.1:8767 | Panel OK at http://127.0.0.1:8766
 
 ## Safe next-session commands
 - `python3 tools/session_start.py --quick --limit 8` (proyecto por defecto: mementobloom)
