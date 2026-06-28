@@ -83,5 +83,8 @@
       ],
       "reason": "test projects from today, keep real project 78"
     }
-  ]
+  ],
+  "last_m360_sync": "2026-06-27T22:25:00-05:00",
+  "m360_project_id": 78,
+  "m360_project_title": "MementoBloom - S-27-06"
 }
