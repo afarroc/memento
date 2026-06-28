@@ -25,3 +25,9 @@ Lecciones aprendidas (2026-06-28):
 - `.agent_context/` es para contexto del agente (semillas, instrucciones, START_CONTEXT regenerable). NUNCA poner documentación permanente ni registros de gestión ahí.
 - Los registros de gestión (conciliaciones, auditorías, cierres) van en `projects/mementobloom/HANDOFF_*.md` o `docs/`.
 - `START_CONTEXT.md` es regenerable y no se trackea. Si aparece en `git status`, revisar si está en el índice (no debería).
+
+Arquitectura de proyectos:
+- **Propio:** solo `mementobloom` (se desarrolla a sí mismo)
+- **Clientes:** `Management360`, `Administracion_UPN`, `Ventas_Porta` (proyectos independientes desarrollados CON mementobloom)
+- **Herramienta propia:** `tools/m360_bridge/` (bridge hacia M360, propiedad de mementobloom)
+- No confundir clientes con proyectos propios en `SESSION.md` o `client_projects`
