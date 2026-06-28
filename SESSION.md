@@ -3,19 +3,19 @@
     "project": "mementobloom",
     "role": "asistente-gtd",
     "workspace": "/Volumes/Macintosh HD - Datos/mementobloom",
-    "last_event_time": "2026-06-28T12:54:52",
+    "last_event_time": "2026-06-28T13:04:47",
     "last_event_type": "bootstrap",
-    "last_event_summary": "chore: register Administracion_UPN as client project in projects/",
+    "last_event_summary": "upn: define Fase 0 structure, create HANDOFF arranque, register M360 project 80",
     "git_branch": "unknown",
-    "git_commit": "0eace7f",
-    "generated_at": "2026-06-28T12:54:52"
+    "git_commit": "216e1eb",
+    "generated_at": "2026-06-28T13:04:47"
   },
   "state": {
     "git": {
       "branch": "unknown",
-      "commit_hash": "0eace7f",
-      "commit_message": "chore: register Administracion_UPN as client project in projects/",
-      "pending_count": 0
+      "commit_hash": "216e1eb",
+      "commit_message": "upn: define Fase 0 structure, create HANDOFF arranque, register M360 project 80",
+      "pending_count": 1
     },
     "services": {
       "sala": {
@@ -87,6 +87,46 @@
       "created_at": "2026-06-28T04:01:31",
       "m360_id": 321,
       "m360_project": 78
+    },
+    {
+      "id": "M3.1",
+      "description": "Diseñar modelo Course (campos, relación con Project 80/78, recursos, silabos, módulos)",
+      "status": "pending",
+      "sprint": null,
+      "m360_id": 327,
+      "m360_project": 81
+    },
+    {
+      "id": "M3.2",
+      "description": "Implementar endpoint GET/POST /api/v1/courses/ en M360",
+      "status": "pending",
+      "sprint": null,
+      "m360_id": 328,
+      "m360_project": 81
+    },
+    {
+      "id": "M3.3",
+      "description": "Implementar endpoint PUT/DELETE /api/v1/courses/<id>/ en M360",
+      "status": "pending",
+      "sprint": null,
+      "m360_id": 329,
+      "m360_project": 81
+    },
+    {
+      "id": "M3.4",
+      "description": "Actualizar cliente M360: api_v1_list_courses, api_v1_create_course, api_v1_update_course, api_v1_delete_course",
+      "status": "pending",
+      "sprint": null,
+      "m360_id": 330,
+      "m360_project": 81
+    },
+    {
+      "id": "M3.5",
+      "description": "Migrar plan de estudios desde ../otros_proyectos/Administracion_UPN/Ciclo_01/ hacia M360 Courses",
+      "status": "pending",
+      "sprint": null,
+      "m360_id": 331,
+      "m360_project": 81
     }
   ],
   "completed_tasks": [
@@ -195,25 +235,51 @@
       "impact": "No se pueden crear tareas Sprint 3 en M360 ni validar flujo completo."
     }
   ],
-  "client_projects": [
-    {
-      "id": "admin_upn",
-      "name": "Administracion_UPN",
-      "path": "projects/Administracion_UPN",
-      "status": "fase0",
-      "memory": "pending_install",
-      "m360_project_id": 80,
-      "m360_project_title": "Administracion_UPN",
-      "m360_status": "Draft",
-      "registered_at": "2026-06-28T12:55:00",
-      "source": "../otros_proyectos/Administracion_UPN"
-    }
-  ],
   "m360": {
-    "project_id": 80,
-    "project_title": "Administracion_UPN",
-    "status": "Draft",
-    "base_url": "http://127.0.0.1:8000",
-    "tasks_synced": []
+    "mementobloom_phase3": {
+      "project_id": 78,
+      "project_title": "MementoBloom - S-27-06",
+      "status": "Draft",
+      "base_url": "http://127.0.0.1:8000",
+      "tasks_synced": []
+    },
+    "admin_upn": {
+      "project_id": 81,
+      "project_title": "Administracion_UPN - Plan de Estudios",
+      "status": "Draft",
+      "base_url": "http://127.0.0.1:8000",
+      "tasks_synced": [
+        {
+          "m360_id": 327,
+          "local_id": "M3.1",
+          "title": "Diseñar modelo Course",
+          "status": "To Do"
+        },
+        {
+          "m360_id": 328,
+          "local_id": "M3.2",
+          "title": "Implementar GET/POST /api/v1/courses/",
+          "status": "To Do"
+        },
+        {
+          "m360_id": 329,
+          "local_id": "M3.3",
+          "title": "Implementar PUT/DELETE /api/v1/courses/<id>/",
+          "status": "To Do"
+        },
+        {
+          "m360_id": 330,
+          "local_id": "M3.4",
+          "title": "Actualizar cliente M360 courses",
+          "status": "To Do"
+        },
+        {
+          "m360_id": 331,
+          "local_id": "M3.5",
+          "title": "Migrar plan de estudios UPN a M360",
+          "status": "To Do"
+        }
+      ]
+    }
   }
 }
