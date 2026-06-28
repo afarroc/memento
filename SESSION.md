@@ -3,19 +3,19 @@
     "project": "mementobloom",
     "role": "asistente-gtd",
     "workspace": "/Volumes/Macintosh HD - Datos/mementobloom",
-    "last_event_time": "2026-06-28T13:11:26",
+    "last_event_time": "2026-06-28T13:56:38",
     "last_event_type": "bootstrap",
-    "last_event_summary": "m360: move API Courses tasks to project 81 (Admin UPN), update SESSION.md",
+    "last_event_summary": "m360: mark API Courses endpoints implementation in progress (M3.2/M3.3)",
     "git_branch": "unknown",
-    "git_commit": "9987489",
-    "generated_at": "2026-06-28T13:11:26"
+    "git_commit": "c181db0",
+    "generated_at": "2026-06-28T13:56:38"
   },
   "state": {
     "git": {
       "branch": "unknown",
-      "commit_hash": "9987489",
-      "commit_message": "m360: move API Courses tasks to project 81 (Admin UPN), update SESSION.md",
-      "pending_count": 0
+      "commit_hash": "c181db0",
+      "commit_message": "m360: mark API Courses endpoints implementation in progress (M3.2/M3.3)",
+      "pending_count": 1
     },
     "services": {
       "sala": {
@@ -42,7 +42,7 @@
       }
     },
     "memory": {
-      "indexed_entries": 173,
+      "indexed_entries": 175,
       "manifest_ts": ""
     }
   },
@@ -99,18 +99,20 @@
     {
       "id": "M3.2",
       "description": "Implementar endpoint GET/POST /api/v1/courses/ en M360",
-      "status": "in_progress",
+      "status": "completed",
       "sprint": null,
       "m360_id": 328,
-      "m360_project": 81
+      "m360_project": 81,
+      "completed_at": "2026-06-28T13:40:00"
     },
     {
       "id": "M3.3",
       "description": "Implementar endpoint PUT/DELETE /api/v1/courses/<id>/ en M360",
-      "status": "in_progress",
+      "status": "completed",
       "sprint": null,
       "m360_id": 329,
-      "m360_project": 81
+      "m360_project": 81,
+      "completed_at": "2026-06-28T13:40:00"
     },
     {
       "id": "M3.4",
