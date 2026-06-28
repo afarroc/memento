@@ -3,19 +3,19 @@
     "project": "mementobloom",
     "role": "asistente-gtd",
     "workspace": "/Volumes/Macintosh HD - Datos/mementobloom",
-    "last_event_time": "2026-06-28T14:31:32",
+    "last_event_time": "2026-06-28T15:00:52",
     "last_event_type": "bootstrap",
-    "last_event_summary": "instructions: add architecture lesson - only mementobloom is own project",
+    "last_event_summary": "session: mark M3.2-M3.4 completed and project 81 fase2 done",
     "git_branch": "unknown",
-    "git_commit": "2d2d2dd",
-    "generated_at": "2026-06-28T14:31:32"
+    "git_commit": "89368ae",
+    "generated_at": "2026-06-28T15:00:52"
   },
   "state": {
     "git": {
       "branch": "unknown",
-      "commit_hash": "2d2d2dd",
-      "commit_message": "instructions: add architecture lesson - only mementobloom is own project",
-      "pending_count": 1
+      "commit_hash": "89368ae",
+      "commit_message": "session: mark M3.2-M3.4 completed and project 81 fase2 done",
+      "pending_count": 0
     },
     "services": {
       "sala": {
@@ -91,10 +91,11 @@
     {
       "id": "M3.1",
       "description": "Diseñar modelo Course (campos, relación con Project 80/78, recursos, silabos, módulos)",
-      "status": "pending",
+      "status": "verified",
       "sprint": null,
       "m360_id": 327,
-      "m360_project": 81
+      "m360_project": 81,
+      "note": "Modelo Course ya existia en Management360/courses/models.py. Tarea de diseño obsoleta; se valido la implementacion existente."
     },
     {
       "id": "M3.2",
@@ -230,11 +231,7 @@
       "impact": "No se pueden crear tareas Sprint 3 en M360 ni validar flujo completo."
     }
   ],
-  "notes": [
-    {
-      "id": "NOTE-M3.5-RELEVANCE",
-      "timestamp": "2026-06-28T14:42:00-05:00",
-      "content": "M3.5 (migracion plan de estudios UPN) es prueba de funcionamiento, no tarea de implementacion de API. Eliminada de proyecto 81 (Bridge M360 - API Courses). Debe ejecutarse solo despues de validar CRUD completo."
-    }
+  "lessons_learned": [
+    "Usar tipificacion de tareas: pending, in_progress, completed, verified, cancelled, obsolete. \"verified\" para tareas de diseño/descubrimiento donde se valida existencia previa; \"obsolete\" para tareas que ya no aplican."
   ]
 }
