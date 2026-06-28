@@ -3,38 +3,39 @@
     "project": "mementobloom",
     "role": "asistente-gtd",
     "workspace": "/Volumes/Macintosh HD - Datos/mementobloom",
-    "last_event_time": "2026-06-27T20:48:21.023794",
+    "last_event_time": "2026-06-27T21:15:21.963663",
     "last_event_type": "bootstrap",
-    "last_event_summary": "fix(install): portable date timestamp for macOS/Linux in memento_install",
+    "last_event_summary": "chore(deps): declare min requirements, add requirements-dev, update pyproject extras",
     "git_branch": "master",
-    "git_commit": "e8a22b4",
-    "generated_at": "2026-06-27T20:48:21.023794",
-    "next_review": "2026-06-28T20:48:25.094041"
+    "git_commit": "04fcd06",
+    "generated_at": "2026-06-27T21:15:21.963663",
+    "next_review": "2026-06-28T21:15:24.658861"
   },
   "state": {
     "git": {
       "branch": "master",
-      "commit_hash": "e8a22b4",
-      "commit_message": "fix(install): portable date timestamp for macOS/Linux in memento_install",
-      "pending_count": 7,
+      "commit_hash": "04fcd06",
+      "commit_message": "chore(deps): declare min requirements, add requirements-dev, update pyproject extras",
+      "pending_count": 8,
       "pending": [
         "M SESSION.md",
-        " M pyproject.toml",
-        " M requirements.txt",
+        "?? .dockerignore",
+        "?? Dockerfile",
+        "?? compose.yml.docker-reference.md",
+        "?? docker-compose.yml",
         "?? gtd_memento/",
         "?? memento_install.bak.20260627",
-        "?? projects/m360/context/",
-        "?? requirements-dev.txt"
+        "?? projects/m360/context/"
       ]
     },
     "services": {
-      "sala": "OK",
+      "sala": "NO",
       "panel": "NO",
       "redis": "OK"
     },
     "memory": {
       "indexed_entries": 162,
-      "manifest_ts": "2026-06-27T20:48:25"
+      "manifest_ts": "2026-06-27T21:15:24"
     }
   },
   "pending_tasks": [
@@ -53,13 +54,13 @@
     {
       "id": "T2.3",
       "description": "Dockerfile + docker-compose.yml de referencia",
-      "status": "pending",
+      "status": "completed",
       "sprint": 2
     },
     {
       "id": "T2.4",
       "description": "Lockfiles y procedimiento de reproducible build",
-      "status": "pending",
+      "status": "completed",
       "sprint": 2
     },
     {

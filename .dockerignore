@@ -1,0 +1,16 @@
+.env
+.env.*
+.git
+.gitignore
+.agent_context/secure/*
+.memento
+.memento_runtime
+archive
+memory/graph/*.json
+venv
+node_modules
+__pycache__
+*.pyc
+*.pyo
+projects/m360/context
+gtd_memento

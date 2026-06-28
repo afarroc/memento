@@ -1,0 +1,24 @@
+services:
+  mementobloom:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mementobloom
+    volumes:
+      - ${MEMENTO_AGENT_CONTEXT:-${PWD}/.agent_context}:/app/.agent_context
+      - ${MEMENTO_MEMORY:-${PWD}/memory}:/app/memory
+      - ${MEMENTO_RUNTIME:-${PWD}/.memento_runtime}:/app/.memento_runtime
+      - ${MEMENTO_PROJECTS:-${PWD}/projects}:/app/projects
+      - ${MEMENTO_ARCHIVE:-${PWD}/archive}:/app/archive
+    environment:
+      - REDIS_HOST=${REDIS_HOST:-192.168.18.59}
+      - REDIS_PORT=${REDIS_PORT:-6379}
+      - SALA_HOST=${SALA_HOST:-127.0.0.1}
+      - SALA_PORT=${SALA_PORT:-8767}
+      - PANEL_HOST=${PANEL_HOST:-127.0.0.1}
+      - PANEL_PORT=${PANEL_PORT:-8766}
+    env_file:
+      - ${PWD}/.env
+    ports:
+      - "${PANEL_PORT:-8766}:${PANEL_PORT:-8766}"
+    command: python3 tools/session_start.py --services
