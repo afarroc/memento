@@ -3,23 +3,22 @@
     "project": "mementobloom",
     "role": "asistente-gtd",
     "workspace": "/Volumes/Macintosh HD - Datos/mementobloom",
-    "last_event_time": "2026-06-27T21:56:46.580078",
+    "last_event_time": "2026-06-27T21:57:30.008310",
     "last_event_type": "bootstrap",
-    "last_event_summary": "fix(sala): handle BrokenPipeError gracefully on client disconnect",
+    "last_event_summary": "feat(sync): sync Sprint 3 tasks to M360 project 78, fix sala BrokenPipeError",
     "git_branch": "master",
-    "git_commit": "517cd1a",
-    "generated_at": "2026-06-27T21:56:46.580078",
-    "next_review": "2026-06-28T21:56:50.121662"
+    "git_commit": "7574c6a",
+    "generated_at": "2026-06-27T21:57:30.008310",
+    "next_review": "2026-06-28T21:57:33.286574"
   },
   "state": {
     "git": {
       "branch": "master",
-      "commit_hash": "517cd1a",
-      "commit_message": "fix(sala): handle BrokenPipeError gracefully on client disconnect",
-      "pending_count": 3,
+      "commit_hash": "7574c6a",
+      "commit_message": "feat(sync): sync Sprint 3 tasks to M360 project 78, fix sala BrokenPipeError",
+      "pending_count": 2,
       "pending": [
         "M .agent_context/START_CONTEXT.md",
-        " M SESSION.md",
         "?? .kilo.backup.20260627/"
       ]
     },
@@ -30,7 +29,7 @@
     },
     "memory": {
       "indexed_entries": 166,
-      "manifest_ts": "2026-06-27T21:56:50"
+      "manifest_ts": "2026-06-27T21:57:33"
     }
   },
   "pending_tasks": [
@@ -67,5 +66,22 @@
     ".memento/**",
     "archive/**"
   ],
-  "entrypoint": "python3 tools/session_bootstrap.py"
+  "entrypoint": "python3 tools/session_bootstrap.py",
+  "cleanup_log": [
+    {
+      "date": "2026-06-27",
+      "action": "m360_cleanup",
+      "deleted_projects": [
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        79
+      ],
+      "reason": "test projects from today, keep real project 78"
+    }
+  ]
 }
