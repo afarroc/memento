@@ -3,24 +3,19 @@
     "project": "mementobloom",
     "role": "asistente-gtd",
     "workspace": "/Volumes/Macintosh HD - Datos/mementobloom",
-    "last_event_time": "2026-06-28T02:26:02.553968",
+    "last_event_time": "2026-06-28T02:48:05",
     "last_event_type": "bootstrap",
-    "last_event_summary": "fix: recover canonical session from git when SESSION.md missing",
-    "git_branch": "master",
-    "git_commit": "213fc18",
-    "generated_at": "2026-06-28T02:26:02.553968",
-    "next_review": "2026-06-29T02:26:06.707835"
+    "last_event_summary": "feat: enrich session startup with quick_scan, doctor, and ranked context",
+    "git_branch": "unknown",
+    "git_commit": "f7b08f9",
+    "generated_at": "2026-06-28T02:48:05"
   },
   "state": {
     "git": {
-      "branch": "master",
-      "commit_hash": "213fc18",
-      "commit_message": "fix: recover canonical session from git when SESSION.md missing",
-      "pending_count": 2,
-      "pending": [
-        "MM SESSION.md",
-        " M tools/session_bootstrap.py"
-      ]
+      "branch": "unknown",
+      "commit_hash": "f7b08f9",
+      "commit_message": "feat: enrich session startup with quick_scan, doctor, and ranked context",
+      "pending_count": 1
     },
     "services": {
       "sala": {
@@ -48,9 +43,17 @@
     },
     "memory": {
       "indexed_entries": 169,
-      "manifest_ts": "2026-06-28T02:26:06"
+      "manifest_ts": ""
     }
   },
+  "forbidden_paths": [
+    ".agent_context/secure/*",
+    "memory/**/*.json",
+    "*.env",
+    ".memento/**",
+    "archive/**"
+  ],
+  "entrypoint": "python3 tools/session_bootstrap.py",
   "pending_tasks": [
     {
       "id": "T3.1",
@@ -182,13 +185,5 @@
       "status": "active",
       "impact": "No se pueden crear tareas Sprint 3 en M360 ni validar flujo completo."
     }
-  ],
-  "forbidden_paths": [
-    ".agent_context/secure/*",
-    "memory/**/*.json",
-    "*.env",
-    ".memento/**",
-    "archive/**"
-  ],
-  "entrypoint": "python3 tools/session_bootstrap.py"
+  ]
 }
