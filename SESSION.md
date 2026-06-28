@@ -3,24 +3,23 @@
     "project": "mementobloom",
     "role": "asistente-gtd",
     "workspace": "/Volumes/Macintosh HD - Datos/mementobloom",
-    "last_event_time": "2026-06-27T21:49:23.181498",
+    "last_event_time": "2026-06-27T21:56:46.580078",
     "last_event_type": "bootstrap",
-    "last_event_summary": "chore(session): final cleanup, Sprint 2 closure and .kilo removal",
+    "last_event_summary": "fix(sala): handle BrokenPipeError gracefully on client disconnect",
     "git_branch": "master",
-    "git_commit": "daa745c",
-    "generated_at": "2026-06-27T21:49:23.181498",
-    "next_review": "2026-06-28T21:49:24.882915"
+    "git_commit": "517cd1a",
+    "generated_at": "2026-06-27T21:56:46.580078",
+    "next_review": "2026-06-28T21:56:50.121662"
   },
   "state": {
     "git": {
       "branch": "master",
-      "commit_hash": "daa745c",
-      "commit_message": "chore(session): final cleanup, Sprint 2 closure and .kilo removal",
-      "pending_count": 4,
+      "commit_hash": "517cd1a",
+      "commit_message": "fix(sala): handle BrokenPipeError gracefully on client disconnect",
+      "pending_count": 3,
       "pending": [
         "M .agent_context/START_CONTEXT.md",
         " M SESSION.md",
-        " M sala.py",
         "?? .kilo.backup.20260627/"
       ]
     },
@@ -30,14 +29,14 @@
       "redis": "OK"
     },
     "memory": {
-      "indexed_entries": 165,
-      "manifest_ts": "2026-06-27T21:49:24"
+      "indexed_entries": 166,
+      "manifest_ts": "2026-06-27T21:56:50"
     }
   },
   "pending_tasks": [
     {
       "id": "T3.1",
-      "description": "Mejorar vault_manager.py: cifrado Fernet o marcar como encoding",
+      "description": "Mejorar vault_manager.py: cifrado Fernet o marcar como encoding, no seguridad",
       "status": "pending",
       "sprint": 3
     },
