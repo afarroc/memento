@@ -392,6 +392,26 @@ def build_context(limit: int, project: str | None = None, agent_result: dict | N
         "## Git state",
         f"- {git_status_summary()}",
         "",
+        "## Memory scan",
+    ])
+    try:
+        scan = subprocess.run(
+            ["python3", "tools/quick_scan.py"],
+            capture_output=True,
+            text=True,
+            timeout=15,
+            cwd=str(WS_ROOT),
+        )
+        if scan.returncode == 0:
+            for line in scan.stdout.splitlines():
+                if line.strip():
+                    lines.append(f"- {line.strip()}")
+        else:
+            lines.append(f"- Quick scan: error ({scan.stderr.strip()[:100]})")
+    except Exception as exc:
+        lines.append(f"- Quick scan: error ({exc})")
+    lines.extend([
+        "",
         "## Services",
     ])
     try:
@@ -401,11 +421,58 @@ def build_context(limit: int, project: str | None = None, agent_result: dict | N
         lines.append(f"- Services: error ({exc})")
     lines.extend([
         "",
+        "## Health check",
+    ])
+    try:
+        health = subprocess.run(
+            ["python3", "tools/doctor.py", "--startup", "--no-services"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+            cwd=str(WS_ROOT),
+        )
+        if health.returncode == 0:
+            for line in health.stdout.splitlines():
+                stripped = line.strip()
+                if stripped and not stripped.startswith("MementoBloom Doctor") and not stripped.startswith("Status:") and not stripped.startswith("Project:") and not stripped.startswith("Working") and stripped != "Checks:":
+                    lines.append(f"- {stripped}")
+        else:
+            lines.append(f"- Doctor: error ({health.stderr.strip()[:100]})")
+    except Exception as exc:
+        lines.append(f"- Doctor: error ({exc})")
+    lines.extend([
+        "",
+        "## Ranked context (top entries)",
+    ])
+    try:
+        ctx = subprocess.run(
+            ["python3", "tools/context_builder.py", "--limit", str(limit or 8)],
+            capture_output=True,
+            text=True,
+            timeout=10,
+            cwd=str(WS_ROOT),
+        )
+        if ctx.returncode == 0:
+            in_context = False
+            for line in ctx.stdout.splitlines():
+                stripped = line.strip()
+                if stripped.startswith("# 🜄 MEMENTO CONTEXT"):
+                    in_context = True
+                    continue
+                if in_context and stripped.startswith("## "):
+                    in_context = False
+                if in_context and stripped and not stripped.startswith("---") and not stripped.startswith("{") and not stripped.startswith("}") and not stripped.startswith('"total"') and not stripped.startswith('"handoffs"') and not stripped.startswith('"contexts"') and not stripped.startswith('"ready"'):
+                    if stripped.startswith("- "):
+                        lines.append(f"{stripped}")
+                    else:
+                        lines.append(f"- {stripped}")
+        else:
+            lines.append(f"- Context builder: error ({ctx.stderr.strip()[:100]})")
+    except Exception as exc:
+        lines.append(f"- Context builder: error ({exc})")
+    lines.extend([
+        "",
         "## Safe next-session commands",
-        f"- `python3 tools/session_start.py --quick --limit 8` (proyecto por defecto: {ROOT.name})",
-        "- `python3 tools/bootstrap_context.py --print` imprime contexto universal para cualquier modelo.",
-        "- `python3 tools/optimize_agent.py --context` audita y resume el entorno operativo.",
-        "- `python3 tools/session_start.py --services-only`",
     ])
     return "\n".join(lines) + "\n"
 
