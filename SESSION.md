@@ -3,19 +3,19 @@
     "project": "mementobloom",
     "role": "asistente-gtd",
     "workspace": "/Volumes/Macintosh HD - Datos/mementobloom",
-    "last_event_time": "2026-06-28T03:03:34",
+    "last_event_time": "2026-06-28T03:14:51",
     "last_event_type": "bootstrap",
-    "last_event_summary": "session: refresh state after enriched startup integration",
+    "last_event_summary": "session: refresh state after enriched startup and sync",
     "git_branch": "unknown",
-    "git_commit": "aa3cae5",
-    "generated_at": "2026-06-28T03:03:34"
+    "git_commit": "6c0ee5e",
+    "generated_at": "2026-06-28T03:14:51"
   },
   "state": {
     "git": {
       "branch": "unknown",
-      "commit_hash": "aa3cae5",
-      "commit_message": "session: refresh state after enriched startup integration",
-      "pending_count": 1
+      "commit_hash": "6c0ee5e",
+      "commit_message": "session: refresh state after enriched startup and sync",
+      "pending_count": 3
     },
     "services": {
       "sala": {

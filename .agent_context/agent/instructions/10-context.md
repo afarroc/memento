@@ -13,3 +13,9 @@ Reglas de arranque:
 - Identifica el objetivo del usuario.
 - Continúa desde el último handoff relevante.
 - No repitas instrucciones ya registradas salvo que sea necesario para ejecutar una tarea.
+
+Ubicación de archivos:
+- `.agent_context/` → solo contexto del agente (semillas, instrucciones, START_CONTEXT regenerable, secure/).
+- `projects/*/HANDOFF_*.md` → registros de gestión, cierres, conciliaciones, auditorías.
+- `docs/` → documentación permanente del proyecto.
+- Nunca pongas documentación de gestión en `.agent_context/` (rompe el propósito del proyecto).
