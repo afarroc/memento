@@ -121,14 +121,6 @@
       "sprint": null,
       "m360_id": 330,
       "m360_project": 81
-    },
-    {
-      "id": "M3.5",
-      "description": "Migrar plan de estudios desde ../otros_proyectos/Administracion_UPN/Ciclo_01/ hacia M360 Courses",
-      "status": "pending",
-      "sprint": null,
-      "m360_id": 331,
-      "m360_project": 81
     }
   ],
   "completed_tasks": [
@@ -235,6 +227,13 @@
       "description": "M360 no disponible actualmente (connection refused). Sincronización diferida de Sprint 3 en proyecto 78.",
       "status": "active",
       "impact": "No se pueden crear tareas Sprint 3 en M360 ni validar flujo completo."
+    }
+  ],
+  "notes": [
+    {
+      "id": "NOTE-M3.5-RELEVANCE",
+      "timestamp": "2026-06-28T14:42:00-05:00",
+      "content": "M3.5 (migracion plan de estudios UPN) es prueba de funcionamiento, no tarea de implementacion de API. Eliminada de proyecto 81 (Bridge M360 - API Courses). Debe ejecutarse solo despues de validar CRUD completo."
     }
   ]
 }
