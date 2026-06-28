@@ -3,35 +3,33 @@
     "project": "mementobloom",
     "role": "asistente-gtd",
     "workspace": "/Volumes/Macintosh HD - Datos/mementobloom",
-    "last_event_time": "2026-06-27T19:01:36.509978",
+    "last_event_time": "2026-06-27T20:14:10.603409",
     "last_event_type": "bootstrap",
-    "last_event_summary": "docs: mark MB-Docs completed and refresh session state",
+    "last_event_summary": "feat(agent): restore automatic .kilo/agents/agent-main.md sync in session_start.py",
     "git_branch": "master",
-    "git_commit": "3152cf2",
-    "generated_at": "2026-06-27T19:01:36.509978",
-    "next_review": "2026-06-28T19:01:43.054170"
+    "git_commit": "202e123",
+    "generated_at": "2026-06-27T20:14:10.603409",
+    "next_review": "2026-06-28T20:14:14.923843"
   },
   "state": {
     "git": {
       "branch": "master",
-      "commit_hash": "3152cf2",
-      "commit_message": "docs: mark MB-Docs completed and refresh session state",
-      "pending_count": 4,
+      "commit_hash": "202e123",
+      "commit_message": "feat(agent): restore automatic .kilo/agents/agent-main.md sync in session_start.py",
+      "pending_count": 2,
       "pending": [
-        "M SESSION.md",
-        " M tools/m360_bridge/client.py",
         "?? gtd_memento/",
         "?? projects/m360/context/"
       ]
     },
     "services": {
       "sala": "OK",
-      "panel": "NO",
+      "panel": "OK",
       "redis": "OK"
     },
     "memory": {
       "indexed_entries": 162,
-      "manifest_ts": "2026-06-27T19:01:42"
+      "manifest_ts": "2026-06-27T20:14:14"
     }
   },
   "pending_tasks": [
