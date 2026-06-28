@@ -3,19 +3,19 @@
     "project": "mementobloom",
     "role": "asistente-gtd",
     "workspace": "/Volumes/Macintosh HD - Datos/mementobloom",
-    "last_event_time": "2026-06-28T03:27:41.793081",
+    "last_event_time": "2026-06-28T03:29:38.339975",
     "last_event_type": "bootstrap",
-    "last_event_summary": "fix: ensure lessons_learned loads from handoff when rebuilding SESSION.md",
+    "last_event_summary": "instructions: embed lessons learned, fix lessons loading order",
     "git_branch": "master",
-    "git_commit": "8d39af0",
-    "generated_at": "2026-06-28T03:27:41.793081",
-    "next_review": "2026-06-29T03:27:45.559301"
+    "git_commit": "8c2f266",
+    "generated_at": "2026-06-28T03:29:38.339975",
+    "next_review": "2026-06-29T03:29:41.493452"
   },
   "state": {
     "git": {
       "branch": "master",
-      "commit_hash": "8d39af0",
-      "commit_message": "fix: ensure lessons_learned loads from handoff when rebuilding SESSION.md",
+      "commit_hash": "8c2f266",
+      "commit_message": "instructions: embed lessons learned, fix lessons loading order",
       "pending_count": 1,
       "pending": [
         "D SESSION.md"
@@ -47,7 +47,7 @@
     },
     "memory": {
       "indexed_entries": 170,
-      "manifest_ts": "2026-06-28T03:27:45"
+      "manifest_ts": "2026-06-28T03:29:41"
     }
   },
   "pending_tasks": [
