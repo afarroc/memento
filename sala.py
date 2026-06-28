@@ -217,7 +217,10 @@ class H(BaseHTTPRequestHandler):
         self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header("Access-Control-Allow-Headers", "Content-Type")
         self.end_headers()
-        self.wfile.write(payload)
+        try:
+            self.wfile.write(payload)
+        except BrokenPipeError:
+            return
 
     def _send_json(self, data, status=200):
         self._send_response(json.dumps(data, ensure_ascii=False, indent=2), "application/json", status)
