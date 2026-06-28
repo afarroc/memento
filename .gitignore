@@ -94,3 +94,5 @@ memory/personality/user_personality.md
 
 # === KILO CLI CONFIG (LOCAL ONLY) ===
 .kilo/
+.kilo.backup*
+
