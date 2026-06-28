@@ -3,19 +3,19 @@
     "project": "mementobloom",
     "role": "asistente-gtd",
     "workspace": "/Volumes/Macintosh HD - Datos/mementobloom",
-    "last_event_time": "2026-06-28T01:51:01",
+    "last_event_time": "2026-06-28T01:52:46",
     "last_event_type": "bootstrap",
-    "last_event_summary": "defenses: atomic writes, git fallback, and START_CONTEXT.md untrack",
+    "last_event_summary": "recontextualize: move reconciliation docs to docs/, clean .agent_context, regenerate context",
     "git_branch": "unknown",
-    "git_commit": "9798e2b",
-    "generated_at": "2026-06-28T01:51:01"
+    "git_commit": "6446865",
+    "generated_at": "2026-06-28T01:52:46"
   },
   "state": {
     "git": {
       "branch": "unknown",
-      "commit_hash": "9798e2b",
-      "commit_message": "defenses: atomic writes, git fallback, and START_CONTEXT.md untrack",
-      "pending_count": 4
+      "commit_hash": "6446865",
+      "commit_message": "recontextualize: move reconciliation docs to docs/, clean .agent_context, regenerate context",
+      "pending_count": 2
     },
     "services": {
       "sala": {
