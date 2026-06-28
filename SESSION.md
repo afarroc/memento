@@ -3,34 +3,57 @@
     "project": "mementobloom",
     "role": "asistente-gtd",
     "workspace": "/Volumes/Macintosh HD - Datos/mementobloom",
-    "last_event_time": "2026-06-27T22:57:03.561578",
+    "last_event_time": "2026-06-28T01:40:21",
     "last_event_type": "bootstrap",
-    "last_event_summary": "chore(session): restore cumulative Sprint 0-2 history in SESSION.md",
-    "git_branch": "master",
-    "git_commit": "8d52264",
-    "generated_at": "2026-06-27T22:57:03.561578",
-    "next_review": "2026-06-28T22:57:07.544724"
+    "last_event_summary": "docs: calibrate M360 project 78 with real Sprint 0-3 tasks and validate memory sync",
+    "git_branch": "unknown",
+    "git_commit": "3f04e73",
+    "generated_at": "2026-06-28T01:40:21"
   },
   "state": {
     "git": {
-      "branch": "master",
-      "commit_hash": "8d52264",
-      "commit_message": "chore(session): restore cumulative Sprint 0-2 history in SESSION.md",
-      "pending_count": 1,
-      "pending": [
-        "M SESSION.md"
-      ]
+      "branch": "unknown",
+      "commit_hash": "3f04e73",
+      "commit_message": "docs: calibrate M360 project 78 with real Sprint 0-3 tasks and validate memory sync",
+      "pending_count": 7
     },
     "services": {
-      "sala": "OK",
-      "panel": "OK",
-      "redis": "OK"
+      "sala": {
+        "ok": true,
+        "status": 200,
+        "data": {
+          "messages": 5
+        },
+        "error": null,
+        "url": "http://127.0.0.1:8767/stats"
+      },
+      "panel": {
+        "ok": true,
+        "status": 200,
+        "data": "<html>",
+        "error": null,
+        "url": "http://127.0.0.1:8766/"
+      },
+      "redis": {
+        "ok": true,
+        "detail": "+PONG",
+        "host": "192.168.18.59",
+        "port": 6379
+      }
     },
     "memory": {
       "indexed_entries": 167,
-      "manifest_ts": "2026-06-27T22:57:07"
+      "manifest_ts": ""
     }
   },
+  "forbidden_paths": [
+    ".agent_context/secure/*",
+    "memory/**/*.json",
+    "*.env",
+    ".memento/**",
+    "archive/**"
+  ],
+  "entrypoint": "python3 tools/session_bootstrap.py",
   "pending_tasks": [
     {
       "id": "T3.1",
@@ -57,15 +80,6 @@
       "sprint": 3
     }
   ],
-  "blockers": [],
-  "forbidden_paths": [
-    ".agent_context/secure/*",
-    "memory/**/*.json",
-    "*.env",
-    ".memento/**",
-    "archive/**"
-  ],
-  "entrypoint": "python3 tools/session_bootstrap.py",
   "completed_tasks": [
     {
       "id": "T0.1",
@@ -162,6 +176,14 @@
       "description": "Actualizar PROJECT_CONTEXT.md con nueva estructura",
       "status": "completed",
       "sprint": null
+    }
+  ],
+  "blockers": [
+    {
+      "id": "B-M360",
+      "description": "M360 no disponible actualmente (connection refused). Sincronización diferida de Sprint 3 en proyecto 78.",
+      "status": "active",
+      "impact": "No se pueden crear tareas Sprint 3 en M360 ni validar flujo completo."
     }
   ]
 }

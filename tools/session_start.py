@@ -10,6 +10,7 @@ import re
 import socket
 import subprocess
 import sys
+import tempfile
 import time
 import urllib.error
 import urllib.request
@@ -365,7 +366,7 @@ def build_context(limit: int, project: str | None = None, agent_result: dict | N
         "# MementoBloom Startup Context",
         "",
         f"Generated: {datetime.now().isoformat(timespec='seconds')}",
-        f"Workspace: {WS_ROOT}",
+        f"Workspace: {rel(WS_ROOT)}",
         f"Project: {WS_ROOT.name}",
         f"Index entries: {len(index)}",
         "",
@@ -411,14 +412,33 @@ def build_context(limit: int, project: str | None = None, agent_result: dict | N
 
 def write_context(text: str):
     START_CONTEXT.parent.mkdir(parents=True, exist_ok=True)
-    START_CONTEXT.write_text(text, encoding="utf-8")
+    backup_dir = WS_ROOT / ".memento_runtime" / "backups"
+    if START_CONTEXT.exists():
+        try:
+            backup_dir.mkdir(parents=True, exist_ok=True)
+            ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+            backup_path = backup_dir / f"start_context_{ts}.md"
+            backup_path.write_text(START_CONTEXT.read_text(encoding="utf-8"), encoding="utf-8")
+        except Exception:
+            pass
+    tmp_fd, tmp_path = tempfile.mkstemp(dir=START_CONTEXT.parent, suffix=".tmp")
+    try:
+        with os.fdopen(tmp_fd, "w", encoding="utf-8") as f:
+            f.write(text)
+        os.replace(tmp_path, START_CONTEXT)
+    except Exception:
+        try:
+            os.unlink(tmp_path)
+        except OSError:
+            pass
+        raise
 
 
 def local_context_summary(path: Path, title: str) -> list[str]:
     if not path.exists():
         return [f"## {title}", f"- `{path}` no existe todavía.", ""]
     text = path.read_text(encoding="utf-8", errors="replace")
-    lines = [f"## {title}", f"- Path: `{path}`", "- Estado: local/contextual"]
+    lines = [f"## {title}", f"- Path: `{rel(path)}`", "- Estado: local/contextual"]
     for line in text.splitlines():
         stripped = line.strip()
         if not stripped or stripped.startswith("#"):

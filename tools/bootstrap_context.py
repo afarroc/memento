@@ -13,6 +13,7 @@ import json
 import os
 import re
 import sys
+import tempfile
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -151,7 +152,7 @@ def format_markdown(context: Dict[str, Any]) -> str:
         "",
         f"Generated: {context.get('generated_at')}",
         f"Project: {context.get('environment', {}).get('project')}",
-        f"Working directory: {context.get('environment', {}).get('working_directory')}",
+        f"Working directory: {rel(Path(context.get('environment', {}).get('working_directory', '.')))}",
         "",
         "## User and project meta",
         f"- PROJECT_META.md: {'OK' if files.get('project_meta', {}).get('exists') else 'NO'}",
@@ -219,11 +220,92 @@ def format_markdown(context: Dict[str, Any]) -> str:
     return "\n".join(lines) + "\n"
 
 
+def _atomic_write_json(path: Path, data: Dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp_fd, tmp_path = tempfile.mkstemp(dir=path.parent, suffix=".tmp")
+    try:
+        with os.fdopen(tmp_fd, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+            f.write("\n")
+        os.replace(tmp_path, path)
+    except Exception:
+        try:
+            os.unlink(tmp_path)
+        except OSError:
+            pass
+        raise
+
+
+def _backup_session(session_file: Path) -> None:
+    if not session_file.exists():
+        return
+    try:
+        backup_dir = WS_ROOT / ".memento_runtime" / "backups"
+        backup_dir.mkdir(parents=True, exist_ok=True)
+        ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+        backup_path = backup_dir / f"session_{ts}.json"
+        backup_path.write_text(session_file.read_text(encoding="utf-8"), encoding="utf-8")
+    except Exception:
+        pass
+
+
+def _recover_from_git() -> Optional[Dict[str, Any]]:
+    try:
+        import subprocess
+        out = subprocess.check_output(
+            ["git", "-C", str(WS_ROOT), "show", "HEAD:SESSION.md"],
+            stderr=subprocess.DEVNULL,
+            timeout=5,
+            text=True,
+        )
+        data = json.loads(out)
+        if isinstance(data, dict) and data.get("completed_tasks"):
+            return data
+    except Exception:
+        pass
+    return None
+
+
+def _validate_session_schema(session: Dict[str, Any]) -> None:
+    required_top = {"session", "state", "forbidden_paths", "entrypoint"}
+    missing = required_top - session.keys()
+    if missing:
+        raise ValueError(f"SESIÓN inválida: faltan secciones {missing}")
+    required_session = {"project", "role", "workspace", "last_event_time", "last_event_type", "last_event_summary", "git_branch", "git_commit", "generated_at"}
+    missing = required_session - session["session"].keys()
+    if missing:
+        raise ValueError(f"SESIÓN inválida: faltan campos en 'session' {missing}")
+    required_state = {"git", "services", "memory"}
+    missing = required_state - session["state"].keys()
+    if missing:
+        raise ValueError(f"SESIÓN inválida: faltan secciones en 'state' {missing}")
+
+
 def write_session_md(context: Dict[str, Any]) -> None:
     session_file = WS_ROOT / "SESSION.md"
     git = context.get("git", {})
     services_data = context.get("services", {})
     memory = context.get("memory", {})
+
+    # Cargar sesión existente para preservar secciones que no se regeneran aquí
+    existing_session: Dict[str, Any] = {}
+    if session_file.exists():
+        try:
+            raw = session_file.read_text(encoding="utf-8")
+            if raw.strip():
+                existing_session = json.loads(raw)
+        except Exception:
+            existing_session = {}
+
+    # Fallback a git si faltan datos operativos en el archivo actual
+    if not existing_session.get("completed_tasks"):
+        recovered = _recover_from_git()
+        if recovered:
+            existing_session.setdefault("completed_tasks", recovered.get("completed_tasks", []))
+            existing_session.setdefault("pending_tasks", recovered.get("pending_tasks", []))
+            existing_session.setdefault("blockers", recovered.get("blockers", []))
+
+    # Validar que lo que vamos a escribir cumpla el esquema mínimo
     session = {
         "session": {
             "project": context.get("environment", {}).get("project", "mementobloom"),
@@ -262,7 +344,36 @@ def write_session_md(context: Dict[str, Any]) -> None:
         ],
         "entrypoint": "python3 tools/session_bootstrap.py",
     }
-    session_file.write_text(json.dumps(session, indent=2, ensure_ascii=False), encoding="utf-8")
+
+    # Preservar secciones operativas existentes si están presentes
+    for key in ("pending_tasks", "completed_tasks", "blockers"):
+        if key in existing_session:
+            session[key] = existing_session[key]
+
+    # Preservar state.services existente (puede tener formato enriquecido)
+    existing_services = existing_session.get("state", {}).get("services") if isinstance(existing_session.get("state"), dict) else None
+    if isinstance(existing_services, dict) and existing_services:
+        session["state"]["services"] = existing_services
+
+    _backup_session(session_file)
+    _validate_session_schema(session)
+    _atomic_write_json(session_file, session)
+
+    # Validación post-escritura: asegurar que las secciones operativas no desaparezcan
+    try:
+        reloaded = json.loads(session_file.read_text(encoding="utf-8"))
+        had_tasks = any(
+            key in reloaded for key in ("pending_tasks", "completed_tasks", "blockers")
+        )
+        if not had_tasks:
+            recovered = _recover_from_git()
+            if recovered:
+                for key in ("pending_tasks", "completed_tasks", "blockers"):
+                    if key in recovered and key not in reloaded:
+                        reloaded[key] = recovered[key]
+                _atomic_write_json(session_file, reloaded)
+    except Exception:
+        pass
 
 
 def main(argv: Optional[List[str]] = None) -> int:

@@ -17,6 +17,7 @@ import json
 import os
 import subprocess
 import sys
+import tempfile
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, Optional
@@ -29,6 +30,7 @@ WS = Path(__file__).resolve().parent.parent
 WS_ROOT = workspace_root()
 SESSION_FILE = WS_ROOT / "SESSION.md"
 SESSION_REPORT_FILE = WS_ROOT / "SESSION_REPORT.md"
+BACKUP_DIR = WS_ROOT / ".memento_runtime" / "backups"
 
 
 def _run(cmd: str, cwd: Path = WS, timeout: int = 15) -> str:
@@ -95,9 +97,61 @@ def _load_existing_session() -> Optional[Dict[str, Any]]:
     if not SESSION_FILE.exists():
         return None
     try:
-        return json.loads(SESSION_FILE.read_text(encoding="utf-8"))
+        raw = SESSION_FILE.read_text(encoding="utf-8").strip()
+        if not raw:
+            return {}
+        data = json.loads(raw)
+        if not isinstance(data, dict):
+            return {}
+        # Si es un esqueleto vacío (solo session/state sin tareas), preferir git
+        has_tasks = bool(data.get("pending_tasks") or data.get("completed_tasks") or data.get("blockers"))
+        if not has_tasks:
+            recovered = _recover_from_git()
+            if recovered and (recovered.get("pending_tasks") or recovered.get("completed_tasks") or recovered.get("blockers")):
+                data = recovered
+        return data
     except Exception:
-        return None
+        return _recover_from_git() or {}
+
+
+def _atomic_write_text(path: Path, text: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp_fd, tmp_path = tempfile.mkstemp(dir=path.parent, suffix=".tmp")
+    try:
+        with os.fdopen(tmp_fd, "w", encoding="utf-8") as f:
+            f.write(text)
+        os.replace(tmp_path, path)
+    except Exception:
+        try:
+            os.unlink(tmp_path)
+        except OSError:
+            pass
+        raise
+
+
+def _backup_session() -> None:
+    if not SESSION_FILE.exists():
+        return
+    try:
+        BACKUP_DIR.mkdir(parents=True, exist_ok=True)
+        ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+        backup_path = BACKUP_DIR / f"session_{ts}.json"
+        backup_path.write_text(SESSION_FILE.read_text(encoding="utf-8"), encoding="utf-8")
+    except Exception:
+        pass  # Non-fatal
+
+
+def _recover_from_git() -> Optional[Dict[str, Any]]:
+    try:
+        raw = _run("git show HEAD:SESSION.md")
+        if raw.startswith("ERROR:"):
+            return None
+        data = json.loads(raw)
+        if isinstance(data, dict) and data.get("completed_tasks"):
+            return data
+    except Exception:
+        pass
+    return None
 
 
 def build_session() -> Dict[str, Any]:
@@ -107,6 +161,10 @@ def build_session() -> Dict[str, Any]:
     services = _get_services()
     memory = _get_memory()
     session = existing.get("session", {})
+    existing_services = existing.get("state", {}).get("services") if isinstance(existing.get("state"), dict) else None
+    merged_services = dict(services)
+    if isinstance(existing_services, dict) and existing_services:
+        merged_services.update(existing_services)
     return {
         "session": {
             "project": "mementobloom",
@@ -122,7 +180,7 @@ def build_session() -> Dict[str, Any]:
         },
         "state": {
             "git": git,
-            "services": services,
+            "services": merged_services,
             "memory": memory,
         },
         "pending_tasks": existing.get("pending_tasks") or [
@@ -134,6 +192,7 @@ def build_session() -> Dict[str, Any]:
             {"id": "MB-Redis", "description": "Resolver disponibilidad de Redis para panel/sala", "status": "blocked"},
             {"id": "MB-Docs", "description": "Actualizar docs/PROJECT_CONTEXT.md para reflejar nueva estructura", "status": "pending"},
         ],
+        "completed_tasks": existing.get("completed_tasks") or [],
         "blockers": existing.get("blockers") or [],
         "forbidden_paths": [
             ".agent_context/secure/*",
@@ -206,11 +265,29 @@ def main() -> int:
 
     session = build_session()
 
+    _backup_session()
+
     # Escribir SESSION.md (canónico JSON)
-    SESSION_FILE.write_text(render_json(session), encoding="utf-8")
+    _atomic_write_text(SESSION_FILE, render_json(session))
+
+    # Validación post-escritura
+    try:
+        reloaded = json.loads(SESSION_FILE.read_text(encoding="utf-8"))
+        had_tasks = any(
+            key in reloaded for key in ("pending_tasks", "completed_tasks", "blockers")
+        )
+        if not had_tasks:
+            recovered = _recover_from_git()
+            if recovered:
+                for key in ("pending_tasks", "completed_tasks", "blockers"):
+                    if key in recovered and key not in reloaded:
+                        reloaded[key] = recovered[key]
+                _atomic_write_text(SESSION_FILE, json.dumps(reloaded, ensure_ascii=False, indent=2))
+    except Exception:
+        pass
 
     # Escribir SESSION_REPORT.md (vista markdown para humanos)
-    SESSION_REPORT_FILE.write_text(render_markdown(session), encoding="utf-8")
+    _atomic_write_text(SESSION_REPORT_FILE, render_markdown(session))
 
     if args.json:
         print(render_json(session))
