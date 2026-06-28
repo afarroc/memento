@@ -95,7 +95,11 @@ def _get_memory() -> Dict[str, Any]:
 
 def _load_existing_session() -> Optional[Dict[str, Any]]:
     if not SESSION_FILE.exists():
-        return None
+        # Fallback a git cuando no existe archivo local (sesion nueva)
+        recovered = _recover_from_git()
+        if recovered:
+            return recovered
+        return {}
     try:
         raw = SESSION_FILE.read_text(encoding="utf-8").strip()
         if not raw:

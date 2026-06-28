@@ -3,19 +3,24 @@
     "project": "mementobloom",
     "role": "asistente-gtd",
     "workspace": "/Volumes/Macintosh HD - Datos/mementobloom",
-    "last_event_time": "2026-06-28T02:08:50",
+    "last_event_time": "2026-06-28T02:14:20.371170",
     "last_event_type": "bootstrap",
-    "last_event_summary": "chore: remove misplaced reconciliation docs from docs/, relocate to projects/",
-    "git_branch": "unknown",
-    "git_commit": "303643d",
-    "generated_at": "2026-06-28T02:08:50"
+    "last_event_summary": "session: final state after recontextualization, selftest 7/7",
+    "git_branch": "master",
+    "git_commit": "95df4c8",
+    "generated_at": "2026-06-28T02:14:20.371170",
+    "next_review": "2026-06-29T02:14:23.959518"
   },
   "state": {
     "git": {
-      "branch": "unknown",
-      "commit_hash": "303643d",
-      "commit_message": "chore: remove misplaced reconciliation docs from docs/, relocate to projects/",
-      "pending_count": 1
+      "branch": "master",
+      "commit_hash": "95df4c8",
+      "commit_message": "session: final state after recontextualization, selftest 7/7",
+      "pending_count": 2,
+      "pending": [
+        "D SESSION.md",
+        " M tools/session_bootstrap.py"
+      ]
     },
     "services": {
       "sala": {
@@ -42,18 +47,10 @@
       }
     },
     "memory": {
-      "indexed_entries": 167,
-      "manifest_ts": ""
+      "indexed_entries": 169,
+      "manifest_ts": "2026-06-28T02:14:23"
     }
   },
-  "forbidden_paths": [
-    ".agent_context/secure/*",
-    "memory/**/*.json",
-    "*.env",
-    ".memento/**",
-    "archive/**"
-  ],
-  "entrypoint": "python3 tools/session_bootstrap.py",
   "pending_tasks": [
     {
       "id": "T3.1",
@@ -185,5 +182,13 @@
       "status": "active",
       "impact": "No se pueden crear tareas Sprint 3 en M360 ni validar flujo completo."
     }
-  ]
+  ],
+  "forbidden_paths": [
+    ".agent_context/secure/*",
+    "memory/**/*.json",
+    "*.env",
+    ".memento/**",
+    "archive/**"
+  ],
+  "entrypoint": "python3 tools/session_bootstrap.py"
 }
