@@ -3,19 +3,19 @@
     "project": "mementobloom",
     "role": "asistente-gtd",
     "workspace": "/Volumes/Macintosh HD - Datos/mementobloom",
-    "last_event_time": "2026-06-28T13:56:38",
+    "last_event_time": "2026-06-28T14:07:08",
     "last_event_type": "bootstrap",
-    "last_event_summary": "m360: mark API Courses endpoints implementation in progress (M3.2/M3.3)",
+    "last_event_summary": "security: resolve INC-2026-06-28-001 - restore su password from env vars",
     "git_branch": "unknown",
-    "git_commit": "c181db0",
-    "generated_at": "2026-06-28T13:56:38"
+    "git_commit": "6468899",
+    "generated_at": "2026-06-28T14:07:08"
   },
   "state": {
     "git": {
       "branch": "unknown",
-      "commit_hash": "c181db0",
-      "commit_message": "m360: mark API Courses endpoints implementation in progress (M3.2/M3.3)",
-      "pending_count": 1
+      "commit_hash": "6468899",
+      "commit_message": "security: resolve INC-2026-06-28-001 - restore su password from env vars",
+      "pending_count": 0
     },
     "services": {
       "sala": {
