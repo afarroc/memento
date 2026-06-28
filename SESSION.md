@@ -3,21 +3,23 @@
     "project": "mementobloom",
     "role": "asistente-gtd",
     "workspace": "/Volumes/Macintosh HD - Datos/mementobloom",
-    "last_event_time": "2026-06-27T22:26:04.000267",
+    "last_event_time": "2026-06-27T22:57:03.561578",
     "last_event_type": "bootstrap",
-    "last_event_summary": "sync(m360): mark Sprint 2 tasks as Completed in project 78",
+    "last_event_summary": "chore(session): restore cumulative Sprint 0-2 history in SESSION.md",
     "git_branch": "master",
-    "git_commit": "c751c67",
-    "generated_at": "2026-06-27T22:26:04.000267",
-    "next_review": "2026-06-28T22:26:07.403259"
+    "git_commit": "8d52264",
+    "generated_at": "2026-06-27T22:57:03.561578",
+    "next_review": "2026-06-28T22:57:07.544724"
   },
   "state": {
     "git": {
       "branch": "master",
-      "commit_hash": "c751c67",
-      "commit_message": "sync(m360): mark Sprint 2 tasks as Completed in project 78",
-      "pending_count": 0,
-      "pending": []
+      "commit_hash": "8d52264",
+      "commit_message": "chore(session): restore cumulative Sprint 0-2 history in SESSION.md",
+      "pending_count": 1,
+      "pending": [
+        "M SESSION.md"
+      ]
     },
     "services": {
       "sala": "OK",
@@ -25,8 +27,8 @@
       "redis": "OK"
     },
     "memory": {
-      "indexed_entries": 166,
-      "manifest_ts": "2026-06-27T22:26:07"
+      "indexed_entries": 167,
+      "manifest_ts": "2026-06-27T22:57:07"
     }
   },
   "pending_tasks": [
