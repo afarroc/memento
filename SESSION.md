@@ -103,7 +103,7 @@
       "sprint": null,
       "m360_id": 328,
       "m360_project": 81,
-      "completed_at": "2026-06-28T13:40:00"
+      "completed_at": "2026-06-28T14:52:00-05:00"
     },
     {
       "id": "M3.3",
@@ -112,15 +112,16 @@
       "sprint": null,
       "m360_id": 329,
       "m360_project": 81,
-      "completed_at": "2026-06-28T13:40:00"
+      "completed_at": "2026-06-28T14:52:00-05:00"
     },
     {
       "id": "M3.4",
       "description": "Actualizar cliente M360: api_v1_list_courses, api_v1_create_course, api_v1_update_course, api_v1_delete_course",
-      "status": "pending",
+      "status": "completed",
       "sprint": null,
       "m360_id": 330,
-      "m360_project": 81
+      "m360_project": 81,
+      "completed_at": "2026-06-28T14:52:00-05:00"
     }
   ],
   "completed_tasks": [
