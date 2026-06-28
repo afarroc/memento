@@ -547,6 +547,19 @@ def agent_seed_status() -> dict:
     }
 
 
+def _sync_kilo_agent() -> None:
+    """Sync the generated agent seed to .kilo/agents/ so Kilo CLI can consume it."""
+    try:
+        kilo_agent_dir = WS_ROOT / ".kilo" / "agents"
+        kilo_agent_dir.mkdir(parents=True, exist_ok=True)
+        dest_path = kilo_agent_dir / "agent-main.md"
+        if AGENT_SEED.exists():
+            dest_path.write_text(AGENT_SEED.read_text(encoding="utf-8"), encoding="utf-8")
+    except Exception as exc:
+        # Non-fatal: Kilo fallback agents remain available if sync fails.
+        print(f"[session_start] Warning: failed to sync agent seed to .kilo/agents/: {exc}")
+
+
 def git_status_summary() -> str:
     try:
         out = subprocess.check_output(
@@ -771,6 +784,8 @@ def main():
         agent_result = {"status": "skipped", "path": str(AGENT_SEED), "hash": "?"}
     else:
         agent_result = ensure_agent_seed(force=args.force_seed or args.prepare_seed, project=project)
+        _sync_kilo_agent()
+
     context = build_context(limit=args.limit, project=project, agent_result=agent_result)
     if not args.no_write_context:
         write_context(context)
