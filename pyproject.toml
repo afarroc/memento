@@ -17,3 +17,12 @@ memento-bootstrap = "tools.bootstrap_context:main"
 memento-doctor = "tools.doctor:main"
 memento-session-start = "tools.session_start:main"
 memento-quick-scan = "tools.quick_scan:main"
+
+[project.optional-dependencies]
+dev = [
+    "redis>=8.0.0",
+    "PyMySQL>=1.2.0",
+    "openpyxl>=3.1.5",
+    "pypdf>=6.13.2",
+    "et_xmlfile>=2.0.0",
+]

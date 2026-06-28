@@ -1,10 +1,3 @@
 # MementoBloom - Memory System for IA
-# Minimal dependencies for compression-efficiency
-
-# Future: embeddings & vector search
-# sentence-transformers>=2.2.0
-# faiss-cpu>=1.7.0
-
-# Future: cloud sync
-# boto3>=1.26.0
-# google-api-python-client>=2.0.0
+# Runtime: Python standard library only (>=3.9)
+# No external pip packages are required to run core tools (core/, tools/, panel_server.py).
