@@ -3,19 +3,23 @@
     "project": "mementobloom",
     "role": "asistente-gtd",
     "workspace": "/Volumes/Macintosh HD - Datos/mementobloom",
-    "last_event_time": "2026-06-28T03:24:04",
+    "last_event_time": "2026-06-28T03:27:41.793081",
     "last_event_type": "bootstrap",
-    "last_event_summary": "instructions: embed lessons learned in agent context, update SESSION.md",
-    "git_branch": "unknown",
-    "git_commit": "dc67976",
-    "generated_at": "2026-06-28T03:24:04"
+    "last_event_summary": "fix: ensure lessons_learned loads from handoff when rebuilding SESSION.md",
+    "git_branch": "master",
+    "git_commit": "8d39af0",
+    "generated_at": "2026-06-28T03:27:41.793081",
+    "next_review": "2026-06-29T03:27:45.559301"
   },
   "state": {
     "git": {
-      "branch": "unknown",
-      "commit_hash": "dc67976",
-      "commit_message": "instructions: embed lessons learned in agent context, update SESSION.md",
-      "pending_count": 2
+      "branch": "master",
+      "commit_hash": "8d39af0",
+      "commit_message": "fix: ensure lessons_learned loads from handoff when rebuilding SESSION.md",
+      "pending_count": 1,
+      "pending": [
+        "D SESSION.md"
+      ]
     },
     "services": {
       "sala": {
@@ -43,17 +47,9 @@
     },
     "memory": {
       "indexed_entries": 170,
-      "manifest_ts": ""
+      "manifest_ts": "2026-06-28T03:27:45"
     }
   },
-  "forbidden_paths": [
-    ".agent_context/secure/*",
-    "memory/**/*.json",
-    "*.env",
-    ".memento/**",
-    "archive/**"
-  ],
-  "entrypoint": "python3 tools/session_bootstrap.py",
   "pending_tasks": [
     {
       "id": "T3.1",
@@ -185,5 +181,21 @@
       "status": "active",
       "impact": "No se pueden crear tareas Sprint 3 en M360 ni validar flujo completo."
     }
+  ],
+  "forbidden_paths": [
+    ".agent_context/secure/*",
+    "memory/**/*.json",
+    "*.env",
+    ".memento/**",
+    "archive/**"
+  ],
+  "entrypoint": "python3 tools/session_bootstrap.py",
+  "lessons_learned": [
+    "Git no es fuente de verdad entre sesiones — usar `.memento_runtime/session_canonical.json`",
+    "`.agent_context/` es exclusivamente para contexto del agente — nunca documentación permanente ni registros de gestión",
+    "Registros de gestión → `projects/mementobloom/HANDOFF_*.md` o `docs/`",
+    "`START_CONTEXT.md` es regenerable local, no se trackea",
+    "Simulación de sesión agnóstica es la prueba definitiva de recuperación",
+    "Backups timestamped son para recuperación extrema; entre sesiones basta con `session_canonical.json`"
   ]
 }
