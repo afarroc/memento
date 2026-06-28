@@ -236,5 +236,48 @@
       "status": "active",
       "impact": "No se pueden crear tareas Sprint 3 en M360 ni validar flujo completo."
     }
-  ]
+  ],
+  "client_projects": [
+    {
+      "id": "management360",
+      "name": "Management360",
+      "type": "client",
+      "path": "/Volumes/Macintosh HD - Datos/projects/Management360",
+      "status": "active_client",
+      "m360_project_id": 78,
+      "m360_project_title": "MementoBloom - S-27-06",
+      "m360_status": "Draft",
+      "registered_at": "2026-06-28T14:20:00-05:00",
+      "note": "Cliente de mementobloom. Se desarrolla con mementobloom pero es proyecto independiente."
+    },
+    {
+      "id": "admin_upn",
+      "name": "Administracion_UPN",
+      "type": "client",
+      "path": "projects/Administracion_UPN",
+      "status": "fase0",
+      "memory": "pending_install",
+      "m360_project_id": 81,
+      "m360_project_title": "Administracion_UPN - Plan de Estudios",
+      "m360_status": "Draft",
+      "registered_at": "2026-06-28T12:55:00",
+      "source": "../otros_proyectos/Administracion_UPN"
+    }
+  ],
+  "m360": {
+    "bridge_tool": "tools/m360_bridge/client.py",
+    "bridge_owner": "mementobloom",
+    "clients": {
+      "management360": {
+        "project_id": 78,
+        "project_title": "MementoBloom - S-27-06",
+        "status": "Draft"
+      },
+      "admin_upn": {
+        "project_id": 81,
+        "project_title": "Administracion_UPN - Plan de Estudios",
+        "status": "Draft"
+      }
+    }
+  }
 }
