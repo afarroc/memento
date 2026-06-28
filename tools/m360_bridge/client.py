@@ -366,6 +366,14 @@ class M360Client:
             return {"http_error": 400, "reason": f"Unknown status: {status}"}
         return self._request_json(f"/api/v1/tasks/{task_id}/status/", {"task_status_id": task_status_id}, method="POST")
 
+    def api_v1_update_task(self, task_id: int, **kwargs: Any) -> Dict[str, Any]:
+        """Actualiza campos de una tarea existente (title, description, etc.)."""
+        allowed_fields = {"title", "description", "important", "ticket_price", "due_date", "assigned_to_id", "task_status_id"}
+        payload = {k: v for k, v in kwargs.items() if k in allowed_fields and v is not None}
+        if not payload:
+            return {"http_error": 400, "reason": "No valid fields provided for update"}
+        return self._request_json(f"/api/v1/tasks/{task_id}/", payload, method="PUT")
+
     def api_v1_list_events(self, **params: Any) -> Dict[str, Any]:
         qs = urllib.parse.urlencode({k: v for k, v in params.items() if v not in (None, "")})
         path = "/api/v1/events/" + (f"?{qs}" if qs else "")
