@@ -3,24 +3,21 @@
     "project": "mementobloom",
     "role": "asistente-gtd",
     "workspace": "/Volumes/Macintosh HD - Datos/mementobloom",
-    "last_event_time": "2026-06-27T21:57:30.008310",
+    "last_event_time": "2026-06-27T22:26:04.000267",
     "last_event_type": "bootstrap",
-    "last_event_summary": "feat(sync): sync Sprint 3 tasks to M360 project 78, fix sala BrokenPipeError",
+    "last_event_summary": "sync(m360): mark Sprint 2 tasks as Completed in project 78",
     "git_branch": "master",
-    "git_commit": "7574c6a",
-    "generated_at": "2026-06-27T21:57:30.008310",
-    "next_review": "2026-06-28T21:57:33.286574"
+    "git_commit": "c751c67",
+    "generated_at": "2026-06-27T22:26:04.000267",
+    "next_review": "2026-06-28T22:26:07.403259"
   },
   "state": {
     "git": {
       "branch": "master",
-      "commit_hash": "7574c6a",
-      "commit_message": "feat(sync): sync Sprint 3 tasks to M360 project 78, fix sala BrokenPipeError",
-      "pending_count": 2,
-      "pending": [
-        "M .agent_context/START_CONTEXT.md",
-        "?? .kilo.backup.20260627/"
-      ]
+      "commit_hash": "c751c67",
+      "commit_message": "sync(m360): mark Sprint 2 tasks as Completed in project 78",
+      "pending_count": 0,
+      "pending": []
     },
     "services": {
       "sala": "OK",
@@ -29,7 +26,7 @@
     },
     "memory": {
       "indexed_entries": 166,
-      "manifest_ts": "2026-06-27T21:57:33"
+      "manifest_ts": "2026-06-27T22:26:07"
     }
   },
   "pending_tasks": [
@@ -67,24 +64,102 @@
     "archive/**"
   ],
   "entrypoint": "python3 tools/session_bootstrap.py",
-  "cleanup_log": [
+  "completed_tasks": [
     {
-      "date": "2026-06-27",
-      "action": "m360_cleanup",
-      "deleted_projects": [
-        71,
-        72,
-        73,
-        74,
-        75,
-        76,
-        77,
-        79
-      ],
-      "reason": "test projects from today, keep real project 78"
+      "id": "T0.1",
+      "description": "Corregir panel_server.py: eliminar import roto check_tcp, agregar dataclass, parsing puerto por sys.argv",
+      "status": "completed",
+      "sprint": 0
+    },
+    {
+      "id": "T0.2",
+      "description": "Corregir core/paths.py: detectar workspace cliente automáticamente",
+      "status": "completed",
+      "sprint": 0
+    },
+    {
+      "id": "T0.3",
+      "description": "Reemplazar IPs hardcodeadas por variables de entorno con defaults neutros",
+      "status": "completed",
+      "sprint": 0
+    },
+    {
+      "id": "T0.4",
+      "description": "Hacer rutas en memory_index.json relativas al workspace usando core/paths.rel()",
+      "status": "completed",
+      "sprint": 0
+    },
+    {
+      "id": "T0.5",
+      "description": "Ejecutar selftest y doctor; capturar y resolver fallos",
+      "status": "completed",
+      "sprint": 0
+    },
+    {
+      "id": "T1.1",
+      "description": "Implementar prefijo de proyecto en REDIS_KEY: memento_panel_items:<proyecto>",
+      "status": "completed",
+      "sprint": 1
+    },
+    {
+      "id": "T1.2",
+      "description": "Agregar detección de puertos libres para Sala y Panel con fallback",
+      "status": "completed",
+      "sprint": 1
+    },
+    {
+      "id": "T1.3",
+      "description": "Modificar memento_install para generar .gitignore sin sobrescribir existentes",
+      "status": "completed",
+      "sprint": 1
+    },
+    {
+      "id": "T1.4",
+      "description": "Crear script memento-configure (CLI) para definir host Redis, puertos y proyecto",
+      "status": "completed",
+      "sprint": 1
+    },
+    {
+      "id": "T2.1",
+      "description": "Portabilidad memento_install (sed macOS/Linux)",
+      "status": "completed",
+      "sprint": 2
+    },
+    {
+      "id": "T2.2",
+      "description": "Declarar dependencias mínimas en requirements.txt",
+      "status": "completed",
+      "sprint": 2
+    },
+    {
+      "id": "T2.3",
+      "description": "Dockerfile + docker-compose.yml de referencia",
+      "status": "completed",
+      "sprint": 2
+    },
+    {
+      "id": "T2.4",
+      "description": "Lockfiles y procedimiento de reproducible build",
+      "status": "completed",
+      "sprint": 2
+    },
+    {
+      "id": "MB-Auth",
+      "description": "Definir estrategia auth para escritura en /api/v1/ (POST/PATCH)",
+      "status": "completed",
+      "sprint": null
+    },
+    {
+      "id": "MB-Redis",
+      "description": "Resolver disponibilidad de Redis para panel/sala",
+      "status": "completed",
+      "sprint": null
+    },
+    {
+      "id": "MB-Docs",
+      "description": "Actualizar PROJECT_CONTEXT.md con nueva estructura",
+      "status": "completed",
+      "sprint": null
     }
-  ],
-  "last_m360_sync": "2026-06-27T22:25:00-05:00",
-  "m360_project_id": 78,
-  "m360_project_title": "MementoBloom - S-27-06"
+  ]
 }
