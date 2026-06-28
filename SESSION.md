@@ -3,21 +3,19 @@
     "project": "mementobloom",
     "role": "asistente-gtd",
     "workspace": "/Volumes/Macintosh HD - Datos/mementobloom",
-    "last_event_time": "2026-06-28T04:25:00",
-    "last_event_type": "m360_calibration",
-    "last_event_summary": "Calibrar T3.5 en M360 proyecto 78: tarea creada id=321",
-    "git_branch": "master",
-    "git_commit": "c29ba86",
-    "generated_at": "2026-06-28T04:25:00",
-    "next_review": "2026-06-29T03:58:10.187352"
+    "last_event_time": "2026-06-28T12:54:52",
+    "last_event_type": "bootstrap",
+    "last_event_summary": "chore: register Administracion_UPN as client project in projects/",
+    "git_branch": "unknown",
+    "git_commit": "0eace7f",
+    "generated_at": "2026-06-28T12:54:52"
   },
   "state": {
     "git": {
-      "branch": "master",
-      "commit_hash": "c29ba86",
-      "commit_message": "session: refresh state post-lessons integration, update project_status timestamp",
-      "pending_count": 0,
-      "pending": []
+      "branch": "unknown",
+      "commit_hash": "0eace7f",
+      "commit_message": "chore: register Administracion_UPN as client project in projects/",
+      "pending_count": 0
     },
     "services": {
       "sala": {
@@ -44,10 +42,18 @@
       }
     },
     "memory": {
-      "indexed_entries": 170,
-      "manifest_ts": "2026-06-28T03:58:10"
+      "indexed_entries": 171,
+      "manifest_ts": ""
     }
   },
+  "forbidden_paths": [
+    ".agent_context/secure/*",
+    "memory/**/*.json",
+    "*.env",
+    ".memento/**",
+    "archive/**"
+  ],
+  "entrypoint": "python3 tools/session_bootstrap.py",
   "pending_tasks": [
     {
       "id": "T3.1",
@@ -189,69 +195,25 @@
       "impact": "No se pueden crear tareas Sprint 3 en M360 ni validar flujo completo."
     }
   ],
-  "forbidden_paths": [
-    ".agent_context/secure/*",
-    "memory/**/*.json",
-    "*.env",
-    ".memento/**",
-    "archive/**"
-  ],
-  "entrypoint": "python3 tools/session_bootstrap.py",
-  "lessons_learned": [
-    "Git no es fuente de verdad entre sesiones — usar `.memento_runtime/session_canonical.json`",
-    "`.agent_context/` es exclusivamente para contexto del agente — nunca documentación permanente ni registros de gestión",
-    "Registros de gestión → `projects/mementobloom/HANDOFF_*.md` o `docs/`",
-    "`START_CONTEXT.md` es regenerable local, no se trackea",
-    "Simulación de sesión agnóstica es la prueba definitiva de recuperación",
-    "Backups timestamped son para recuperación extrema; entre sesiones basta con `session_canonical.json`"
-  ],
-  "m360": {
-    "project_id": 78,
-    "project_title": "MementoBloom - S-27-06",
-    "status": "Draft",
-    "base_url": "http://127.0.0.1:8000",
-    "tasks_synced": [
-      {
-        "m360_id": 315,
-        "local_id": "T3.1",
-        "title": "Mejorar vault_manager.py: cifrado Fernet o marcar como encoding, no seguridad",
-        "status": "To Do"
-      },
-      {
-        "m360_id": 316,
-        "local_id": "T3.2",
-        "title": "Asegurar exclusión Git de archivos sensibles en instalaciones cliente",
-        "status": "To Do"
-      },
-      {
-        "m360_id": 317,
-        "local_id": "T3.3",
-        "title": "Validación de .env al arranque: doctor.py alerta variables críticas",
-        "status": "To Do"
-      },
-      {
-        "m360_id": 318,
-        "local_id": "T3.4",
-        "title": "Sanitizar rutas absolutas en logs y exports",
-        "status": "To Do"
-      },
-      {
-        "m360_id": 321,
-        "local_id": "T3.5",
-        "title": "Garantizar que session_start.py invoque session_bootstrap.py automáticamente",
-        "status": "To Do"
-      }
-    ]
-  },
   "client_projects": [
     {
       "id": "admin_upn",
       "name": "Administracion_UPN",
       "path": "projects/Administracion_UPN",
-      "status": "registered",
+      "status": "fase0",
       "memory": "pending_install",
-      "registered_at": "2026-06-28T12:47:28",
+      "m360_project_id": 80,
+      "m360_project_title": "Administracion_UPN",
+      "m360_status": "Draft",
+      "registered_at": "2026-06-28T12:55:00",
       "source": "../otros_proyectos/Administracion_UPN"
     }
-  ]
+  ],
+  "m360": {
+    "project_id": 80,
+    "project_title": "Administracion_UPN",
+    "status": "Draft",
+    "base_url": "http://127.0.0.1:8000",
+    "tasks_synced": []
+  }
 }
