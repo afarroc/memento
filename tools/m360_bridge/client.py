@@ -374,6 +374,62 @@ class M360Client:
             return {"http_error": 400, "reason": "No valid fields provided for update"}
         return self._request_json(f"/api/v1/tasks/{task_id}/", payload, method="PUT")
 
+    # ======================
+    # COURSES API v1
+    # ======================
+    def api_v1_list_courses(self, **params: Any) -> Dict[str, Any]:
+        qs = urllib.parse.urlencode({k: v for k, v in params.items() if v not in (None, "")})
+        path = "/api/v1/courses/" + (f"?{qs}" if qs else "")
+        return self._get_request(path)
+
+    def api_v1_create_course(self, title: str, project_id: int = 0, **kwargs: Any) -> Dict[str, Any]:
+        import re
+        slug = kwargs.pop("slug", None)
+        if not slug:
+            slug = re.sub(r"[^a-zA-Z0-9]+", "-", title.lower()).strip("-")
+        payload: Dict[str, Any] = {
+            "title": title,
+            "slug": slug,
+            "project_id": project_id,
+        }
+        for optional, value in [
+            ("description", kwargs.get("description", "")),
+            ("short_description", kwargs.get("short_description", "")),
+            ("tutor_id", kwargs.get("tutor_id")),
+            ("category_id", kwargs.get("category_id")),
+            ("level", kwargs.get("level", "beginner")),
+            ("price", kwargs.get("price", 0)),
+            ("duration_hours", kwargs.get("duration_hours", 0)),
+            ("is_published", kwargs.get("is_published", False)),
+            ("is_featured", kwargs.get("is_featured", False)),
+        ]:
+            if value is not None and value != "":
+                payload[optional] = value
+        payload = {k: v for k, v in payload.items() if v is not None}
+        return self._request_json("/api/v1/courses/", payload, method="POST")
+
+    def api_v1_update_course(self, course_id: int, **kwargs: Any) -> Dict[str, Any]:
+        allowed_fields = {"title", "description", "short_description", "tutor_id", "category_id", "level", "price", "duration_hours", "is_published", "is_featured", "published_at"}
+        payload = {k: v for k, v in kwargs.items() if k in allowed_fields and v is not None}
+        if not payload:
+            return {"http_error": 400, "reason": "No valid fields provided for update"}
+        return self._request_json(f"/api/v1/courses/{course_id}/", payload, method="PATCH")
+
+    def api_v1_delete_course(self, course_id: int) -> Dict[str, Any]:
+        return self._request_json(f"/api/v1/courses/{course_id}/", {}, method="DELETE")
+
+    def api_v1_list_course_categories(self, **params: Any) -> Dict[str, Any]:
+        qs = urllib.parse.urlencode({k: v for k, v in params.items() if v not in (None, "")})
+        path = "/api/v1/course-categories/" + (f"?{qs}" if qs else "")
+        return self._get_request(path)
+
+    def api_v1_create_course_category(self, name: str, **kwargs: Any) -> Dict[str, Any]:
+        payload: Dict[str, Any] = {"name": name}
+        for optional in ("description", "slug"):
+            if optional in kwargs and kwargs[optional] not in (None, ""):
+                payload[optional] = kwargs[optional]
+        return self._request_json("/api/v1/course-categories/", payload, method="POST")
+
     def api_v1_list_events(self, **params: Any) -> Dict[str, Any]:
         qs = urllib.parse.urlencode({k: v for k, v in params.items() if v not in (None, "")})
         path = "/api/v1/events/" + (f"?{qs}" if qs else "")
