@@ -242,5 +242,16 @@
         "status": "To Do"
       }
     ]
-  }
+  },
+  "client_projects": [
+    {
+      "id": "admin_upn",
+      "name": "Administracion_UPN",
+      "path": "projects/Administracion_UPN",
+      "status": "registered",
+      "memory": "pending_install",
+      "registered_at": "2026-06-28T12:47:28",
+      "source": "../otros_proyectos/Administracion_UPN"
+    }
+  ]
 }
