@@ -3,19 +3,19 @@
     "project": "mementobloom",
     "role": "asistente-gtd",
     "workspace": "/Volumes/Macintosh HD - Datos/mementobloom",
-    "last_event_time": "2026-06-28T01:40:21",
+    "last_event_time": "2026-06-28T01:51:01",
     "last_event_type": "bootstrap",
-    "last_event_summary": "docs: calibrate M360 project 78 with real Sprint 0-3 tasks and validate memory sync",
+    "last_event_summary": "defenses: atomic writes, git fallback, and START_CONTEXT.md untrack",
     "git_branch": "unknown",
-    "git_commit": "3f04e73",
-    "generated_at": "2026-06-28T01:40:21"
+    "git_commit": "9798e2b",
+    "generated_at": "2026-06-28T01:51:01"
   },
   "state": {
     "git": {
       "branch": "unknown",
-      "commit_hash": "3f04e73",
-      "commit_message": "docs: calibrate M360 project 78 with real Sprint 0-3 tasks and validate memory sync",
-      "pending_count": 7
+      "commit_hash": "9798e2b",
+      "commit_message": "defenses: atomic writes, git fallback, and START_CONTEXT.md untrack",
+      "pending_count": 4
     },
     "services": {
       "sala": {

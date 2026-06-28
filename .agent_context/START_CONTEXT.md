@@ -1,15 +1,15 @@
 # MementoBloom Startup Context
 
-Generated: 2026-06-27T21:42:34
-Workspace: /Volumes/Macintosh HD - Datos/mementobloom
+Generated: 2026-06-28T01:50:46
+Workspace: .
 Project: mementobloom
-Index entries: 165
+Index entries: 167
 
 ## Startup instruction
 Prepara la semilla progresiva del agente, lee el contexto inicial y continúa desde el último handoff relevante sin pedir información ya registrada.
 
 ## Project meta
-- Path: `/Volumes/Macintosh HD - Datos/mementobloom/.agent_context/PROJECT_META.md`
+- Path: `.agent_context/PROJECT_META.md`
 - Estado: local/contextual
 - Objetivo meta del usuario:
 - - Cada sesión iniciada debe poder continuar la gestión del proyecto sin depender de un modelo específico.
@@ -22,7 +22,7 @@ Prepara la semilla progresiva del agente, lee el contexto inicial y continúa de
 - 3. Leer `memory/personality/user_personality.md` para calibrar tono y estilo.
 
 ## User context
-- Path: `/Volumes/Macintosh HD - Datos/mementobloom/.agent_context/secure/USER_CONTEXT.md`
+- Path: `.agent_context/secure/USER_CONTEXT.md`
 - Estado: local/contextual
 - Actualizado: 2026-06-14T04:35:00-05:00
 - - Idioma principal: español.
@@ -35,6 +35,10 @@ Prepara la semilla progresiva del agente, lee el contexto inicial y continúa de
 - - `.agent_context/secure/USER_CONTEXT.md`
 
 ## Top recent memory
+- h_HANDOFF_2026-06-27_225500_calibracion_m360_sync | HANDOFF | project=mementobloom | ts=2026-06-27 | path=projects/mementobloom/HANDOFF_2026-06-27_225500_calibracion_m360_sync.md
+  # HANDOFF - Calibración M360 y sincronización de memoria ## Datos básicos - Proyecto: mementobloom
+- h_HANDOFF_2026-06-27_215200_sprint3_m360_sync | HANDOFF | project=mementobloom | ts=2026-06-27 | path=projects/mementobloom/HANDOFF_2026-06-27_215200_sprint3_m360_sync.md
+  # HANDOFF - Sincronización Sprint 3 en M360 ## Datos básicos - Proyecto: mementobloom - Fecha/hora:
 - h_HANDOFF_2026-06-27_213600_sprint3_plan | HANDOFF | project=mementobloom | ts=2026-06-27 | path=projects/mementobloom/HANDOFF_2026-06-27_213600_sprint3_plan.md
   # HANDOFF - Plan Sprint 3: Seguridad y configuración sensible ## Datos básicos - Proyecto: mementobl
 - h_HANDOFF_2026-06-27_213100_cierre_sesion_sprint2 | HANDOFF | project=mementobloom | ts=2026-06-27 | path=projects/mementobloom/HANDOFF_2026-06-27_213100_cierre_sesion_sprint2.md
@@ -59,16 +63,12 @@ Prepara la semilla progresiva del agente, lee el contexto inicial y continúa de
   # HANDOFF - Cierre: integración M360 API v1 completada ## Datos básicos - Proyecto: mementobloom -
 - h_HANDOFF_2026-06-27_02_m360_integration_completed | HANDOFF | project=mementobloom | ts=2026-06-27 | path=projects/mementobloom/HANDOFF_2026-06-27_02_m360_integration_completed.md
   # HANDOFF - M360 API v1 + Integración completa ## Datos básicos - Proyecto: mementobloom - Fecha/ho
-- h_HANDOFF_2026-06-27_01_m360_api_v1 | HANDOFF | project=mementobloom | ts=2026-06-27 | path=projects/mementobloom/HANDOFF_2026-06-27_01_m360_api_v1.md
-  # HANDOFF - M360 API v1 + Memoria sincronizada ## Datos básicos - Proyecto: mementobloom - Fecha/ho
-- h_HANDOFF_2026-06-26_verificacion_recreacion | HANDOFF | project=mementobloom | ts=2026-06-26 | path=projects/mementobloom/HANDOFF_2026-06-26_verificacion_recreacion.md
-  # HANDOFF - Verificación y Recreación Proyecto 60 ## Datos básicos - **Proyecto:** mementobloom - *
 
 ## Git state
-- 3 cambio(s): M .agent_context/START_CONTEXT.md,  M SESSION.md, ?? .kilo.backup.20260627/
+- 4 cambio(s): M .agent_context/START_CONTEXT.md,  M SESSION.md, ?? docs/RECONCILIACION_M360_ESTADO_ACTUAL_20260628.md, ?? docs/RECONCILIACION_START_CONTEXT_20260628.md
 
 ## Services
-Redis OK at 192.168.18.59:6379 | Sala NO at http://127.0.0.1:8767 | Panel OK at http://127.0.0.1:8766
+Redis OK at 192.168.18.59:6379 | Sala OK at http://127.0.0.1:8767 | Panel OK at http://127.0.0.1:8766
 
 ## Safe next-session commands
 - `python3 tools/session_start.py --quick --limit 8` (proyecto por defecto: mementobloom)
