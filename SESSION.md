@@ -72,6 +72,13 @@
       "description": "Sanitizar rutas absolutas en logs y exports",
       "status": "pending",
       "sprint": 3
+    },
+    {
+      "id": "T3.5",
+      "description": "Garantizar que session_start.py invoque session_bootstrap.py automaticamente al final del flujo --print para evitar timestamps congelados en SESSION.md",
+      "status": "pending",
+      "sprint": 3,
+      "created_at": "2026-06-28T04:01:31"
     }
   ],
   "completed_tasks": [
