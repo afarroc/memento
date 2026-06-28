@@ -107,6 +107,36 @@ def _load_canonical_backup() -> Optional[Dict[str, Any]]:
     return None
 
 
+def _load_lessons() -> List[str]:
+    """Carga lecciones aprendidas desde handoff de cierre."""
+    try:
+        from pathlib import Path
+        import re
+        lessons_path = (
+            WS_ROOT
+            / "projects"
+            / "mementobloom"
+            / "HANDOFF_2026-06-28_cierre_sesion_blindaje_memoria.md"
+        )
+        if not lessons_path.exists():
+            return []
+        text = lessons_path.read_text(encoding="utf-8", errors="replace")
+        lessons = []
+        in_section = False
+        for line in text.splitlines():
+            stripped = line.strip()
+            if stripped.startswith("## Lecciones aprendidas"):
+                in_section = True
+                continue
+            if in_section and stripped.startswith("## "):
+                in_section = False
+            if in_section and re.match(r'^\d+\.\s', stripped):
+                lessons.append(stripped[3:].strip())
+        return lessons
+    except Exception:
+        return []
+
+
 def _load_existing_session() -> Optional[Dict[str, Any]]:
     """Carga estado con fallback jerárquico: SESSION.md -> canonical backup -> Git (último recurso)."""
     # 1. Intentar SESSION.md
@@ -230,6 +260,7 @@ def build_session() -> Dict[str, Any]:
             "archive/**",
         ],
         "entrypoint": "python3 tools/session_bootstrap.py",
+        "lessons_learned": _load_lessons() or existing.get("lessons_learned", []),
     }
 
 

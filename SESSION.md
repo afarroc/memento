@@ -3,19 +3,19 @@
     "project": "mementobloom",
     "role": "asistente-gtd",
     "workspace": "/Volumes/Macintosh HD - Datos/mementobloom",
-    "last_event_time": "2026-06-28T03:14:51",
+    "last_event_time": "2026-06-28T03:24:04",
     "last_event_type": "bootstrap",
-    "last_event_summary": "session: refresh state after enriched startup and sync",
+    "last_event_summary": "instructions: embed lessons learned in agent context, update SESSION.md",
     "git_branch": "unknown",
-    "git_commit": "6c0ee5e",
-    "generated_at": "2026-06-28T03:14:51"
+    "git_commit": "dc67976",
+    "generated_at": "2026-06-28T03:24:04"
   },
   "state": {
     "git": {
       "branch": "unknown",
-      "commit_hash": "6c0ee5e",
-      "commit_message": "session: refresh state after enriched startup and sync",
-      "pending_count": 3
+      "commit_hash": "dc67976",
+      "commit_message": "instructions: embed lessons learned in agent context, update SESSION.md",
+      "pending_count": 2
     },
     "services": {
       "sala": {
