@@ -3,12 +3,12 @@
     "project": "mementobloom",
     "role": "asistente-gtd",
     "workspace": "/Volumes/Macintosh HD - Datos/mementobloom",
-    "last_event_time": "2026-06-28T03:58:07.395572",
-    "last_event_type": "bootstrap",
-    "last_event_summary": "session: refresh state post-lessons integration, update project_status timestamp",
+    "last_event_time": "2026-06-28T04:25:00",
+    "last_event_type": "m360_calibration",
+    "last_event_summary": "Calibrar T3.5 en M360 proyecto 78: tarea creada id=321",
     "git_branch": "master",
     "git_commit": "c29ba86",
-    "generated_at": "2026-06-28T03:58:07.395572",
+    "generated_at": "2026-06-28T04:25:00",
     "next_review": "2026-06-29T03:58:10.187352"
   },
   "state": {
@@ -75,10 +75,12 @@
     },
     {
       "id": "T3.5",
-      "description": "Garantizar que session_start.py invoque session_bootstrap.py automaticamente al final del flujo --print para evitar timestamps congelados en SESSION.md",
+      "description": "Garantizar que session_start.py invoque session_bootstrap.py automáticamente al final del flujo --print para evitar timestamps congelados en SESSION.md",
       "status": "pending",
       "sprint": 3,
-      "created_at": "2026-06-28T04:01:31"
+      "created_at": "2026-06-28T04:01:31",
+      "m360_id": 321,
+      "m360_project": 78
     }
   ],
   "completed_tasks": [
@@ -202,5 +204,43 @@
     "`START_CONTEXT.md` es regenerable local, no se trackea",
     "Simulación de sesión agnóstica es la prueba definitiva de recuperación",
     "Backups timestamped son para recuperación extrema; entre sesiones basta con `session_canonical.json`"
-  ]
+  ],
+  "m360": {
+    "project_id": 78,
+    "project_title": "MementoBloom - S-27-06",
+    "status": "Draft",
+    "base_url": "http://127.0.0.1:8000",
+    "tasks_synced": [
+      {
+        "m360_id": 315,
+        "local_id": "T3.1",
+        "title": "Mejorar vault_manager.py: cifrado Fernet o marcar como encoding, no seguridad",
+        "status": "To Do"
+      },
+      {
+        "m360_id": 316,
+        "local_id": "T3.2",
+        "title": "Asegurar exclusión Git de archivos sensibles en instalaciones cliente",
+        "status": "To Do"
+      },
+      {
+        "m360_id": 317,
+        "local_id": "T3.3",
+        "title": "Validación de .env al arranque: doctor.py alerta variables críticas",
+        "status": "To Do"
+      },
+      {
+        "m360_id": 318,
+        "local_id": "T3.4",
+        "title": "Sanitizar rutas absolutas en logs y exports",
+        "status": "To Do"
+      },
+      {
+        "m360_id": 321,
+        "local_id": "T3.5",
+        "title": "Garantizar que session_start.py invoque session_bootstrap.py automáticamente",
+        "status": "To Do"
+      }
+    ]
+  }
 }
