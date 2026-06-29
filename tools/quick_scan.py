@@ -95,11 +95,19 @@ class QuickScan:
 
     def _parse_context(self, f: Path) -> Dict[str, Any]:
         content = f.read_text(encoding="utf-8", errors="replace")[:500]
-        project = f.parent.parent.name if f.parent.parent != self.workspace else f.parent.name
+
+        def _extract_project(path: Path) -> str:
+            """Extract project name from path, handling handouts/ subdirectories."""
+            parts = path.parts
+            for i, part in enumerate(parts):
+                if part == "projects" and i + 1 < len(parts):
+                    return parts[i + 1]
+            return path.parent.name
+
         return {
-            "id": f"c_{project}_{f.stem}",
+            "id": f"c_{f.stem}",
             "type": "CONTEXT",
-            "project": project,
+            "project": _extract_project(f),
             "ts": "discover",
             "path": rel(f, self.workspace),
             "summary": content[:100],
