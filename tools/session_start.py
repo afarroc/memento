@@ -286,7 +286,7 @@ def build_agent_content(project: str | None = None) -> tuple[str, str]:
         "description: Curador de memoria histórica del proyecto",
         f"project: {active_project}",
         "mode: primary",
-        "model: any",
+        "model: kilo/kilo-auto/free",
         "steps: 25",
         "---",
         f"<!-- generated-hash: {signature} -->",
@@ -461,11 +461,9 @@ def build_context(limit: int, project: str | None = None, agent_result: dict | N
                     continue
                 if in_context and stripped.startswith("## "):
                     in_context = False
+                # Include both entry line and path line for context entries
                 if in_context and stripped and not stripped.startswith("---") and not stripped.startswith("{") and not stripped.startswith("}") and not stripped.startswith('"total"') and not stripped.startswith('"handoffs"') and not stripped.startswith('"contexts"') and not stripped.startswith('"ready"'):
-                    if stripped.startswith("- "):
-                        lines.append(f"{stripped}")
-                    else:
-                        lines.append(f"- {stripped}")
+                    lines.append(f"{stripped}")
         else:
             lines.append(f"- Context builder: error ({ctx.stderr.strip()[:100]})")
     except Exception as exc:

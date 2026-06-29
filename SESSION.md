@@ -3,19 +3,19 @@
     "project": "mementobloom",
     "role": "asistente-gtd",
     "workspace": "/Volumes/Macintosh HD - Datos/mementobloom",
-    "last_event_time": "2026-06-28T20:43:16",
+    "last_event_time": "2026-06-29T16:48:20",
     "last_event_type": "bootstrap",
-    "last_event_summary": "sync(SESSION): update to latest bootstrap state",
+    "last_event_summary": "sync(SESSION): auto-update after handoff indexing",
     "git_branch": "unknown",
-    "git_commit": "020c3d2",
-    "generated_at": "2026-06-28T20:43:16"
+    "git_commit": "a97173a",
+    "generated_at": "2026-06-29T16:48:20"
   },
   "state": {
     "git": {
       "branch": "unknown",
-      "commit_hash": "020c3d2",
-      "commit_message": "sync(SESSION): update to latest bootstrap state",
-      "pending_count": 0
+      "commit_hash": "a97173a",
+      "commit_message": "sync(SESSION): auto-update after handoff indexing",
+      "pending_count": 7
     },
     "services": {
       "sala": {
@@ -42,7 +42,7 @@
       }
     },
     "memory": {
-      "indexed_entries": 137,
+      "indexed_entries": 159,
       "manifest_ts": ""
     }
   },
@@ -232,6 +232,11 @@
     }
   ],
   "lessons_learned": [
-    "Usar tipificacion de tareas: pending, in_progress, completed, verified, cancelled, obsolete. \"verified\" para tareas de diseño/descubrimiento donde se valida existencia previa; \"obsolete\" para tareas que ya no aplican."
+    "Git no es fuente de verdad entre sesiones — usar `.memento_runtime/session_canonical.json`",
+    "`.agent_context/` es exclusivamente para contexto del agente — nunca documentación permanente ni registros de gestión",
+    "Registros de gestión → `projects/mementobloom/HANDOFF_*.md` o `docs/`",
+    "`START_CONTEXT.md` es regenerable local, no se trackea",
+    "Simulación de sesión agnóstica es la prueba definitiva de recuperación",
+    "Backups timestamped son para recuperación extrema; entre sesiones basta con `session_canonical.json`"
   ]
 }

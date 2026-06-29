@@ -33,6 +33,11 @@ def generate_handoff(project: str, problem: str, solution: str, workspace: str =
 if __name__ == "__main__":
     import sys
     if len(sys.argv) >= 3:
-        generate_handoff(sys.argv[1], sys.argv[2], sys.argv[3] if len(sys.argv) > 3 else "Pendiente")
+        project = sys.argv[1]
+        if project.startswith("-"):
+            print(f"Error: '{project}' no es un nombre de proyecto válido")
+            print("Uso: python handoff_gen.py <proyecto> <problema> [solucion]")
+            sys.exit(1)
+        generate_handoff(project, sys.argv[2], sys.argv[3] if len(sys.argv) > 3 else "Pendiente")
     else:
         print("Uso: python handoff_gen.py <proyecto> <problema> [solucion]")

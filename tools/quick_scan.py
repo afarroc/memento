@@ -84,10 +84,11 @@ class QuickScan:
                     return parts[i + 1]
             return path.parent.name
 
+        project = _extract_project(f)
         return {
-            "id": f"h_{f.stem}",
+            "id": f"h_{project}_{f.stem}",
             "type": "HANDOFF",
-            "project": _extract_project(f),
+            "project": project,
             "ts": date_m.group(1) if date_m else "unknown",
             "path": rel(f, self.workspace),
             "summary": content[:100],
@@ -104,10 +105,11 @@ class QuickScan:
                     return parts[i + 1]
             return path.parent.name
 
+        project = _extract_project(f)
         return {
-            "id": f"c_{f.stem}",
+            "id": f"c_{project}_{f.stem}",
             "type": "CONTEXT",
-            "project": _extract_project(f),
+            "project": project,
             "ts": "discover",
             "path": rel(f, self.workspace),
             "summary": content[:100],

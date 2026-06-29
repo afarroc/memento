@@ -35,6 +35,9 @@ class ContextBuilder:
     def _filter_entries(self, project: str, context_type: str, limit: int) -> List[Dict]:
         results = []
         for entry_id, entry in self.index.items():
+            # Skip external entries (unavailable in this workspace)
+            if entry.get("external"):
+                continue
             if project and context_type:
                 if entry.get("project") != project or entry.get("type") != context_type:
                     continue
@@ -62,7 +65,9 @@ class ContextBuilder:
             header = e.get("summary", "")[:120].replace("\n", " ")
             keywords = ", ".join(e.get("keywords", [])[:5])
             score = e.get("score", "?")
+            path = e.get("path", "?")
             lines.append(f"- [{e.get('id', '?')}] {e.get('type', '?')} :: {e.get('project', '?')} | {e.get('ts', '?')} | score={score} | {keywords} | {header}")
+            lines.append(f"  path={path}")
         return "\n".join(lines)
     
     def ready_check(self) -> Dict:
