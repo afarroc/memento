@@ -304,6 +304,7 @@ def write_session_md(context: Dict[str, Any]) -> None:
             existing_session.setdefault("completed_tasks", recovered.get("completed_tasks", []))
             existing_session.setdefault("pending_tasks", recovered.get("pending_tasks", []))
             existing_session.setdefault("blockers", recovered.get("blockers", []))
+            existing_session.setdefault("lessons_learned", recovered.get("lessons_learned", []))
 
     # Validar que lo que vamos a escribir cumpla el esquema mínimo
     session = {
@@ -346,7 +347,7 @@ def write_session_md(context: Dict[str, Any]) -> None:
     }
 
     # Preservar secciones operativas existentes si están presentes
-    for key in ("pending_tasks", "completed_tasks", "blockers"):
+    for key in ("pending_tasks", "completed_tasks", "blockers", "lessons_learned"):
         if key in existing_session:
             session[key] = existing_session[key]
 

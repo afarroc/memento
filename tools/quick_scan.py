@@ -74,10 +74,20 @@ class QuickScan:
     def _parse_handoff(self, f: Path) -> Dict[str, Any]:
         content = f.read_text(encoding="utf-8", errors="replace")[:500]
         date_m = HANDOFF_RE.search(f.name)
+
+        def _extract_project(path: Path) -> str:
+            """Extract project name from path, handling handoffs/ subdirectories."""
+            parts = path.parts
+            # Buscar 'projects' en la ruta y tomar el siguiente componente
+            for i, part in enumerate(parts):
+                if part == "projects" and i + 1 < len(parts):
+                    return parts[i + 1]
+            return path.parent.name
+
         return {
             "id": f"h_{f.stem}",
             "type": "HANDOFF",
-            "project": f.parent.name,
+            "project": _extract_project(f),
             "ts": date_m.group(1) if date_m else "unknown",
             "path": rel(f, self.workspace),
             "summary": content[:100],

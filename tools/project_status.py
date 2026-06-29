@@ -119,7 +119,7 @@ def _projects_info() -> Dict[str, Any]:
     for child in base.iterdir():
         if not child.is_dir():
             continue
-        handoffs = list(child.glob("HANDOFF_*.md"))
+        handoffs = list(child.rglob("HANDOFF*.md"))
         projects[child.name] = {"path": str(child.relative_to(WS)), "handoffs": len(handoffs)}
     return projects
 
