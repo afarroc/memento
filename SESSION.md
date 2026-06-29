@@ -3,19 +3,21 @@
     "project": "mementobloom",
     "role": "asistente-gtd",
     "workspace": "/Volumes/Macintosh HD - Datos/mementobloom",
-    "last_event_time": "2026-06-29T16:48:20",
+    "last_event_time": "2026-06-29T16:52:38.262144",
     "last_event_type": "bootstrap",
-    "last_event_summary": "sync(SESSION): auto-update after handoff indexing",
-    "git_branch": "unknown",
-    "git_commit": "a97173a",
-    "generated_at": "2026-06-29T16:48:20"
+    "last_event_summary": "cleanup: remove embedding/keywords from memory_index, fix path validation, external markers",
+    "git_branch": "master",
+    "git_commit": "e0e3f11",
+    "generated_at": "2026-06-29T16:52:38.262144",
+    "next_review": "2026-06-30T16:52:41.790384"
   },
   "state": {
     "git": {
-      "branch": "unknown",
-      "commit_hash": "a97173a",
-      "commit_message": "sync(SESSION): auto-update after handoff indexing",
-      "pending_count": 7
+      "branch": "master",
+      "commit_hash": "e0e3f11",
+      "commit_message": "cleanup: remove embedding/keywords from memory_index, fix path validation, external markers",
+      "pending_count": 0,
+      "pending": []
     },
     "services": {
       "sala": {
@@ -42,18 +44,10 @@
       }
     },
     "memory": {
-      "indexed_entries": 159,
-      "manifest_ts": ""
+      "indexed_entries": 160,
+      "manifest_ts": "2026-06-29T16:52:41"
     }
   },
-  "forbidden_paths": [
-    ".agent_context/secure/*",
-    "memory/**/*.json",
-    "*.env",
-    ".memento/**",
-    "archive/**"
-  ],
-  "entrypoint": "python3 tools/session_bootstrap.py",
   "pending_tasks": [
     {
       "id": "T3.1",
@@ -231,6 +225,14 @@
       "impact": "No se pueden crear tareas Sprint 3 en M360 ni validar flujo completo."
     }
   ],
+  "forbidden_paths": [
+    ".agent_context/secure/*",
+    "memory/**/*.json",
+    "*.env",
+    ".memento/**",
+    "archive/**"
+  ],
+  "entrypoint": "python3 tools/session_bootstrap.py",
   "lessons_learned": [
     "Git no es fuente de verdad entre sesiones — usar `.memento_runtime/session_canonical.json`",
     "`.agent_context/` es exclusivamente para contexto del agente — nunca documentación permanente ni registros de gestión",
