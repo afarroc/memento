@@ -89,6 +89,12 @@ build/
 # === BACKUPS LOCALES (NO VERSIONAR) ===
 .backups/
 
+# === CLIENT PROJECTS (ONLY mementobloom tracked) ===
+projects/*
+!projects/mementobloom/
+projects/*/handoffs/
+projects/*/memory/
+
 # === PERSONALIDAD ===
 memory/personality/user_personality.md
 
