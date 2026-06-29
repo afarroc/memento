@@ -3,19 +3,19 @@
     "project": "mementobloom",
     "role": "asistente-gtd",
     "workspace": "/Volumes/Macintosh HD - Datos/mementobloom",
-    "last_event_time": "2026-06-28T15:00:52",
+    "last_event_time": "2026-06-28T20:40:32",
     "last_event_type": "bootstrap",
-    "last_event_summary": "session: mark M3.2-M3.4 completed and project 81 fase2 done",
+    "last_event_summary": "refactor(memento_install): add wrappers for vault and handoff tools",
     "git_branch": "unknown",
-    "git_commit": "89368ae",
-    "generated_at": "2026-06-28T15:00:52"
+    "git_commit": "f74b9aa",
+    "generated_at": "2026-06-28T20:40:32"
   },
   "state": {
     "git": {
       "branch": "unknown",
-      "commit_hash": "89368ae",
-      "commit_message": "session: mark M3.2-M3.4 completed and project 81 fase2 done",
-      "pending_count": 0
+      "commit_hash": "f74b9aa",
+      "commit_message": "refactor(memento_install): add wrappers for vault and handoff tools",
+      "pending_count": 1
     },
     "services": {
       "sala": {
@@ -42,7 +42,7 @@
       }
     },
     "memory": {
-      "indexed_entries": 176,
+      "indexed_entries": 136,
       "manifest_ts": ""
     }
   },
