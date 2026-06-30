@@ -3,21 +3,23 @@
     "project": "mementobloom",
     "role": "asistente-gtd",
     "workspace": "/Volumes/Macintosh HD - Datos/mementobloom",
-    "last_event_time": "2026-06-29T16:52:38.262144",
+    "last_event_time": "2026-06-29T20:42:00.227881",
     "last_event_type": "bootstrap",
-    "last_event_summary": "cleanup: remove embedding/keywords from memory_index, fix path validation, external markers",
+    "last_event_summary": "sync: add HANDOFF_2026-06-29_cierre_paths_cleanup, sync memory index",
     "git_branch": "master",
-    "git_commit": "e0e3f11",
-    "generated_at": "2026-06-29T16:52:38.262144",
-    "next_review": "2026-06-30T16:52:41.790384"
+    "git_commit": "bad0784",
+    "generated_at": "2026-06-29T20:42:00.227881",
+    "next_review": "2026-06-30T20:42:03.917394"
   },
   "state": {
     "git": {
       "branch": "master",
-      "commit_hash": "e0e3f11",
-      "commit_message": "cleanup: remove embedding/keywords from memory_index, fix path validation, external markers",
-      "pending_count": 0,
-      "pending": []
+      "commit_hash": "bad0784",
+      "commit_message": "sync: add HANDOFF_2026-06-29_cierre_paths_cleanup, sync memory index",
+      "pending_count": 1,
+      "pending": [
+        "M SESSION.md"
+      ]
     },
     "services": {
       "sala": {
@@ -45,7 +47,7 @@
     },
     "memory": {
       "indexed_entries": 160,
-      "manifest_ts": "2026-06-29T16:52:41"
+      "manifest_ts": "2026-06-29T20:42:03"
     }
   },
   "pending_tasks": [
