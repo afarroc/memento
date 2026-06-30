@@ -3,24 +3,22 @@
     "project": "mementobloom",
     "role": "asistente-gtd",
     "workspace": "/Volumes/Macintosh HD - Datos/mementobloom",
-    "last_event_time": "2026-06-29T20:57:32.456415",
+    "last_event_time": "2026-06-29T20:58:39.712595",
     "last_event_type": "bootstrap",
-    "last_event_summary": "sync: SESSION.md canonical state updated",
+    "last_event_summary": "fix: session_start.py invokes session_bootstrap.py automatically on --print (T3.5)",
     "git_branch": "master",
-    "git_commit": "339d874",
-    "generated_at": "2026-06-29T20:57:32.456415",
-    "next_review": "2026-06-30T20:57:35.480913"
+    "git_commit": "2ad4baa",
+    "generated_at": "2026-06-29T20:58:39.712595",
+    "next_review": "2026-06-30T20:58:41.972263"
   },
   "state": {
     "git": {
       "branch": "master",
-      "commit_hash": "339d874",
-      "commit_message": "sync: SESSION.md canonical state updated",
-      "pending_count": 3,
+      "commit_hash": "2ad4baa",
+      "commit_message": "fix: session_start.py invokes session_bootstrap.py automatically on --print (T3.5)",
+      "pending_count": 1,
       "pending": [
-        "M SESSION.md",
-        " M tools/session_bootstrap.py",
-        " M tools/session_start.py"
+        "D SESSION.md"
       ]
     },
     "services": {
@@ -49,7 +47,7 @@
     },
     "memory": {
       "indexed_entries": 160,
-      "manifest_ts": "2026-06-29T20:57:35"
+      "manifest_ts": "2026-06-29T20:58:41"
     }
   },
   "pending_tasks": [
