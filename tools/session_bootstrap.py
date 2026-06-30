@@ -138,7 +138,7 @@ def _load_lessons() -> List[str]:
 
 
 def _load_existing_session() -> Optional[Dict[str, Any]]:
-    """Carga estado con fallback jerárquico: SESSION.md -> canonical backup -> Git (último recurso)."""
+    """Carga estado con fallback jerárquica: SESSION.md -> canonical -> backups -> Git."""
     # 1. Intentar SESSION.md
     if SESSION_FILE.exists():
         try:
@@ -155,7 +155,12 @@ def _load_existing_session() -> Optional[Dict[str, Any]]:
     if canonical:
         return canonical
 
-    # 3. Git como último recurso extremo
+    # 3. Fallback a backups timestamped recientes
+    backup_recovered = _recover_from_backups()
+    if backup_recovered:
+        return backup_recovered
+
+    # 4. Git como último recurso extremo
     return _recover_from_git() or {}
 
 
@@ -197,6 +202,25 @@ def _backup_session() -> None:
         backup_path.write_text(SESSION_FILE.read_text(encoding="utf-8"), encoding="utf-8")
     except Exception:
         pass  # Non-fatal
+
+
+def _recover_from_backups() -> Optional[Dict[str, Any]]:
+    """Recupera desde backups timestamped cuando canonical no existe."""
+    try:
+        backup_dir = WS_ROOT / ".memento_runtime" / "backups"
+        if not backup_dir.exists():
+            return None
+        backups = sorted(backup_dir.glob("session_*.json"), reverse=True)
+        for backup_path in backups:
+            try:
+                data = json.loads(backup_path.read_text(encoding="utf-8"))
+                if isinstance(data, dict) and data.get("completed_tasks"):
+                    return data
+            except Exception:
+                continue
+    except Exception:
+        pass
+    return None
 
 
 def _recover_from_git() -> Optional[Dict[str, Any]]:
