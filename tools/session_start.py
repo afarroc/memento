@@ -878,6 +878,18 @@ def main():
     print_agent_seed(agent_result)
     sys.stdout.flush()
 
+    # T3.5: Invocar session_bootstrap.py automáticamente al final del flujo --print
+    # para actualizar timestamps y estado canónico en SESSION.md
+    if args.print and not args.no_write_context:
+        bootstrap_path = WS_ROOT / "tools" / "session_bootstrap.py"
+        bootstrap_proc = subprocess.run(
+            [sys.executable, str(bootstrap_path)],
+            capture_output=True,
+            cwd=str(WS_ROOT)
+        )
+        if bootstrap_proc.returncode != 0:
+            print(f"\n[session_start] Warning: bootstrap failed (exit={bootstrap_proc.returncode})")
+
     if args.services or args.services_only:
         print_services(ensure_services())
 

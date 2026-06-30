@@ -20,7 +20,7 @@ import sys
 import tempfile
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -112,13 +112,13 @@ def _load_lessons() -> List[str]:
     try:
         from pathlib import Path
         import re
-        lessons_path = (
-            WS_ROOT
-            / "projects"
-            / "mementobloom"
-            / "HANDOFF_2026-06-28_cierre_sesion_blindaje_memoria.md"
-        )
-        if not lessons_path.exists():
+        # Buscar el handoff más reciente con lecciones (patrón de búsqueda)
+        lessons_path = None
+        handoff_dir = WS_ROOT / "projects" / "mementobloom"
+        if handoff_dir.exists():
+            handoffs = sorted(handoff_dir.glob("HANDOFF_*_cierre_sesion*.md"), reverse=True)
+            lessons_path = handoffs[0] if handoffs else None
+        if not lessons_path or not lessons_path.exists():
             return []
         text = lessons_path.read_text(encoding="utf-8", errors="replace")
         lessons = []

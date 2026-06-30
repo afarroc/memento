@@ -3,22 +3,24 @@
     "project": "mementobloom",
     "role": "asistente-gtd",
     "workspace": "/Volumes/Macintosh HD - Datos/mementobloom",
-    "last_event_time": "2026-06-29T20:42:00.227881",
+    "last_event_time": "2026-06-29T20:57:32.456415",
     "last_event_type": "bootstrap",
-    "last_event_summary": "sync: add HANDOFF_2026-06-29_cierre_paths_cleanup, sync memory index",
+    "last_event_summary": "sync: SESSION.md canonical state updated",
     "git_branch": "master",
-    "git_commit": "bad0784",
-    "generated_at": "2026-06-29T20:42:00.227881",
-    "next_review": "2026-06-30T20:42:03.917394"
+    "git_commit": "339d874",
+    "generated_at": "2026-06-29T20:57:32.456415",
+    "next_review": "2026-06-30T20:57:35.480913"
   },
   "state": {
     "git": {
       "branch": "master",
-      "commit_hash": "bad0784",
-      "commit_message": "sync: add HANDOFF_2026-06-29_cierre_paths_cleanup, sync memory index",
-      "pending_count": 1,
+      "commit_hash": "339d874",
+      "commit_message": "sync: SESSION.md canonical state updated",
+      "pending_count": 3,
       "pending": [
-        "M SESSION.md"
+        "M SESSION.md",
+        " M tools/session_bootstrap.py",
+        " M tools/session_start.py"
       ]
     },
     "services": {
@@ -47,7 +49,7 @@
     },
     "memory": {
       "indexed_entries": 160,
-      "manifest_ts": "2026-06-29T20:42:03"
+      "manifest_ts": "2026-06-29T20:57:35"
     }
   },
   "pending_tasks": [
@@ -78,11 +80,12 @@
     {
       "id": "T3.5",
       "description": "Garantizar que session_start.py invoque session_bootstrap.py automáticamente al final del flujo --print para evitar timestamps congelados en SESSION.md",
-      "status": "pending",
+      "status": "completed",
       "sprint": 3,
       "created_at": "2026-06-28T04:01:31",
       "m360_id": 321,
-      "m360_project": 78
+      "m360_project": 78,
+      "completed_at": "2026-06-29T20:58:00"
     },
     {
       "id": "M3.1",
