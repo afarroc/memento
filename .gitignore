@@ -89,9 +89,9 @@ build/
 # === BACKUPS LOCALES (NO VERSIONAR) ===
 .backups/
 
-# === CLIENT PROJECTS (ONLY mementobloom tracked) ===
+# === CLIENT PROJECTS (NONE tracked) ===
 projects/*
-!projects/mementobloom/
+projects/mementobloom/
 projects/*/handoffs/
 projects/*/memory/
 
