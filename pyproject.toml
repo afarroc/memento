@@ -15,6 +15,7 @@ include = ["core*", "tools*", "memento*"]
 [project.scripts]
 memento-bootstrap = "tools.bootstrap_context:main"
 memento-doctor = "tools.doctor:main"
+memento-md-to-pdf = "tools.md_to_pdf:main"
 memento-session-start = "tools.session_start:main"
 memento-quick-scan = "tools.quick_scan:main"
 
