@@ -414,22 +414,8 @@ def compact_context(audit: Dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
-def environment_details_block() -> str:
-    return "\n".join([
-        "<environment_details>",
-        f"Current time: {now_iso()}",
-        f"Working directory: {WS}",
-        f"Workspace root folder: {WS}",
-        f"Tool installation: {ROOT}",
-        "</environment_details>",
-        "",
-    ])
-
-
 def panel_markdown(text: str, title: str = "Optimización") -> str:
     body = text.strip()
-    if "<environment_details>" not in body:
-        body = environment_details_block() + body
     return "\n".join([
         f"# {title}",
         "",
