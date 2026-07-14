@@ -30,8 +30,6 @@ header .status{font-size:11px;color:#6b7280}
 .msg.html .form-actions{display:flex;gap:8px;align-items:center;justify-content:flex-end}
 .msg.html,.msg.code,.msg.json,.msg.pixels,.msg.image,.msg.file,.msg.system{margin:8px 12px}
 .msg.code .badge{color:#6ee7b7;border-color:#14532d;background:#0e1b16}
-.env-block{margin:6px 0;padding:8px 10px;background:#0b121e;border-left:3px solid #1f4f7a;border-radius:4px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;white-space:pre-wrap;word-wrap:break-word;color:#e5e7eb}
-.env-block .env-label{font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
 .msg.json{background:#230f0f;border-left-color:#7f1d1d;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px}
 .msg.json .badge{color:#fca5a5;border-color:#7f1d1d;background:#230f0f}
 .msg.pixels{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;background:#14100f;border-left-color:#422006}
@@ -70,8 +68,6 @@ pre code{background:transparent;padding:0;font-size:12px}
 .preview-files .chip{border-color:#374151;background:#0a0c10}
 .restored-time{display:inline-block;min-width:42px}
 .msg .meta-line .restored-tag{color:#6b7280}
-.msg .content .env-block{border:1px solid #1f2933;padding:6px 8px;border-radius:6px;background:#0b0d11}
-.msg .content .env-block .env-label{color:#9ca3af;font-size:10px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
 .msg.restored-old{border-left-color:#1f2933}
 .msg.restored-old .badge{background:#111318;border-color:#1f2933;color:#d4d4d4}
 .msg.restored-old{border-style:solid;border-width:1px 1px 1px 3px;opacity:.95}
@@ -261,12 +257,6 @@ function sanitizeEnvHtml(s){
     .replace(new RegExp('</?(?!/?(?:' + allowed + ')(?:\\s|>|/))[^>]*>', 'gi'), '');
 }
 
-function envDetailsHtml(s){
-  return String(s==null?'':s).replace(/<environment_details>([\s\S]*?)<\/environment_details>/ig, (m, content)=>{
-    return `<div class="env-block"><div class="env-label">environment</div><div class="content env-html">${sanitizeEnvHtml(content.trim())}</div></div>`;
-  });
-}
-
 function renderReplyContext(m){
   const replyTo = m.reply_to || m.meta?.reply_to;
   if (!replyTo) return '';
@@ -318,44 +308,16 @@ function renderMsg(m){
     body+=`<pre><code>${esc(JSON.stringify(payload,null,2))}</code></pre>`;
     if(m.text && !payload) body+=`<div class="content">${mdHtml(m.text)}</div>`;
   } else if(m.type==='markdown'){
-    const md = m.text || '';
-    const safe = md.replace(/&lt;/g,'<').replace(/&gt;/g,'>');
-    const envBlocks = [];
-    let rest = safe;
-    const re = /<environment_details>([\s\S]*?)<\/environment_details>/ig;
-    let m2;
-    while ((m2 = re.exec(rest)) !== null) {
-      envBlocks.push(m2[1].trim());
-    }
-    rest = rest.replace(re, '');
-    envBlocks.forEach((content) => {
-      const normalized = content.replace(/\\r\\n/g,'\n').replace(/\\n/g,'\n').replace(/\\r/g,'\n').trim();
-      body += `<div class="env-block"><div class="env-label">environment</div><div class="content">${esc(normalized)}</div></div>`;
-    });
-    body += `<div class="content">${mdHtml(rest.trim())}</div>`;
+    body += `<div class="content">${mdHtml((m.text || '').trim())}</div>`;
   } else if(m.type==='html'){
-    const html = envDetailsHtml(m.html || '');
-    body += `<div class="content html-content">${html || esc(m.text||'')}</div>`;
+    body += `<div class="content html-content">${esc(m.html || m.text || '')}</div>`;
   } else if(m.type==='system'){
     body+=`<div class="content"><strong>${esc(m.text||'')}</strong></div>`;
     if(m.html && m.type==='system') body+=`<div class="content">${m.html}</div>`;
   } else {
     const files=(m.meta&&m.meta.files)||[];
     if(files.length) body+=renderFiles(files);
-    const txt = m.text || '';
-    const envRe = /<environment_details>([\s\S]*?)<\/environment_details>/ig;
-    let envMatch;
-    const envBlocks=[];
-    let restTxt = txt;
-    while ((envMatch = envRe.exec(txt)) !== null) {
-      envBlocks.push(envMatch[1].trim());
-    }
-    restTxt = txt.replace(envRe, '');
-    envBlocks.forEach((content) => {
-      const normalized = content.replace(/\\r\\n/g,'\n').replace(/\\n/g,'\n').replace(/\\r/g,'\n').trim();
-      body += `<div class="env-block"><div class="env-label">environment</div><div class="content">${esc(normalized)}</div></div>`;
-    });
-    body += `<div class="content">${esc(restTxt)}</div>`;
+    body += `<div class="content">${esc(m.text || '')}</div>`;
   }
 
   d.innerHTML=`${timeSpan}${badge}${replyBtn}${renderReplyContext(m)}${body}${renderMeta(m)}`;
