@@ -119,7 +119,7 @@ Todas las herramientas ahora usan el directorio actual como workspace, sin fallb
 | `tools/quick_scan.py` | `detect_workspace()` retorna siempre `ROOT` a menos que se pase `--workspace` o `MEMENTO_WORKSPACE` |
 | `tools/session_start.py` | `WS_ROOT = Path(__file__).resolve().parent.parent.resolve()` |
 | `tools/bootstrap_context.py` | `workspace_root = str(ROOT)` |
-| `tools/optimize_agent.py` | `root_workspace = str(ROOT)`, `environment_details_block()` usa `ROOT` |
+| `tools/optimize_agent.py` | `root_workspace = str(ROOT)` |
 | `memento_cli.py` | `WS_ROOT = ROOT` |
 
 ### 3.3 `doctor.py` / `core/health.py` tolerantes a memoria vacía
