@@ -103,3 +103,6 @@ memory/personality/user_personality.md
 .kilo.backup*
 
 SESSION.md
+.playwright-mcp/
+tiendas-directory-debug.png
+tiendas-directory.png
