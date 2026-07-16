@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import datetime as _dt
 import json
 import re
 import sys
@@ -24,7 +25,7 @@ class QuickScan:
         self.index = load_index(self.index_path)
         self.new_count = 0
 
-    def scan(self, incremental_path: Optional[str] = None, build_manifest_output: bool = True) -> Dict[str, Any]:
+    def scan(self, incremental_path: Optional[str] = None, build_manifest_output: bool = True, replace_existing: bool = False) -> Dict[str, Any]:
         self.projects.mkdir(parents=True, exist_ok=True)
         self.index_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -36,28 +37,41 @@ class QuickScan:
                 f = self.workspace / f
             if f.name.startswith("HANDOFF") and f.suffix == ".md":
                 entry = self._parse_handoff(f)
-                if entry and entry["id"] not in existing_ids:
+                if entry and (replace_existing or entry["id"] not in existing_ids):
                     self.index[entry["id"]] = entry
-                    self.new_count += 1
+                    if replace_existing and entry["id"] in existing_ids:
+                        self.new_count += 0  # replacement not counted as new
+                    else:
+                        self.new_count += 1
             elif f.name.endswith("_CONTEXT.md"):
                 entry = self._parse_context(f)
-                if entry and entry["id"] not in existing_ids:
+                if entry and (replace_existing or entry["id"] not in existing_ids):
                     self.index[entry["id"]] = entry
-                    self.new_count += 1
+                    if replace_existing and entry["id"] in existing_ids:
+                        self.new_count += 0
+                    else:
+                        self.new_count += 1
         else:
             for f in self.projects.rglob("HANDOFF*.md"):
                 entry = self._parse_handoff(f)
-                if entry and entry["id"] not in existing_ids:
+                if entry and (replace_existing or entry["id"] not in existing_ids):
                     self.index[entry["id"]] = entry
-                    existing_ids.add(entry["id"])
-                    self.new_count += 1
+                    if not replace_existing:
+                        existing_ids.add(entry["id"])
+                        self.new_count += 1
+                    else:
+                        # ensure id stays in set for subsequent dedup if needed
+                        existing_ids.add(entry["id"])
 
             for f in self.projects.rglob("*_CONTEXT.md"):
                 entry = self._parse_context(f)
-                if entry and entry["id"] not in existing_ids:
+                if entry and (replace_existing or entry["id"] not in existing_ids):
                     self.index[entry["id"]] = entry
-                    existing_ids.add(entry["id"])
-                    self.new_count += 1
+                    if not replace_existing:
+                        existing_ids.add(entry["id"])
+                        self.new_count += 1
+                    else:
+                        existing_ids.add(entry["id"])
 
         saved = save_index(self.index, self.index_path)
         manifest = None
@@ -106,11 +120,13 @@ class QuickScan:
             return path.parent.name
 
         project = _extract_project(f)
+        # Usar mtime como fallback para archivos CONTEXT sin fecha en el nombre
+        fallback_ts = _dt.datetime.fromtimestamp(f.stat().st_mtime).isoformat(timespec="seconds")[:19]
         return {
             "id": f"c_{project}_{f.stem}",
             "type": "CONTEXT",
             "project": project,
-            "ts": "discover",
+            "ts": fallback_ts,
             "path": rel(f, self.workspace),
             "summary": content[:100],
         }
@@ -128,11 +144,12 @@ def main(argv: Optional[list[str]] = None) -> int:
     parser.add_argument("--legacy-index", action="store_true", help="Usar .memento/memory/graph/memory_index.json")
     parser.add_argument("--no-manifest", action="store_true", help="No actualizar index_manifest.json")
     parser.add_argument("--json", action="store_true", help="Imprimir resultado en JSON")
+    parser.add_argument("--replace", action="store_true", help="Reemplazar entradas existentes durante el escaneo completo")
     args = parser.parse_args(argv)
 
     workspace = Path(args.workspace).resolve() if args.workspace else detect_workspace()
     scanner = QuickScan(workspace=workspace, index_path=Path(args.index) if args.index else None, legacy_index=args.legacy_index)
-    result = scanner.scan(incremental_path=args.incremental_path, build_manifest_output=not args.no_manifest)
+    result = scanner.scan(incremental_path=args.incremental_path, build_manifest_output=not args.no_manifest, replace_existing=args.replace)
 
     if args.json:
         print(json.dumps(result, indent=2, ensure_ascii=False))

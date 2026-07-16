@@ -33,6 +33,7 @@ START_CONTEXT = WS_ROOT / ".agent_context" / "START_CONTEXT.md"
 PROJECT_META = WS_ROOT / ".agent_context" / "PROJECT_META.md"
 USER_CONTEXT = WS_ROOT / ".agent_context" / "secure" / "USER_CONTEXT.md"
 SECURE_CONTEXT = WS_ROOT / ".agent_context" / "secure" / "SECURE.md"
+CLIENT_PROJECTS_JSON = WS_ROOT / ".agent_context" / "secure" / "client_projects.json"
 AGENT_DIR = WS_ROOT / ".agent_context" / "agent"
 AGENT_SEED = AGENT_DIR / "agent-main.md"
 AGENT_INIT = AGENT_DIR / "init.md"
@@ -265,6 +266,35 @@ def user_context_short(limit: int = 4) -> list[str]:
     return ["(sin contexto de usuario local)"]
 
 
+def client_project_paths() -> list[str]:
+    """Lee .agent_context/secure/client_projects.json y devuelve líneas de contexto cliente."""
+    path = CLIENT_PROJECTS_JSON
+    if not path.exists():
+        return []
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return []
+    lines = []
+    for name, meta in data.items():
+        if not isinstance(meta, dict):
+            continue
+        lines.append(f"- **{name}**")
+        for key in ("source", "venv", "repo", "branch", "production", "memento_docs"):
+            value = meta.get(key)
+            if value:
+                label = {
+                    "source": "Fuente local",
+                    "venv": "venv",
+                    "repo": "Repo GitHub",
+                    "branch": "rama",
+                    "production": "Producción",
+                    "memento_docs": "Documentación Memento",
+                }.get(key, key)
+                lines.append(f"- {label}: {value}")
+    return lines
+
+
 def build_agent_content(project: str | None = None) -> tuple[str, str]:
     signature = agent_source_signature(project=project)
     init = AGENT_INIT.read_text(encoding="utf-8", errors="replace") if AGENT_INIT.exists() else ""
@@ -332,6 +362,13 @@ def build_agent_content(project: str | None = None) -> tuple[str, str]:
         f"- Aislamiento estricto: este agente pertenece exclusivamente al proyecto **{active_project}**. No mezcles contexto de otros proyectos.",
     ])
     lines.extend(user_context_short(limit=4))
+    paths = client_project_paths()
+    if paths:
+        lines.extend([
+            "",
+            "## Rutas de proyectos cliente",
+        ])
+        lines.extend(paths)
     return "\n".join(lines), signature
 
 
@@ -376,6 +413,11 @@ def build_context(limit: int, project: str | None = None, agent_result: dict | N
     ]
     lines.extend(local_context_summary(PROJECT_META, "Project meta"))
     lines.extend(local_context_summary(USER_CONTEXT, "User context"))
+    paths = client_project_paths()
+    if paths:
+        lines.append("## Rutas de proyectos cliente")
+        lines.extend([f"- {line}" for line in paths])
+        lines.append("")
     lines.extend([
         "## Top recent memory",
     ])

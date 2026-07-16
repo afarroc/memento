@@ -63,6 +63,12 @@ def save_index(data: Dict[str, Dict[str, Any]], path: Optional[Path] = None, com
 
 def parse_ts(value: Any) -> datetime:
     text = str(value or "")
+    normalized = text.strip().lower()
+    if normalized in {"discover", "unknown", "none", ""}:
+        return datetime.min
+    # Aceptar ISO básico con o sin timezone: 2026-06-26T12:00:00-05:00 -> 2026-06-26T12:00:00
+    if len(text) >= 19 and text[10] == "T":
+        text = text[:19]
     for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d"):
         try:
             return datetime.strptime(text[:19], fmt)
@@ -72,7 +78,8 @@ def parse_ts(value: Any) -> datetime:
 
 
 def entry_sort_key(entry: Dict[str, Any], project: Optional[str] = None) -> tuple[Any, ...]:
-    ts = parse_ts(entry.get("ts", ""))
+    ts_raw = entry.get("ts") or entry.get("timestamp") or ""
+    ts = parse_ts(ts_raw)
     project_value = str(entry.get("project", ""))
     type_value = str(entry.get("type", ""))
     type_priority = {"HANDOFF": 0, "SOURCE": 1, "NOTE": 2, "CONTEXT": 3, "COMPONENT": 4}.get(type_value, 50)
