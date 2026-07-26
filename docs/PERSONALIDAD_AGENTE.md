@@ -119,6 +119,6 @@ python3 tools/backup_local.py restore 20260627_131520
 ```
 
 Los backups se guardan en `.backups/<YYYYMMDD_HHMMSS>/` (ignorado por git).
-Incluye: `.agent_context/START_CONTEXT.md`, `.env`, `gtd_memento/`, `memory/personality/`, `projects/m360/`, `projects/ventas_porta/`.
+Incluye: `.agent_context/START_CONTEXT.md`, `.env`, `gtd_memento/`, `memory/personality/`, `projects/Management360/`, `projects/ventas_porta/`.
 
 Regla: ejecutar backup antes de cambios estructurales en `.gitignore`, `projects/`, `memory/` o `tools/`.

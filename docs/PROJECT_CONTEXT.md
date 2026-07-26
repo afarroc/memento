@@ -199,7 +199,7 @@ Handoffs relevantes por tema:
 | Sprint 1 | `HANDOFF_2026-06-26_cierre_sprint1.md` |
 | Estado real M360 | `HANDOFF_2026-06-26_correccion_estado_real_m360.md` |
 | Cierre sesión | `HANDOFF_2026-06-26_cierre_sesion.md` |
-| Auth M360 v1 | `projects/m360/handoffs/HANDOFF_2026-06-27_174500_mb_auth_strategy.md` |
+| Auth M360 v1 | `projects/Management360/handoffs/HANDOFF_2026-06-27_174500_mb_auth_strategy.md` |
 | Cierre sesión 2026-06-27 | `projects/mementobloom/HANDOFF_2026-06-27_183500_cierre_sesion.md` |
 
 _El índice completo está en `memory/graph/memory_index.json` (162 entradas)._
