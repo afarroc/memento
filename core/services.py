@@ -43,8 +43,14 @@ HEALTH_CACHE_PATH = workspace_root() / ".memento_runtime" / "health_cache.json"
 
 
 def redis_ping(host: str = REDIS_HOST, port: int = REDIS_PORT, timeout: float = 0.6) -> Dict[str, Any]:
+    password = os.environ.get("REDIS_PASSWORD")
     try:
         with socket.create_connection((host, port), timeout=timeout) as sock:
+            if password:
+                sock.sendall(f"*2\r\n$4\r\nAUTH\r\n${len(password)}\r\n{password}\r\n".encode("utf-8"))
+                auth_resp = sock.recv(128).decode(errors="replace")
+                if not auth_resp.startswith("+OK"):
+                    return {"ok": False, "detail": "AUTH failed", "host": host, "port": port}
             sock.sendall(b"*1\r\n$4\r\nPING\r\n")
             data = sock.recv(128).decode(errors="replace")
         return {"ok": "PONG" in data, "detail": data.strip(), "host": host, "port": port}

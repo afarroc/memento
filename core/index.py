@@ -10,33 +10,26 @@ from core.paths import ROOT, ensure_dir, rel, workspace_root
 
 
 def _client_index_paths():
-    """Get client workspace index paths dynamically based on MEMENTO_WORKSPACE."""
+    """Client workspace index paths."""
     ws = workspace_root()
     return {
         "client_index": ws / "memory" / "graph" / "memory_index.json",
-        "client_legacy": ws / ".memento" / "memory" / "graph" / "memory_index.json",
         "manifest": ws / "memory" / "graph" / "index_manifest.json",
     }
 
 
 def default_index_path() -> Path:
     paths = _client_index_paths()
-    if paths["client_index"].exists():
-        return paths["client_index"]
-    if paths["client_legacy"].exists():
-        return paths["client_legacy"]
-    return paths["client_index"]
+    return paths["client_index"].resolve()
 
 
-def resolve_index_path(index: Optional[str] = None, workspace: Optional[Path] = None, legacy: bool = False) -> Path:
+def resolve_index_path(index: Optional[str] = None, workspace: Optional[Path] = None) -> Path:
     root = workspace or ROOT
     if index:
         path = Path(index).expanduser()
         if not path.is_absolute():
             path = root / path
         return path.resolve()
-    if legacy:
-        return (workspace or ROOT) / ".memento" / "memory" / "graph" / "memory_index.json"
     return default_index_path().resolve()
 
 
@@ -89,7 +82,7 @@ def entry_sort_key(entry: Dict[str, Any], project: Optional[str] = None) -> tupl
 
 
 def top_entries(index: Dict[str, Dict[str, Any]], limit: int, project: Optional[str] = None) -> List[Dict[str, Any]]:
-    entries = list(index.values())
+    entries = [entry for entry in index.values() if isinstance(entry, dict)]
     if project:
         entries = [entry for entry in entries if str(entry.get("project")) == project]
     entries.sort(key=lambda entry: entry_sort_key(entry, project=project), reverse=True)
@@ -103,13 +96,15 @@ def latest_handoffs(index: Dict[str, Dict[str, Any]], limit: int = 5, project: O
 def count_by(entries: Iterable[Dict[str, Any]], field: str) -> Dict[str, int]:
     counts: Dict[str, int] = {}
     for entry in entries:
+        if not isinstance(entry, dict):
+            continue
         value = str(entry.get(field, "unknown") or "unknown")
         counts[value] = counts.get(value, 0) + 1
     return dict(sorted(counts.items()))
 
 
 def build_manifest(index: Dict[str, Dict[str, Any]], path: Optional[Path] = None) -> Dict[str, Any]:
-    entries = list(index.values())
+    entries = [entry for entry in index.values() if isinstance(entry, dict)]
     manifest = {
         "updated_at": datetime.now().isoformat(timespec="seconds"),
         "total": len(index),

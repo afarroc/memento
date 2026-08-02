@@ -15,92 +15,16 @@ MementoBloom es un sistema de memoria histórica para proyectos gestionados por 
 - **5 commits adelantados**, árbol limpio
 - **Redis operativo** en Termux (192.168.18.59:6379)
 - **Tareas Sprint 3:** T3.1-T3.4 pendientes, T3.5 completado
-- **Blocker activo:** Management360 no disponible
+- **Blocker activo:** Management360 no disponible → reclasificado como servicio on-demand en 2026-07-24
 
 ---
 
-## 2. Arquitectura
-
-```
-ROOT (instalación)          WS_ROOT (workspace cliente)
-├── core/                   ├── .agent_context/
-│   ├── paths.py            │   ├── PROJECT_META.md (trackeado)
-│   ├── services.py         │   ├── START_CONTEXT.md (no trackeado)
-│   ├── index.py            │   ├── agent/
-│   ├── health.py           │   │   ├── init.md
-│   └── git.py              │   │   ├── agent-main.md
-│                           │   │   └── instructions/
-├── tools/                  │   │       ├── 00-core.md
-│   ├── bootstrap_context.py│   │       ├── 10-context.md
-│   ├── session_start.py    │   │       ├── 20-memory.md
-│   ├── doctor.py           │   │       ├── 30-redis-panel.md
-│   ├── selftest.py         │   │       └── 90-safety.md
-│   ├── quick_scan.py       │   └── secure/
-│   ├── context_builder.py  │       └── USER_CONTEXT.md
-│   ├── optimize_agent.py   ├── memory/graph/
-│   ├── m360_bridge/      │   ├── memory_index.json
-│   └── ...                 │   └── index_manifest.json
-└── docs/                   ├── projects/
-    └── *.md                │   ├── mementobloom/HANDOFF_*.md
-                            │   ├── m360/handoffs/
-                            │   ├── Ventas_Porta/handoffs/
-                            │   └── Administracion_UPN/handoffs/
-```
-
----
-
-## 3. Proyectos registrados
-
-| Proyecto | Handoffs | Estado |
-|----------|----------|--------|
-| mementobloom | 131 entries (raíz) | Activo - desarrollo principal |
-| m360 | 22 entries | Activo - bridge API implementado |
-| Ventas_Porta | 15 entries | Activo - catálogo retail en progreso |
-| Administracion_UPN | 9 entries | Activo - Fase 2 GTD |
-| adherence_test | 1 entry | Test de instalación cliente |
-
----
-
-## 4. Estado técnico actual
-
-### 4.1 Repositorio
-- **Branch:** master
-- **Commit actual:** c72c1fb (`fix: add backup recovery fallback for clean session starts (T3.5)`)
-- **Cambios pendientes:** 0 archivos modificados
-
-### 4.2 Memoria
-- **Total entradas:** 160
-- **Por tipo:** HANDOFF: 154, CONTEXT: 3, COMPONENT: 1, NOTE: 1, SOURCE: 1
-- **Índice:** `memory/graph/memory_index.json` (compacto, sin embeddings)
-
-### 4.3 Servicios
-| Servicio | Estado | URL/Host |
-|----------|--------|----------|
-| Redis | OK | 192.168.18.59:6379 |
-| Sala | NO | http://127.0.0.1:8767 |
-| Panel | NO | http://127.0.0.1:8766 |
-
----
-
-## 5. Tareas pendientes
-
-### Sprint 3 - Seguridad y configuración sensible
+## 6. Estado operacional
 
 | ID | Descripción | Estado |
 |----|-------------|--------|
-| T3.1 | Vault manager: Fernet o encoding claro | ⏳ pendiente |
-| T3.2 | Exclusiones Git en instalaciones cliente | ⏳ pendiente |
-| T3.3 | Validación .env al arranque | ⏳ pendiente |
-| T3.4 | Sanitizar rutas absolutas en logs/exports | ⏳ pendiente |
-| T3.5 | session_start.py → session_bootstrap.py auto-invocación | ✅ completado |
-
----
-
-## 6. Blockers
-
-| ID | Descripción | Impacto |
-|----|-------------|---------|
-| B-M360 | Connection refused - Management360 no disponible | Sincronización Sprint 3 diferida |
+| M360 | Servicio on-demand | Disponibilidad controlada por el usuario |
+| Redis | Servicio best-effort | Reintentar una vez si no responde |
 
 ---
 

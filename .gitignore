@@ -89,11 +89,12 @@ build/
 # === BACKUPS LOCALES (NO VERSIONAR) ===
 .backups/
 
-# === CLIENT PROJECTS (NONE tracked) ===
+# === CLIENT PROJECTS / HANDOFFS (NONE tracked) ===
 projects/*
 projects/mementobloom/
 projects/*/handoffs/
 projects/*/memory/
+*HANDOFF*.md
 
 # === PERSONALIDAD ===
 memory/personality/user_personality.md
@@ -104,5 +105,7 @@ memory/personality/user_personality.md
 
 SESSION.md
 .playwright-mcp/
+workspace/
+
 tiendas-directory-debug.png
 tiendas-directory.png
