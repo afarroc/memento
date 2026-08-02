@@ -1,0 +1,381 @@
+/* ============================================================
+   MementoBloom Sala — ITCSS
+   ============================================================
+   Settings   → variables y defaults
+   Tools      → helpers reutilizables
+   Generic    → reseteos base
+   Elements   → elementos HTML sin clases
+   Objects    → patrones estructurales
+   Components → componentes de sala
+   Utilities  → utilidades pequeñas
+   ============================================================ */
+
+/* ------------------------------------------------------------
+   1. SETTINGS
+   ------------------------------------------------------------ */
+:root {
+  --mb-bg: #08090a;
+  --mb-surface: #111318;
+  --mb-surface-raised: #161b22;
+  --mb-border: #1f2933;
+  --mb-border-subtle: #262a33;
+  --mb-text: #d4d4d4;
+  --mb-text-secondary: #9ca3af;
+  --mb-text-muted: #6b7280;
+  --mb-header-bg: #0f1419;
+  --mb-accent: #2563eb;
+  --mb-accent-hover: #1d4ed8;
+  --mb-success: #34d399;
+  --mb-radius: 8px;
+  --mb-radius-sm: 4px;
+  --mb-radius-pill: 999px;
+  --mb-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --mb-font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+/* ------------------------------------------------------------
+   2. TOOLS
+   ------------------------------------------------------------ */
+.mbl-scrollbar-thin::-webkit-scrollbar {
+  width: 8px;
+}
+.mbl-scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+.mbl-scrollbar-thin::-webkit-scrollbar-thumb {
+  background: #262a33;
+  border-radius: 999px;
+}
+
+/* ------------------------------------------------------------
+   3. GENERIC
+   ------------------------------------------------------------ */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+html, body {
+  margin: 0;
+  padding: 0;
+}
+body {
+  font-family: var(--mb-font);
+  background: var(--mb-bg);
+  color: var(--mb-text);
+  min-height: 100vh;
+}
+a {
+  color: inherit;
+  text-decoration: none;
+}
+button {
+  font: inherit;
+  cursor: pointer;
+}
+textarea {
+  font: inherit;
+}
+
+/* ------------------------------------------------------------
+   4. ELEMENTS
+   ------------------------------------------------------------ */
+header {
+  background: var(--mb-header-bg);
+  border-bottom: 1px solid var(--mb-border);
+  padding: 10px 12px;
+}
+header h1 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #e5e7eb;
+  margin: 0;
+}
+select, input, textarea {
+  background: #0a0c10;
+  color: #e5e7eb;
+  border: 1px solid var(--mb-border);
+  border-radius: var(--mb-radius-sm);
+  padding: 6px 8px;
+  font: inherit;
+}
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: #374151;
+}
+
+/* ------------------------------------------------------------
+   5. OBJECTS
+   ------------------------------------------------------------ */
+#mbl-root {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+.mbl-feed {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+}
+.mbl-composer {
+  background: var(--mb-header-bg);
+  border-top: 1px solid var(--mb-border);
+  padding: 10px 12px;
+}
+.mbl-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.mbl-row {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+}
+.mbl-files {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 6px 0;
+}
+
+/* ------------------------------------------------------------
+   6. COMPONENTS
+   ------------------------------------------------------------ */
+
+/* Header / status */
+.mbl-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.mbl-status {
+  font-size: 11px;
+  color: var(--mb-text-muted);
+}
+
+/* Buttons */
+.mbl-btn {
+  padding: 6px 12px;
+  background: var(--mb-accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--mb-radius-sm);
+  font-size: 12px;
+  font-weight: 600;
+}
+.mbl-btn:hover {
+  background: var(--mb-accent-hover);
+}
+.mbl-btn-ghost {
+  background: var(--mb-surface);
+  color: var(--mb-text);
+  border: 1px solid var(--mb-border);
+}
+.mbl-btn-ghost:hover {
+  background: #1a1f27;
+}
+
+/* Form controls */
+.mbl-form-control {
+  flex: 1;
+  min-height: 34px;
+  max-height: 160px;
+  padding: 8px;
+  background: #0a0c10;
+  color: #e5e7eb;
+  border: 1px solid var(--mb-border);
+  border-radius: var(--mb-radius);
+  resize: vertical;
+}
+.mbl-checkbox {
+  font-size: 12px;
+  color: var(--mb-text-secondary);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  user-select: none;
+}
+
+/* Messages */
+.mbl-msg {
+  margin: 10px 12px;
+  padding: 10px 12px;
+  background: var(--mb-surface);
+  border: 1px solid var(--mb-border);
+  border-left: 3px solid #262a33;
+  border-radius: var(--mb-radius);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.mbl-msg .mbl-time {
+  font-size: 10px;
+  color: var(--mb-text-muted);
+  display: inline-block;
+  margin-right: 6px;
+}
+.mbl-msg .mbl-content {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  border: 1px solid var(--mb-border);
+  border-radius: var(--mb-radius-sm);
+  padding: 8px;
+  margin-top: 6px;
+}
+.mbl-msg .mbl-content ul {
+  margin: 8px 0;
+  padding-left: 20px;
+}
+.mbl-msg .mbl-content li {
+  margin: 4px 0;
+}
+.mbl-msg code {
+  background: #0b0d11;
+  padding: 1px 4px;
+  border-radius: var(--mb-radius-sm);
+  font-size: 11px;
+}
+.mbl-msg pre {
+  margin: 6px 0;
+  padding: 8px;
+  background: #0b0d11;
+  border-radius: var(--mb-radius-sm);
+  overflow-x: auto;
+}
+.mbl-msg pre code {
+  background: transparent;
+  padding: 0;
+  font-size: 12px;
+}
+
+/* Badges */
+.mbl-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 2px 6px;
+  border-radius: var(--mb-radius-pill);
+  margin-right: 6px;
+  border: 1px solid transparent;
+}
+
+/* Meta / chips */
+.mbl-meta-line {
+  font-size: 11px;
+  color: var(--mb-text-muted);
+  margin-top: 4px;
+}
+.mbl-chip {
+  background: var(--mb-surface);
+  border: 1px solid var(--mb-border);
+  border-radius: var(--mb-radius-pill);
+  padding: 3px 8px;
+  font-size: 11px;
+  color: var(--mb-text-secondary);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.mbl-chip button {
+  background: transparent;
+  border: none;
+  color: var(--mb-text-secondary);
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+}
+
+/* Reply context */
+.mbl-reply-context {
+  margin: 6px 0;
+  padding: 6px 8px;
+  background: #0b0d11;
+  border: 1px solid var(--mb-border);
+  border-radius: var(--mb-radius-sm);
+  font-size: 12px;
+}
+.mbl-reply-label {
+  font-size: 11px;
+  color: var(--mb-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 2px;
+}
+.mbl-reply-text {
+  color: var(--mb-text-secondary);
+  line-height: 1.3;
+}
+.mbl-reply-btn {
+  background: transparent;
+  border: none;
+  color: var(--mb-text-secondary);
+  cursor: pointer;
+  font-size: 12px;
+}
+
+/* Image / file variants */
+.mbl-image img {
+  max-width: 100%;
+  max-height: 260px;
+  border-radius: var(--mb-radius-sm);
+  border: 1px solid var(--mb-border-subtle);
+  display: block;
+  margin-top: 4px;
+}
+.mbl-file a {
+  color: var(--mb-text-secondary);
+  font-size: 12px;
+}
+
+/* Restored messages */
+.mbl-restored-old {
+  border-left-color: var(--mb-border);
+  border-style: solid;
+  border-width: 1px 1px 1px 3px;
+  opacity: 0.95;
+}
+.restored-tag {
+  color: var(--mb-text-muted);
+}
+
+/* Hint */
+#hint {
+  font-size: 10px;
+  color: var(--mb-text-muted);
+  margin-top: 4px;
+}
+
+/* ------------------------------------------------------------
+   7. STYLE PRESETS (tone/level based)
+   These classes are applied inline from backend style mapping,
+   but keeping fallback tokens here for optional CSS-only usage.
+   ------------------------------------------------------------ */
+.mbl-style-info       { background:#0b1d2e; border-left-color:#1f4f7a; color:#dcecff; }
+.mbl-style-success    { background:#0b261b; border-left-color:#1f8a5b; color:#dcfce7; }
+.mbl-style-warn       { background:#2a280b; border-left-color:#7a6a1f; color:#fff7cc; }
+.mbl-style-error      { background:#2a0b0b; border-left-color:#7a1f1f; color:#ffe4e6; }
+.mbl-style-agent_optimizer { background:#101827; border-left-color:#60a5fa; color:#e0f2fe; }
+.mbl-style-bootstrap  { background:#171325; border-left-color:#a78bfa; color:#f3e8ff; }
+.mbl-style-memory     { background:#0f1d18; border-left-color:#34d399; color:#dcfce7; }
+.mbl-style-git        { background:#1d160f; border-left-color:#f59e0b; color:#fef3c7; }
+.mbl-style-service    { background:#0b1d2e; border-left-color:#38bdf8; color:#e0f2fe; }
+.mbl-style-code       { background:#0e1b16; border-left-color:#14532d; color:#d1fae5; }
+.mbl-style-json       { background:#230f0f; border-left-color:#7f1d1d; color:#fee2e2; }
+
+/* ------------------------------------------------------------
+   8. UTILITIES
+   ------------------------------------------------------------ */
+.mbl-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
