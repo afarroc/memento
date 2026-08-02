@@ -14,7 +14,20 @@ from urllib.parse import unquote, quote
 
 from core.paths import detect_project_name
 
+_env_path = Path(__file__).resolve().parent / ".env"
+if _env_path.exists():
+    for raw_line in _env_path.read_text(encoding="utf-8", errors="replace").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        key = key.strip()
+        value = value.strip().strip("\"'")
+        if key and key not in os.environ:
+            os.environ[key] = value
+
 HTML = Path(__file__).parent / "templates" / "sala.html"
+STATIC_DIR = Path(__file__).parent / "static"
 REDIS_HOST = os.environ.get("REDIS_HOST", "localhost")
 REDIS_PORT = int(os.environ.get("REDIS_PORT", "6379"))
 REDIS_KEY = os.environ.get("REDIS_KEY", f"memento_panel_items:{detect_project_name()}")
@@ -52,9 +65,16 @@ def redis_cmd(args):
         import os
         redis_host = os.environ.get("REDIS_HOST", "localhost")
         redis_port = int(os.environ.get("REDIS_PORT", "6379"))
+        redis_password = os.environ.get("REDIS_PASSWORD")
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.settimeout(3)
         s.connect((redis_host, redis_port))
+        if redis_password:
+            s.sendall(f"*2\r\n$4\r\nAUTH\r\n${len(redis_password)}\r\n{redis_password}\r\n".encode("utf-8"))
+            auth_resp = s.recv(128).decode(errors="replace")
+            if not auth_resp.startswith("+OK"):
+                s.close()
+                return {"ok": False, "out": "AUTH failed"}
         chunks = [f"*{len(args)}\r\n".encode("utf-8")]
         for arg in args:
             encoded = str(arg).encode("utf-8")
@@ -463,6 +483,15 @@ class H(BaseHTTPRequestHandler):
             data, status, content_type = serve_upload(self.path)
             if status == 200:
                 self._send_response(data, content_type or "application/octet-stream")
+            else:
+                self._send_json({"error": "not found"}, 404)
+        elif self.path.startswith("/static/"):
+            rel = unquote(self.path[len("/static/"):])
+            safe = os.path.normpath(rel)
+            full = (STATIC_DIR / safe).resolve()
+            if str(full).startswith(str(STATIC_DIR.resolve())) and full.is_file():
+                ctype = mimetypes.guess_type(str(full))[0] or "application/octet-stream"
+                self._send_response(full.read_bytes(), ctype)
             else:
                 self._send_json({"error": "not found"}, 404)
         else:
