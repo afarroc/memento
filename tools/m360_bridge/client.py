@@ -26,10 +26,15 @@ class M360Client:
         csrf_url = f"{self.base_url}/api/csrf/"
         req = urllib.request.Request(csrf_url, method="GET")
         with self._opener.open(req, timeout=self._timeout) as resp:
-            for c in self._jar:
-                if c.name == "csrftoken":
-                    self._csrf = c.value
-                    break
+            # M360 devuelve el token en el header X-Csrftoken (body puede venir vacío {}).
+            header_csrf = resp.headers.get("X-Csrftoken") or resp.headers.get("X-CSRFToken")
+            if header_csrf:
+                self._csrf = header_csrf
+            else:
+                for c in self._jar:
+                    if c.name == "csrftoken":
+                        self._csrf = c.value
+                        break
         login_url = f"{self.base_url}/api/login/"
         payload = json.dumps({"username": self.username, "password": self.password}).encode("utf-8")
         req = urllib.request.Request(login_url, data=payload, method="POST")
@@ -402,6 +407,20 @@ class M360Client:
             ("duration_hours", kwargs.get("duration_hours", 0)),
             ("is_published", kwargs.get("is_published", False)),
             ("is_featured", kwargs.get("is_featured", False)),
+            ("codigo", kwargs.get("codigo")),
+            ("creditos", kwargs.get("creditos")),
+            ("ht", kwargs.get("ht")),
+            ("hp", kwargs.get("hp")),
+            ("hl", kwargs.get("hl")),
+            ("pc", kwargs.get("pc")),
+            ("requisitos", kwargs.get("requisitos")),
+            ("naturaleza", kwargs.get("naturaleza")),
+            ("competencia_general", kwargs.get("competencia_general")),
+            ("componentes", kwargs.get("componentes")),
+            ("sumilla", kwargs.get("sumilla")),
+            ("logro_curso", kwargs.get("logro_curso")),
+            ("sistema_evaluacion", kwargs.get("sistema_evaluacion")),
+            ("bibliografia", kwargs.get("bibliografia")),
         ]:
             if value is not None and value != "":
                 payload[optional] = value
@@ -409,7 +428,13 @@ class M360Client:
         return self._request_json("/api/v1/courses/", payload, method="POST")
 
     def api_v1_update_course(self, course_id: int, **kwargs: Any) -> Dict[str, Any]:
-        allowed_fields = {"title", "description", "short_description", "tutor_id", "category_id", "level", "price", "duration_hours", "is_published", "is_featured", "published_at"}
+        allowed_fields = {
+            "title", "description", "short_description", "tutor_id", "category_id",
+            "level", "price", "duration_hours", "is_published", "is_featured", "published_at",
+            "codigo", "creditos", "ht", "hp", "hl", "pc", "requisitos", "naturaleza",
+            "competencia_general", "componentes", "sumilla", "logro_curso",
+            "sistema_evaluacion", "bibliografia",
+        }
         payload = {k: v for k, v in kwargs.items() if k in allowed_fields and v is not None}
         if not payload:
             return {"http_error": 400, "reason": "No valid fields provided for update"}
@@ -476,3 +501,76 @@ class M360Client:
     def api_v1_update_inbox_item(self, item_id: int, **kwargs: Any) -> Dict[str, Any]:
         payload: Dict[str, Any] = {k: v for k, v in kwargs.items() if v not in (None, "")}
         return self._request_json(f"/api/v1/inbox/{item_id}/", payload, method="PATCH")
+
+    # ======================
+    # COURSES EXTENDED API v1
+    # ======================
+    def api_v1_list_modules(self, **params: Any) -> Dict[str, Any]:
+        qs = urllib.parse.urlencode({k: v for k, v in params.items() if v not in (None, "")})
+        path = "/api/v1/modules/" + (f"?{qs}" if qs else "")
+        return self._get_request(path)
+
+    def api_v1_create_module(self, course_id: int, title: str, **kwargs: Any) -> Dict[str, Any]:
+        payload: Dict[str, Any] = {
+            "course": course_id,
+            "title": title,
+            "order": kwargs.get("order", 1),
+            "description": kwargs.get("description", ""),
+            "logro_unidad": kwargs.get("logro_unidad", ""),
+        }
+        return self._request_json("/api/v1/modules/", payload, method="POST")
+
+    def api_v1_list_lessons(self, **params: Any) -> Dict[str, Any]:
+        qs = urllib.parse.urlencode({k: v for k, v in params.items() if v not in (None, "")})
+        path = "/api/v1/lessons/" + (f"?{qs}" if qs else "")
+        return self._get_request(path)
+
+    def api_v1_create_lesson(self, module_id: Optional[int] = None, title: str = "", **kwargs: Any) -> Dict[str, Any]:
+        payload: Dict[str, Any] = {
+            "title": title,
+            "lesson_type": kwargs.get("lesson_type", "text"),
+            "order": kwargs.get("order", 1),
+            "is_free": kwargs.get("is_free", False),
+            "duration_minutes": kwargs.get("duration_minutes", 0),
+            "content": kwargs.get("content", ""),
+            "structured_content": kwargs.get("structured_content", []),
+            "video_url": kwargs.get("video_url", ""),
+            "quiz_questions": kwargs.get("quiz_questions", []),
+            "logro_semana": kwargs.get("logro_semana", ""),
+            "saberes_esenciales": kwargs.get("saberes_esenciales", ""),
+            "actividades": kwargs.get("actividades", ""),
+            "trabajo_campo": kwargs.get("trabajo_campo", ""),
+        }
+        if module_id is not None:
+            payload["module"] = module_id
+        return self._request_json("/api/v1/lessons/", payload, method="POST")
+
+    def api_v1_list_evaluations(self, **params: Any) -> Dict[str, Any]:
+        qs = urllib.parse.urlencode({k: v for k, v in params.items() if v not in (None, "")})
+        path = "/api/v1/evaluations/" + (f"?{qs}" if qs else "")
+        return self._get_request(path)
+
+    def api_v1_create_evaluation(self, course_id: int, nombre: str, peso: float, semana: int, **kwargs: Any) -> Dict[str, Any]:
+        payload: Dict[str, Any] = {
+            "course": course_id,
+            "nombre": nombre,
+            "peso": peso,
+            "semana": semana,
+            "descripcion": kwargs.get("descripcion", ""),
+        }
+        return self._request_json("/api/v1/evaluations/", payload, method="POST")
+
+    def api_v1_list_bibliografia(self, **params: Any) -> Dict[str, Any]:
+        qs = urllib.parse.urlencode({k: v for k, v in params.items() if v not in (None, "")})
+        path = "/api/v1/bibliografia/" + (f"?{qs}" if qs else "")
+        return self._get_request(path)
+
+    def api_v1_create_bibliografia(self, course_id: int, autor: str, titulo: str, **kwargs: Any) -> Dict[str, Any]:
+        payload: Dict[str, Any] = {
+            "course": course_id,
+            "autor": autor,
+            "titulo": titulo,
+            "anio": kwargs.get("anio", ""),
+            "enlace": kwargs.get("enlace", ""),
+        }
+        return self._request_json("/api/v1/bibliografia/", payload, method="POST")

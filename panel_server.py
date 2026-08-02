@@ -14,6 +14,18 @@ from typing import Any, Dict, List, Optional
 from core.paths import ROOT, detect_project_name, workspace_root
 from core.services import find_free_port
 
+_env_path = ROOT / ".env"
+if _env_path.exists():
+    for raw_line in _env_path.read_text(encoding="utf-8", errors="replace").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        key = key.strip()
+        value = value.strip().strip("\"'")
+        if key and key not in os.environ:
+            os.environ[key] = value
+
 CONFIG_FILE = ROOT / "config" / "services.json"
 PANEL_PORT = int(os.environ.get("PANEL_PORT", "8766"))
 PORT = PANEL_PORT
@@ -68,9 +80,16 @@ def check_tcp(host: str, port: int, timeout: float = 1.0) -> bool:
         return False
 
 def redis_cmd(args):
+    redis_password = os.environ.get("REDIS_PASSWORD")
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.settimeout(2)
     s.connect((SERVICES["redis"][1].host, SERVICES["redis"][1].port))
+    if redis_password:
+        s.sendall(f"*2\r\n$4\r\nAUTH\r\n${len(redis_password)}\r\n{redis_password}\r\n".encode("utf-8"))
+        auth_resp = s.recv(128).decode(errors="replace")
+        if not auth_resp.startswith("+OK"):
+            s.close()
+            return {"ok": False, "data": "AUTH failed"}
     chunks = [f"*{len(args)}\r\n".encode("utf-8")]
     for arg in args:
         encoded = str(arg).encode("utf-8")

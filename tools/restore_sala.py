@@ -14,15 +14,34 @@ REDIS_HOST = os.environ.get("REDIS_HOST", "localhost")
 REDIS_PORT = int(os.environ.get("REDIS_PORT", "6379"))
 REDIS_KEY = os.environ.get("REDIS_KEY", f"memento_panel_items:{detect_project_name()}")
 
+_env_path = Path(__file__).resolve().parent.parent / ".env"
+if _env_path.exists():
+    for raw_line in _env_path.read_text(encoding="utf-8", errors="replace").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        key = key.strip()
+        value = value.strip().strip("\"'")
+        if key and key not in os.environ:
+            os.environ[key] = value
+
 
 def redis_cmd(args, host=None, port=None):
     if host is None:
         host = REDIS_HOST
     if port is None:
         port = REDIS_PORT
+    redis_password = os.environ.get("REDIS_PASSWORD")
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.settimeout(3)
     s.connect((host, port))
+    if redis_password:
+        s.sendall(f"*2\r\n$4\r\nAUTH\r\n${len(redis_password)}\r\n{redis_password}\r\n".encode("utf-8"))
+        auth_resp = s.recv(128).decode(errors="replace")
+        if not auth_resp.startswith("+OK"):
+            s.close()
+            return "AUTH failed"
     chunks = [f"*{len(args)}\r\n".encode("utf-8")]
     for arg in args:
         encoded = str(arg).encode("utf-8")
