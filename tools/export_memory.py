@@ -82,7 +82,7 @@ def main(argv: Optional[list[str]] = None) -> int:
     args = parser.parse_args(argv)
 
     index = load_index()
-    entries = list(index.values())
+    entries = [e for e in index.values() if isinstance(e, dict)]
 
     if args.project:
         entries = [e for e in entries if e.get("project") == args.project]

@@ -43,6 +43,19 @@ RUNTIME_DIR = WS_ROOT / ".memento_runtime"
 LOG_DIR = RUNTIME_DIR / "logs"
 PID_DIR = RUNTIME_DIR / "pids"
 DEFAULT_AGENT = "agent-main"
+
+_env_path = WS_ROOT / ".env"
+if _env_path.exists():
+    for raw_line in _env_path.read_text(encoding="utf-8", errors="replace").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        key = key.strip()
+        value = value.strip().strip("\"'")
+        if key and key not in os.environ:
+            os.environ[key] = value
+
 REDIS_HOST = os.environ.get("REDIS_HOST", os.environ.get("MEMENTO_REDIS_HOST", "localhost"))
 REDIS_PORT = int(os.environ.get("REDIS_PORT", os.environ.get("MEMENTO_REDIS_PORT", "6379")))
 SALA_PORT = int(os.environ.get("SALA_PORT", "8767"))
@@ -211,7 +224,7 @@ def load_progressive_instructions() -> list[tuple[Path, str, bool]]:
 
 def top_memory_entries(limit: int = 14, project: str | None = None) -> list[dict]:
     index = load_index()
-    entries = list(index.values())
+    entries = [e for e in index.values() if isinstance(e, dict)]
     if project:
         entries = [e for e in entries if e.get("project") == project]
     entries.sort(key=lambda e: entry_sort_key(e, project), reverse=True)
@@ -393,7 +406,7 @@ def ensure_agent_seed(force: bool = False, project: str | None = None) -> dict:
 
 def build_context(limit: int, project: str | None = None, agent_result: dict | None = None):
     index = load_index()
-    entries = list(index.values())
+    entries = [e for e in index.values() if isinstance(e, dict)]
     if project:
         entries = [e for e in entries if e.get("project") == project]
     entries.sort(key=lambda e: entry_sort_key(e, project), reverse=True)
@@ -404,7 +417,7 @@ def build_context(limit: int, project: str | None = None, agent_result: dict | N
         "",
         f"Generated: {datetime.now().isoformat(timespec='seconds')}",
         f"Workspace: {rel(WS_ROOT)}",
-        f"Project: {WS_ROOT.name}",
+        f"Project: {project}",
         f"Index entries: {len(index)}",
         "",
         "## Startup instruction",
@@ -488,7 +501,7 @@ def build_context(limit: int, project: str | None = None, agent_result: dict | N
     ])
     try:
         ctx = subprocess.run(
-            ["python3", "tools/context_builder.py", "--limit", str(limit or 8)],
+            ["python3", "tools/context_builder.py", "--limit", str(limit or 8), "--project", project or ""],
             capture_output=True,
             text=True,
             timeout=10,
@@ -574,8 +587,14 @@ def http_ok(url: str, timeout: float = 0.5) -> bool:
 
 
 def redis_ping(timeout: float = 1.0) -> dict:
+    password = os.environ.get("REDIS_PASSWORD")
     try:
         with socket.create_connection((REDIS_HOST, REDIS_PORT), timeout=timeout) as sock:
+            if password:
+                sock.sendall(f"*2\r\n$4\r\nAUTH\r\n${len(password)}\r\n{password}\r\n".encode("utf-8"))
+                auth_resp = sock.recv(128).decode(errors="replace")
+                if not auth_resp.startswith("+OK"):
+                    return {"ok": False, "detail": "AUTH failed"}
             sock.sendall(b"*1\r\n$4\r\nPING\r\n")
             data = sock.recv(64).decode(errors="replace")
         return {"ok": "PONG" in data, "detail": data.strip()}
@@ -712,7 +731,7 @@ def rel(path: Path) -> str:
 
 def quick_startup_report(limit: int = 8, project: str | None = None) -> str:
     index = load_index(resolve_index_path(workspace=WS_ROOT))
-    entries = list(index.values())
+    entries = [e for e in index.values() if isinstance(e, dict)]
     if project:
         entries = [e for e in entries if e.get("project") == project]
     entries.sort(key=lambda e: entry_sort_key(e, project), reverse=True)
@@ -725,7 +744,7 @@ def quick_startup_report(limit: int = 8, project: str | None = None) -> str:
         "",
         f"Generated: {datetime.now().isoformat(timespec='seconds')}",
         f"Workspace: {rel(WS_ROOT)}",
-        f"Project: {WS_ROOT.name}",
+        f"Project: {project}",
         f"Context file: {rel(START_CONTEXT)}",
         f"User context: {rel(USER_CONTEXT) if USER_CONTEXT.exists() else '.agent_context/secure/USER_CONTEXT.md (no existe)'}",
         f"Project meta: {rel(PROJECT_META)}",

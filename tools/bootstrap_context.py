@@ -19,18 +19,10 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 # Resolve workspace first before importing core modules
-MEMENTO_WORKSPACE = os.environ.get("MEMENTO_WORKSPACE")
-SCRIPT_ROOT = Path(__file__).resolve().parent.parent  # mementobloom/ directory
-
-# Determine correct paths based on execution context:
-# - Client mode: MEMENTO_WORKSPACE is the client workspace, core/ is in mementobloom/
-# - Dev mode: Running directly from mementobloom repo, no MEMENTO_WORKSPACE
-if MEMENTO_WORKSPACE:
-    WS_ROOT = Path(MEMENTO_WORKSPACE).expanduser().resolve()
-    MEMENTO_ROOT = WS_ROOT / "mementobloom"  # Client has mementobloom/ subdir
-else:
-    WS_ROOT = SCRIPT_ROOT  # Running from mementobloom repo directly
-    MEMENTO_ROOT = WS_ROOT  # Same directory in dev mode
+from core.path_resolver import RESOLVER
+WS_ROOT = RESOLVER.WS_ROOT
+MEMENTO_ROOT = RESOLVER.ROOT
+SCRIPT_ROOT = MEMENTO_ROOT
 
 # Add mementobloom directory to path for core imports
 sys.path.insert(0, str(MEMENTO_ROOT))
@@ -57,7 +49,7 @@ def load_project_priority() -> List[str]:
     for raw_line in text.splitlines():
         line = raw_line.strip()
         if line.startswith("## "):
-            in_section = line.lower() == "## proyectos prioritarios"
+            in_section = line.lower() in {"## proyectos activos", "## proyectos prioritarios"}
             continue
         if not in_section or not line.startswith("-"):
             continue
@@ -65,6 +57,42 @@ def load_project_priority() -> List[str]:
         if match:
             priorities.append(match.group(1))
     return priorities
+
+
+def discover_projects_from_fs() -> List[str]:
+    projects_dir = WS_ROOT / "projects"
+    if not projects_dir.exists():
+        return []
+    found: List[str] = []
+    for entry in projects_dir.iterdir():
+        if entry.is_dir() and not entry.name.startswith("."):
+            has_context = (entry / "PROJECT_CONTEXT.md").exists()
+            has_handoffs = (entry / "handoffs").exists() and any((entry / "handoffs").glob("HANDOFF_*.md"))
+            if has_context or has_handoffs:
+                found.append(entry.name)
+    return sorted(found)
+
+
+def discover_projects_from_memory(index: List[Dict[str, Any]], max_entries: int = 50) -> List[str]:
+    seen: Dict[str, int] = {}
+    for entry in index[:max_entries]:
+        project = entry.get("project")
+        if project:
+            seen[project] = seen.get(project, 0) + 1
+    return [name for name, _ in sorted(seen.items(), key=lambda x: x[1], reverse=True)]
+
+
+def merged_active_projects(index_entries: List[Dict[str, Any]]) -> List[str]:
+    manual = load_project_priority()
+    fs_projects = discover_projects_from_fs()
+    memory_projects = discover_projects_from_memory(index_entries)
+    merged: List[str] = []
+    seen = set()
+    for name in manual + fs_projects + memory_projects:
+        if name not in seen:
+            merged.append(name)
+            seen.add(name)
+    return merged
 
 
 def now_iso() -> str:
@@ -93,6 +121,12 @@ def build_context(
     check_services: bool = True,
     fresh_health: bool = False,
 ) -> Dict[str, Any]:
+    from core.path_resolver import RESOLVER
+    if RESOLVER.MODO == "dev":
+        print(f"⚠️  MODO DEV: ROOT == WS_ROOT en {RESOLVER.ROOT}")
+        print("   Los handoffs de mementobloom se resolverán como 'self' (proyecto propio)")
+    else:
+        print(f"✅ MODO INSTALADO: ROOT={RESOLVER.ROOT}, WS_ROOT={RESOLVER.WS_ROOT}")
     index_file = resolve_index_path(str(index_path) if index_path else None, workspace=WS_ROOT)
     index = load_index(index_file)
     entries = top_entries(index, limit, project=project)
@@ -102,12 +136,13 @@ def build_context(
     start_context = read_file(START_CONTEXT) if include_files else {"exists": START_CONTEXT.exists(), "path": rel(START_CONTEXT)}
     agent_init = read_file(AGENT_INIT) if include_files else {"exists": AGENT_INIT.exists(), "path": rel(AGENT_INIT)}
     services = service_status(fresh=fresh_health) if check_services else {"checked": False, "reason": "services disabled"}
+    active_projects = merged_active_projects([entry for entry in index.values() if isinstance(entry, dict)])
     return {
         "generated_at": now_iso(),
         "environment": {
             "working_directory": str(WS_ROOT),
             "workspace_root": str(WS_ROOT),
-            "project": WS_ROOT.name,
+            "project": project or WS_ROOT.name,
         },
         "files": {
             "project_meta": project_meta,
@@ -127,6 +162,7 @@ def build_context(
             "by_type": count_by(index.values(), "type"),
             "by_project": count_by(index.values(), "project"),
         },
+        "active_projects": active_projects,
         "top_context": entries,
         "latest_handoffs": handoffs,
         "services": services,
@@ -136,6 +172,7 @@ def build_context(
             "selftest": "python3 tools/selftest.py",
             "ranked_context": "python3 tools/context_builder.py --limit 12",
             "quick_scan": "python3 tools/quick_scan.py <HANDOFF_PATH>",
+            "memory_tree": "python3 tools/memory_tree.py [--domain X --tags Y]  # Context Tree (Domain>Tema>Entry, sin volcar contenido)",
         },
     }
 
@@ -183,8 +220,11 @@ def format_markdown(context: Dict[str, Any]) -> str:
         f"- By type: {json.dumps(memory.get('by_type', {}), ensure_ascii=False)}",
         f"- By project: {json.dumps(memory.get('by_project', {}), ensure_ascii=False)}",
         "",
-        "## Latest handoffs",
+        "## Active projects",
     ])
+    for idx, name in enumerate(context.get("active_projects", []), 1):
+        lines.append(f"{idx}. {name}")
+    lines.extend(["", "## Latest handoffs"])
     for entry in context.get("latest_handoffs", []):
         summary = " ".join(str(entry.get("summary", "")).split())[:220]
         lines.append(f"- {entry.get('id', '?')} | {entry.get('project', '?')} | {entry.get('ts', '?')} | {summary}")
@@ -286,6 +326,7 @@ def write_session_md(context: Dict[str, Any]) -> None:
     git = context.get("git", {})
     services_data = context.get("services", {})
     memory = context.get("memory", {})
+    active_projects = context.get("active_projects", [])
 
     # Cargar sesión existente para preservar secciones que no se regeneran aquí
     existing_session: Dict[str, Any] = {}
@@ -307,7 +348,7 @@ def write_session_md(context: Dict[str, Any]) -> None:
             existing_session.setdefault("lessons_learned", recovered.get("lessons_learned", []))
 
     # Validar que lo que vamos a escribir cumpla el esquema mínimo
-    session = {
+    session: Dict[str, Any] = {
         "session": {
             "project": context.get("environment", {}).get("project", "mementobloom"),
             "role": "asistente-gtd",
@@ -346,7 +387,27 @@ def write_session_md(context: Dict[str, Any]) -> None:
         "entrypoint": "python3 tools/session_bootstrap.py",
     }
 
-    # Preservar secciones operativas existentes si están presentes
+    # Reconstruir activos desde memoria / filesystem cuando corresponda
+    if active_projects:
+        new_active_project = {
+            "name": active_projects[0],
+            "app": None,
+            "last_commit": None,
+            "entrypoints": [],
+            "example": None,
+            "next_step": None,
+        }
+        # Fusionar con active_project existente para preservar campos extra (app, last_commit, entrypoints)
+        existing_active_project = existing_session.get("active_project")
+        if isinstance(existing_active_project, dict):
+            merged_active_project = dict(existing_active_project)
+            merged_active_project.update(new_active_project)
+            session["active_project"] = merged_active_project
+        else:
+            session["active_project"] = new_active_project
+        session["active_projects"] = active_projects
+
+    # Preservar secciones operativas existentes si están presentes y no fueron reconstruidas arriba
     for key in ("pending_tasks", "completed_tasks", "blockers", "lessons_learned"):
         if key in existing_session:
             session[key] = existing_session[key]
@@ -364,12 +425,12 @@ def write_session_md(context: Dict[str, Any]) -> None:
     try:
         reloaded = json.loads(session_file.read_text(encoding="utf-8"))
         had_tasks = any(
-            key in reloaded for key in ("pending_tasks", "completed_tasks", "blockers")
+            key in reloaded for key in ("pending_tasks", "completed_tasks", "blockers", "active_project", "active_projects")
         )
         if not had_tasks:
             recovered = _recover_from_git()
             if recovered:
-                for key in ("pending_tasks", "completed_tasks", "blockers"):
+                for key in ("pending_tasks", "completed_tasks", "blockers", "active_project", "active_projects"):
                     if key in recovered and key not in reloaded:
                         reloaded[key] = recovered[key]
                 _atomic_write_json(session_file, reloaded)

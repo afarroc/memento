@@ -70,7 +70,7 @@ class ContextRetriever:
 
             return score
 
-        entries = list(index.values())
+        entries = [e for e in index.values() if isinstance(e, dict)]
         if project:
             entries = [e for e in entries if str(e.get("project")) == project]
 

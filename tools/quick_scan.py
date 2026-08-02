@@ -15,13 +15,14 @@ from core.index import build_manifest, load_index, resolve_index_path, save_inde
 from core.paths import detect_workspace_root, rel
 
 HANDOFF_RE = re.compile(r"(\d{4}-\d{2}-\d{2})")
+IDENTITY_RE = re.compile(r"<!-- IDENTIDAD:\s*project_type=(self|cliente),\s*target_path=[^ ]+/ -->", re.IGNORECASE)
 
 
 class QuickScan:
-    def __init__(self, workspace: Path, index_path: Optional[Path] = None, legacy_index: bool = False):
+    def __init__(self, workspace: Path, index_path: Optional[Path] = None):
         self.workspace = workspace.resolve()
         self.projects = self.workspace / "projects"
-        self.index_path = resolve_index_path(str(index_path) if index_path else None, workspace=self.workspace, legacy=legacy_index)
+        self.index_path = resolve_index_path(str(index_path) if index_path else None, workspace=self.workspace)
         self.index = load_index(self.index_path)
         self.new_count = 0
 
@@ -99,6 +100,7 @@ class QuickScan:
             return path.parent.name
 
         project = _extract_project(f)
+        identity_valid = bool(IDENTITY_RE.search(content))
         return {
             "id": f"h_{project}_{f.stem}",
             "type": "HANDOFF",
@@ -106,6 +108,7 @@ class QuickScan:
             "ts": date_m.group(1) if date_m else "unknown",
             "path": rel(f, self.workspace),
             "summary": content[:100],
+            "identity_valid": identity_valid,
         }
 
     def _parse_context(self, f: Path) -> Dict[str, Any]:
@@ -141,14 +144,33 @@ def main(argv: Optional[list[str]] = None) -> int:
     parser.add_argument("incremental_path", nargs="?", help="HANDOFF o *_CONTEXT.md a indexar")
     parser.add_argument("--workspace", default=None, help="Workspace raíz")
     parser.add_argument("--index", default=None, help="Ruta del índice de memoria")
-    parser.add_argument("--legacy-index", action="store_true", help="Usar .memento/memory/graph/memory_index.json")
     parser.add_argument("--no-manifest", action="store_true", help="No actualizar index_manifest.json")
     parser.add_argument("--json", action="store_true", help="Imprimir resultado en JSON")
     parser.add_argument("--replace", action="store_true", help="Reemplazar entradas existentes durante el escaneo completo")
+    parser.add_argument("--verify-all", action="store_true", help="Verificar integridad del índice: duplicados, paths perdidos e identidad")
     args = parser.parse_args(argv)
 
+    if args.verify_all:
+        workspace = Path(args.workspace).resolve() if args.workspace else detect_workspace()
+        index_path = resolve_index_path(args.index, workspace=workspace)
+        index = load_index(index_path)
+        paths = [e.get('path') for e in index.values() if isinstance(e, dict) and e.get('path')]
+        missing = [p for p in paths if not (workspace / p).expanduser().exists()]
+        dupes = len(paths) - len(set(paths))
+        invalid = [e.get('id') for e in index.values() if isinstance(e, dict) and str(e.get('type')) == 'HANDOFF' and not e.get('identity_valid')]
+        print(json.dumps({
+            'ok': True,
+            'total': len(index),
+            'missing_paths': missing,
+            'missing_count': len(missing),
+            'duplicates': dupes,
+            'invalid_identity': invalid,
+            'invalid_identity_count': len(invalid),
+        }, indent=2, ensure_ascii=False))
+        return 0
+
     workspace = Path(args.workspace).resolve() if args.workspace else detect_workspace()
-    scanner = QuickScan(workspace=workspace, index_path=Path(args.index) if args.index else None, legacy_index=args.legacy_index)
+    scanner = QuickScan(workspace=workspace, index_path=Path(args.index) if args.index else None)
     result = scanner.scan(incremental_path=args.incremental_path, build_manifest_output=not args.no_manifest, replace_existing=args.replace)
 
     if args.json:

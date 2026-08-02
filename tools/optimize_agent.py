@@ -41,6 +41,19 @@ AGENT_INIT = AGENT_DIR / "init.md"
 AGENT_SEED = AGENT_DIR / "agent-main.md"
 INSTRUCTION_DIR = AGENT_DIR / "instructions"
 HANDOFF_DIR = WS / "projects" / WS.name
+
+_env_path = WS / ".env"
+if _env_path.exists():
+    for raw_line in _env_path.read_text(encoding="utf-8", errors="replace").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        key = key.strip()
+        value = value.strip().strip("\"'")
+        if key and key not in os.environ:
+            os.environ[key] = value
+
 REDIS_HOST = os.environ.get("REDIS_HOST", os.environ.get("MEMENTO_REDIS_HOST", "localhost"))
 REDIS_PORT = int(os.environ.get("REDIS_PORT", os.environ.get("MEMENTO_REDIS_PORT", "6379")))
 SALA_PORT = int(os.environ.get("SALA_PORT", "8767"))
@@ -134,7 +147,7 @@ def entry_sort_key(entry: Dict[str, Any]) -> tuple[Any, ...]:
 
 
 def top_entries(index: Dict[str, Dict[str, Any]], limit: int, project: Optional[str] = None) -> List[Dict[str, Any]]:
-    entries = list(index.values())
+    entries = [entry for entry in index.values() if isinstance(entry, dict)]
     if project:
         entries = [entry for entry in entries if str(entry.get("project")) == project]
     entries.sort(key=entry_sort_key, reverse=True)
@@ -144,6 +157,8 @@ def top_entries(index: Dict[str, Dict[str, Any]], limit: int, project: Optional[
 def count_by(entries: Iterable[Dict[str, Any]], field: str) -> Dict[str, int]:
     counts: Dict[str, int] = {}
     for entry in entries:
+        if not isinstance(entry, dict):
+            continue
         value = str(entry.get(field, "unknown") or "unknown")
         counts[value] = counts.get(value, 0) + 1
     return dict(sorted(counts.items()))
@@ -234,11 +249,12 @@ def agent_seed_audit() -> Dict[str, Any]:
 
 
 def memory_audit(index: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
-    by_type = core_count_by(index.values(), "type")
-    by_project = core_count_by(index.values(), "project")
-    empty_summaries = sum(1 for entry in index.values() if not str(entry.get("summary", "")).strip())
+    entries = [e for e in index.values() if isinstance(e, dict)]
+    by_type = core_count_by(entries, "type")
+    by_project = core_count_by(entries, "project")
+    empty_summaries = sum(1 for entry in entries if not str(entry.get("summary", "")).strip())
     missing_paths = []
-    for entry in index.values():
+    for entry in entries:
         path = entry.get("path")
         if path and not Path(str(path)).exists() and str(entry.get("type")) == "HANDOFF":
             missing_paths.append(str(path))

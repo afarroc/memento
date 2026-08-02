@@ -35,6 +35,8 @@ class ContextBuilder:
     def _filter_entries(self, project: str, context_type: str, limit: int) -> List[Dict]:
         results = []
         for entry_id, entry in self.index.items():
+            if not isinstance(entry, dict):
+                continue
             # Skip external entries (unavailable in this workspace)
             if entry.get("external"):
                 continue
@@ -72,8 +74,8 @@ class ContextBuilder:
     
     def ready_check(self) -> Dict:
         """Verifica estado de expansión."""
-        handoffs = sum(1 for e in self.index.values() if e["type"] == "HANDOFF")
-        contexts = sum(1 for e in self.index.values() if e["type"] == "CONTEXT")
+        handoffs = sum(1 for e in self.index.values() if isinstance(e, dict) and e.get("type") == "HANDOFF")
+        contexts = sum(1 for e in self.index.values() if isinstance(e, dict) and e.get("type") == "CONTEXT")
         return {"total": handoffs + contexts, "handoffs": handoffs, "contexts": contexts, "ready": True}
 
 if __name__ == "__main__":
@@ -84,6 +86,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="MementoBloom Context Builder")
     parser.add_argument("--ready", action="store_true", help="Show ready status only")
     parser.add_argument("--limit", type=int, default=20, help="Limit entries")
+    parser.add_argument("--project", default=None, help="Filter by project name")
     args = parser.parse_args()
 
     ws_root = workspace_root()
@@ -94,6 +97,6 @@ if __name__ == "__main__":
     if args.ready:
         print(json.dumps(cb.ready_check(), indent=2))
     else:
-        print(cb.get_expanded_context(limit=args.limit))
+        print(cb.get_expanded_context(project=args.project, limit=args.limit))
         print("\n---\n")
         print(json.dumps(cb.ready_check(), indent=2))

@@ -23,7 +23,7 @@ def load_context(limit: int) -> str:
         return "# MEMENTO CONTEXT AUTO-LOADED\n- memory/graph/memory_index.json no existe todavía."
 
     index = json.loads(INDEX_PATH.read_text(encoding="utf-8"))
-    entries = list(index.values())
+    entries = [e for e in index.values() if isinstance(e, dict)]
     entries.sort(key=lambda e: str(e.get("ts", "")), reverse=True)
     lines = ["# MEMENTO CONTEXT AUTO-LOADED"]
     for entry in entries[:limit]:

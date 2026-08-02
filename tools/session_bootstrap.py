@@ -43,17 +43,18 @@ def _run(cmd: str, cwd: Path = WS, timeout: int = 15) -> str:
         return f"ERROR: {exc}"
 
 
-def _get_git_state() -> Dict[str, Any]:
-    branch = _run("git branch --show-current")
+def _get_git_state(repo_path: Optional[Path] = None) -> Dict[str, Any]:
+    cwd = repo_path if repo_path else WS
+    branch = _run("git branch --show-current", cwd=cwd)
     if branch.startswith("ERROR:"):
         branch = "unknown"
-    commit_hash = _run("git rev-parse --short HEAD")
+    commit_hash = _run("git rev-parse --short HEAD", cwd=cwd)
     if commit_hash.startswith("ERROR:"):
         commit_hash = "unknown"
-    commit_msg = _run("git log -1 --format=%s --abbrev-commit")
+    commit_msg = _run("git log -1 --format=%s --abbrev-commit", cwd=cwd)
     if commit_msg.startswith("ERROR:"):
         commit_msg = "unknown"
-    status_raw = _run("git status --short")
+    status_raw = _run("git status --short", cwd=cwd)
     pending = [line for line in status_raw.splitlines() if line.strip()] if not status_raw.startswith("ERROR:") else []
     return {
         "branch": branch,
@@ -236,12 +237,90 @@ def _recover_from_git() -> Optional[Dict[str, Any]]:
     return None
 
 
+def _get_client_context() -> Dict[str, Any]:
+    """Detecta el proyecto cliente activo desde USER_CONTEXT.md y el último handoff relevante."""
+    context: Dict[str, Any] = {
+        "name": "mementobloom",
+        "app": None,
+        "last_commit": None,
+        "entrypoints": [],
+        "example": None,
+        "next_step": None,
+    }
+    try:
+        user_context_path = WS_ROOT / ".agent_context" / "secure" / "USER_CONTEXT.md"
+        if user_context_path.exists():
+            text = user_context_path.read_text(encoding="utf-8", errors="replace")
+            for line in text.splitlines():
+                if line.startswith("1. `") and "` (activo actual" in line:
+                    project = line.split("`")[1]
+                    context["name"] = project
+                    break
+    except Exception:
+        pass
+    try:
+        from pathlib import Path
+        import re
+        project_dir = WS_ROOT / "projects" / context.get("name") if context.get("name") else None
+        search_dirs = [project_dir] if project_dir else []
+        search_dirs.append(WS_ROOT / "projects")
+        handoffs = []
+        for directory in search_dirs:
+            if directory.exists():
+                handoffs.extend(sorted(directory.rglob("HANDOFF_*.md"), key=lambda p: p.stat().st_mtime, reverse=True))
+        handoffs = sorted(handoffs, key=lambda p: p.stat().st_mtime, reverse=True)
+        for path in handoffs[:8]:
+            content = path.read_text(encoding="utf-8", errors="replace")
+            commit_match = re.search(r"Commit[:#]?\s*([0-9a-f]{7,40})", content)
+            if commit_match:
+                context["last_commit"] = commit_match.group(1)
+            app_match = re.search(r"app [`']([^`']+)[`']", content)
+            if app_match:
+                context["app"] = app_match.group(1)
+            url_matches = re.findall(r"/digitalizacion/(?:preparacion|digitalizar|qc1|metadatos|qc2|auditoria|certificar|preprocesamiento)/[^\s\)\"]+", content)
+            if url_matches:
+                context["entrypoints"] = url_matches[:5]
+            example_match = re.search(r"Lote:\s*([^\n]+)\nDocumento:\s*([^\n]+)", content)
+            if example_match:
+                context["example"] = {
+                    "lote": example_match.group(1).strip(),
+                    "documento": example_match.group(2).strip(),
+                }
+            if context.get("entrypoints") or context.get("example"):
+                break
+    except Exception:
+        pass
+    return context
+
+
+def _detect_active_project() -> Optional[str]:
+    """Detecta el proyecto cliente activo desde USER_CONTEXT.md."""
+    try:
+        user_context_path = WS_ROOT / ".agent_context" / "secure" / "USER_CONTEXT.md"
+        if user_context_path.exists():
+            text = user_context_path.read_text(encoding="utf-8", errors="replace")
+            for line in text.splitlines():
+                if line.startswith("1. `") and "` (activo actual" in line:
+                    return line.split("`")[1]
+    except Exception:
+        pass
+    return None
+
+
 def build_session() -> Dict[str, Any]:
     now = datetime.now().isoformat()
     existing = _load_existing_session() or {}
-    git = _get_git_state()
+    active_project = _detect_active_project()
+    client_repo = None
+    if active_project:
+        try:
+            client_repo = WS_ROOT / "projects" / active_project
+        except Exception:
+            client_repo = None
+    git = _get_git_state(client_repo) if client_repo and client_repo.exists() else _get_git_state()
     services = _get_services()
     memory = _get_memory()
+    client_context = _get_client_context()
     session = existing.get("session", {})
     existing_services = existing.get("state", {}).get("services") if isinstance(existing.get("state"), dict) else None
     merged_services = dict(services)
@@ -260,20 +339,13 @@ def build_session() -> Dict[str, Any]:
             "generated_at": now,
             "next_review": (datetime.now() + timedelta(hours=24)).isoformat(),
         },
+        "active_project": client_context,
         "state": {
             "git": git,
             "services": merged_services,
             "memory": memory,
         },
-        "pending_tasks": existing.get("pending_tasks") or [
-            {"id": "T2.1", "description": "Portabilidad memento_install (sed macOS/Linux)", "status": "pending", "sprint": 2},
-            {"id": "T2.2", "description": "Declarar dependencias mínimas en requirements.txt", "status": "pending", "sprint": 2},
-            {"id": "T2.3", "description": "Dockerfile + docker-compose.yml de referencia", "status": "pending", "sprint": 2},
-            {"id": "T2.4", "description": "Lockfiles y procedimiento de reproducible build", "status": "pending", "sprint": 2},
-            {"id": "MB-Auth", "description": "Definir estrategia auth para escritura en /api/v1/ (POST/PATCH)", "status": "pending"},
-            {"id": "MB-Redis", "description": "Resolver disponibilidad de Redis para panel/sala", "status": "blocked"},
-            {"id": "MB-Docs", "description": "Actualizar docs/PROJECT_CONTEXT.md para reflejar nueva estructura", "status": "pending"},
-        ],
+        "pending_tasks": existing.get("pending_tasks") or [],
         "completed_tasks": existing.get("completed_tasks") or [],
         "blockers": existing.get("blockers") or [],
         "forbidden_paths": [
@@ -283,7 +355,7 @@ def build_session() -> Dict[str, Any]:
             ".memento/**",
             "archive/**",
         ],
-        "entrypoint": "python3 tools/session_bootstrap.py",
+        "entrypoint": "python3 tools/session_bootstrap.py --print",
         "lessons_learned": _load_lessons() or existing.get("lessons_learned", []),
     }
 
@@ -340,10 +412,153 @@ def render_markdown(session: Dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
+def _sync_user_context(session: Dict[str, Any]) -> None:
+    """Actualiza USER_CONTEXT.md con el estado actual del proyecto activo, memoria y servicios."""
+    try:
+        active = session.get("active_project") or {}
+        project = active.get("name") or "mementobloom"
+        app = active.get("app")
+        entrypoints = active.get("entrypoints") or []
+        example = active.get("example")
+        next_step = active.get("next_step")
+        git = session.get("state", {}).get("git", {})
+        memory = session.get("state", {}).get("memory", {})
+        lines = [
+            "# Contexto de Usuario MementoBloom",
+            "",
+            f"Actualizado: {session.get('session', {}).get('last_event_time', datetime.now().isoformat())}",
+            "",
+            "## Preferencias de comunicación",
+            "",
+            "- Idioma principal: español.",
+            "- Estilo preferido: directo, técnico y orientado a acción.",
+            "- Evitar conversación innecesaria.",
+            "- Responder con resúmenes claros, comandos concretos y estado verificable.",
+            "",
+            "## Objetivo meta del usuario",
+            "",
+            "El usuario quiere que MementoBloom sea útil para que cada sesión iniciada sepa exactamente todo lo necesario sobre el usuario y el proyecto sin depender de un modelo específico.",
+            "",
+            "Cualquier modelo debería poder proseguir con la gestión del proyecto si puede leer:",
+            "",
+            "- `.agent_context/PROJECT_META.md`",
+            "- `.agent_context/secure/USER_CONTEXT.md`",
+            "- `.agent_context/START_CONTEXT.md`",
+            "- `tools/bootstrap_context.py`",
+            "- handoffs recientes",
+            "- `memory/graph/memory_index.json`",
+            "- estado Git",
+            "- servicios locales/remotos relevantes",
+            "",
+            "## Proyectos prioritarios",
+            "",
+            f"1. `{project}` (activo actual — app `{app or 'N/D'}`)",
+            "2. `Administracion_UPN`",
+            "3. `mementobloom`",
+            "4. `Ventas_Porta`",
+            "",
+            "## Estado actual del proyecto",
+            f"- Rama principal: `{git.get('branch', '?')}`",
+            f"- Último commit: `{git.get('commit_hash', '?')}` {git.get('commit_message', '')}",
+            f"- Memoria indexada: {memory.get('indexed_entries', '?')} entradas",
+        ]
+        if entrypoints:
+            lines += [
+                "",
+                "## Puntos de retorno",
+            ]
+            for ep in entrypoints:
+                lines.append(f"- `{ep}`")
+        if example:
+            lines += [
+                "",
+                "## Ejemplo activo",
+                f"- Lote: `{example.get('lote')}`",
+                f"- Documento: `{example.get('documento')}`",
+            ]
+        if next_step:
+            lines += [
+                "",
+                "## Próximo paso recomendado",
+                f"- {next_step}",
+            ]
+        lines += [
+            "",
+            "## Reglas operativas preferidas",
+            "",
+            "- No pedir datos ya registrados en memoria.",
+            "- Continuar desde el último handoff relevante.",
+            "- No trackear contexto local regenerable.",
+            "- No commitear sin solicitud explícita.",
+            "- No ejecutar operaciones destructivas.",
+            "- Publicar resúmenes en la sala cuando el usuario lo pida.",
+        ]
+        user_context_path = WS_ROOT / ".agent_context" / "secure" / "USER_CONTEXT.md"
+        user_context_path.parent.mkdir(parents=True, exist_ok=True)
+        _atomic_write_text(user_context_path, "\n".join(lines) + "\n")
+    except Exception:
+        pass
+
+
+def _sync_client_project(session: Dict[str, Any]) -> None:
+    """Actualiza PROJECT_CONTEXT.md del proyecto activo y ejecuta quick_scan."""
+    try:
+        active = session.get("active_project") or {}
+        project = active.get("name") or "mementobloom"
+        app = active.get("app")
+        entrypoints = active.get("entrypoints") or []
+        example = active.get("example")
+        last_commit = session.get("state", {}).get("git", {}).get("commit_hash")
+        client_dir = WS_ROOT / "projects" / project
+        context_file = client_dir / "PROJECT_CONTEXT.md"
+        context_file.parent.mkdir(parents=True, exist_ok=True)
+        lines = [
+            f"# {project} — Project Context",
+            "",
+            "## Visión general",
+            f"- Workspace: {WS_ROOT}",
+            f"- Project: {project}",
+            "- Tipo: Proyecto externo / interno según corresponda",
+            "",
+            "## Referencia externa",
+            f"- Documentación Memento: `projects/{project}/` (handoffs/, docs/)",
+            "",
+            "## Estado actual",
+            f"- Rama principal: `main`",
+        ]
+        if last_commit:
+            lines.append(f"- Último commit: `{last_commit}`")
+        if app:
+            lines.append(f"- App activa: `{app}`")
+        if entrypoints:
+            lines.append("- Entrypoints:")
+            for ep in entrypoints:
+                lines.append(f"  - `{ep}`")
+        if example:
+            lines.append("- Ejemplo activo:")
+            lines.append(f"  - Lote: `{example.get('lote')}`")
+            lines.append(f"  - Documento: `{example.get('documento')}`")
+        lines += [
+            "",
+            "## Handoffs",
+            "Ver `handoffs/` para historial de sesión.",
+        ]
+        _atomic_write_text(context_file, "\n".join(lines) + "\n")
+    except Exception:
+        pass
+
+    try:
+        _run("python3 tools/quick_scan.py")
+    except Exception:
+        pass
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Bootstrap unificado de sesión MementoBloom")
+    parser.add_argument("--print", action="store_true", help="Alias de --json: imprime el estado de sesión como JSON por stdout")
     parser.add_argument("--json", action="store_true", help="Salida solo JSON")
     parser.add_argument("--md", action="store_true", help="Salida solo Markdown")
+    parser.add_argument("--sync", action="store_true", help="Actualiza también PROJECT_CONTEXT.md del proyecto activo y ejecuta quick_scan")
     args = parser.parse_args()
 
     session = build_session()
@@ -355,6 +570,11 @@ def main() -> int:
 
     # Actualizar backup canónico local (fuente de verdad inmutable)
     _update_canonical_backup(session)
+
+    # Sync automático de proyecto cliente
+    if args.sync:
+        _sync_client_project(session)
+        _sync_user_context(session)
 
     # Validación post-escritura
     try:
@@ -375,7 +595,7 @@ def main() -> int:
     # Escribir SESSION_REPORT.md (vista markdown para humanos)
     _atomic_write_text(SESSION_REPORT_FILE, render_markdown(session))
 
-    if args.json:
+    if args.json or args.print:
         print(render_json(session))
     elif args.md:
         print(render_markdown(session))

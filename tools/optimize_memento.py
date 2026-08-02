@@ -154,6 +154,8 @@ class MementoOptimizer:
         idf = self._build_idf(vocab, len(index))
         results = []
         for entry in index.values():
+            if not isinstance(entry, dict):
+                continue
             score = self._score_entry(entry, tokenized_query, idf)
             if score <= 0:
                 continue
