@@ -70,7 +70,7 @@ class MementoCLI(cmd.Cmd):
 
     def do_scan(self, arg):
         """Re-escanear workspace para nuevas entradas"""
-        qs = QuickScan(str(WS_ROOT))
+        qs = QuickScan(WS_ROOT)
         qs.scan()
 
     def do_vault(self, arg):
@@ -129,9 +129,18 @@ class MementoCLI(cmd.Cmd):
         print("Cerrando MementoBloom...")
         return True
 
+    def do_EOF(self, arg):
+        """Salir al recibir EOF (Ctrl+D / pipe cerrado)"""
+        print("")
+        return True
+
     def default(self, line):
         print(f"Comando desconocido: {line}. Usar 'help'")
 
 
 if __name__ == "__main__":
-    MementoCLI().cmdloop()
+    try:
+        MementoCLI().cmdloop()
+    except KeyboardInterrupt:
+        print("\nCerrando MementoBloom...")
+        raise SystemExit(0)
