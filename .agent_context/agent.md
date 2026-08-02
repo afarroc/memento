@@ -10,9 +10,15 @@ Puede ejecutarse con cualquier modelo, CLI o asistente capaz de leer archivos lo
 Al iniciar, usa este flujo modelo-agnóstico:
 
 ```bash
-python3 tools/bootstrap_context.py --print
-python3 tools/session_start.py --print
-python3 tools/session_start.py --print --launch-agent
+# Contexto universal puro (stdout JSON/MD listo para cualquier modelo/CLI)
+python3 tools/session_bootstrap.py --print      # alias de --json
+python3 tools/session_bootstrap.py --md         # alias markdown
+
+# Flujo completo (prepara seed + contexto + invoca session_bootstrap.py internamente)
+python3 tools/session_start.py --print          # para agentes externos
+python3 tools/session_start.py --print --launch-agent   # idem + lanza MEMENTO_AGENT_CMD
+
+# Contexto ranked y curación
 python3 tools/context_builder.py --limit 20
 python3 tools/quick_scan.py <HANDOFF_PATH>
 ```

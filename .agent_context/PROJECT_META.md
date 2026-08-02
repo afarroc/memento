@@ -14,7 +14,7 @@ Reglas universales de arranque:
 3. Leer `memory/personality/user_personality.md` para calibrar tono y estilo.
 4. Leer `.agent_context/START_CONTEXT.md` si existe, como contexto local regenerable no trackeado.
 5. Ejecutar `python3 tools/bootstrap_context.py --print` para obtener contexto compacto modelo-agnóstico.
-6. Si se necesita iniciar como agente externo, ejecutar `python3 tools/session_start.py --print --launch-agent` con `MEMENTO_AGENT_CMD` configurado.
+6. Si se necesita iniciar como agente externo, ejecutar `python3 tools/session_start.py --print` (flujo completo: prepara seed + contexto + invoca internamente `session_bootstrap.py --print`). Para bootstrap modelo-agnóstico puro, usar `python3 tools/session_bootstrap.py --print` (alias de `--json`).
 7. Leer los handoffs recientes del proyecto activo (ver `projects/` o `USER_CONTEXT.md`).
 8. Verificar `git status`, último commit y cambios pendientes.
 9. Verificar Redis/sala si la tarea involucra panel o comunicación.
