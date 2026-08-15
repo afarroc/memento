@@ -38,6 +38,7 @@ USER_CONTEXT = WS_ROOT / ".agent_context" / "secure" / "USER_CONTEXT.md"
 START_CONTEXT = WS_ROOT / ".agent_context" / "START_CONTEXT.md"
 AGENT_INIT = WS_ROOT / ".agent_context" / "agent" / "init.md"
 SECURE_CONTEXT = WS_ROOT / ".agent_context" / "secure" / "SECURE.md"
+PERSONALITY = WS_ROOT / "memory" / "personality" / "user_personality.md"
 
 
 def load_project_priority() -> List[str]:
@@ -120,6 +121,7 @@ def build_context(
     index_path: Optional[Path] = None,
     check_services: bool = True,
     fresh_health: bool = False,
+    fast_mode: bool = False,
 ) -> Dict[str, Any]:
     from core.path_resolver import RESOLVER
     if RESOLVER.MODO == "dev":
@@ -135,6 +137,7 @@ def build_context(
     user_context = read_file(USER_CONTEXT) if include_files else {"exists": USER_CONTEXT.exists(), "path": rel(USER_CONTEXT)}
     start_context = read_file(START_CONTEXT) if include_files else {"exists": START_CONTEXT.exists(), "path": rel(START_CONTEXT)}
     agent_init = read_file(AGENT_INIT) if include_files else {"exists": AGENT_INIT.exists(), "path": rel(AGENT_INIT)}
+    personality = read_file(PERSONALITY) if include_files and not fast_mode else {"exists": PERSONALITY.exists(), "path": rel(PERSONALITY), "fast_skipped": fast_mode}
     services = service_status(fresh=fresh_health) if check_services else {"checked": False, "reason": "services disabled"}
     active_projects = merged_active_projects([entry for entry in index.values() if isinstance(entry, dict)])
     return {
@@ -149,6 +152,7 @@ def build_context(
             "user_context": user_context,
             "start_context": start_context,
             "agent_init": agent_init,
+            "personality": personality,
             "user_context_ignored": check_ignore(rel(USER_CONTEXT)) if USER_CONTEXT.exists() else {"ignored": True, "rule": "optional"},
         },
         "git": {
@@ -166,6 +170,7 @@ def build_context(
         "top_context": entries,
         "latest_handoffs": handoffs,
         "services": services,
+        "fast_mode": fast_mode,
         "bootstrap_commands": {
             "universal": "python3 tools/bootstrap_context.py --print",
             "startup_doctor": "python3 tools/doctor.py --startup",
@@ -184,12 +189,14 @@ def format_markdown(context: Dict[str, Any]) -> str:
     memory = context.get("memory", {})
     services_data = context.get("services", {})
     files = context.get("files", {})
+    fast_mode = context.get("fast_mode", False)
     lines = [
         "# MementoBloom Bootstrap Context",
         "",
         f"Generated: {context.get('generated_at')}",
         f"Project: {context.get('environment', {}).get('project')}",
         f"Working directory: {rel(Path(context.get('environment', {}).get('working_directory', '.')))}",
+        f"Mode: {'fast' if fast_mode else 'full'}",
         "",
         "## User and project meta",
         f"- PROJECT_META.md: {'OK' if files.get('project_meta', {}).get('exists') else 'NO'}",
@@ -204,12 +211,21 @@ def format_markdown(context: Dict[str, Any]) -> str:
         "## User context summary",
         files.get("user_context", {}).get("summary", "No user context file found or optional."),
         "",
+        "## Personality",
+        files.get("personality", {}).get("summary", "No personality file found.") if not fast_mode else "(omitido en modo rápido)",
+        "",
         "## Git state",
+        f"- Rama: {commit.get('branch', '?')}",
         f"- Commit: {commit.get('hash', '?')} {commit.get('message', '')}".strip(),
-        f"- Pending changes: {status.get('change_count', 0)}",
+        f"- Pendientes: {status.get('change_count', 0)}",
     ]
-    for change in status.get("changes", [])[:6]:
-        lines.append(f"  - {change}")
+    changes = status.get("changes", [])
+    if changes:
+        lines.append("- Cambios:")
+        for change in changes:
+            lines.append(f"  - {change}")
+    else:
+        lines.append("- Cambios: ninguno")
     diff = git.get("diff_stat", {}).get("text", "").strip()
     if diff:
         lines.extend(["", "## Diff stat", diff])
@@ -245,10 +261,15 @@ def format_markdown(context: Dict[str, Any]) -> str:
             "## Services",
             service_summary(services_data),
         ])
+
+    if not fast_mode:
+        lines.extend(_build_bootstrap_checklist(context, files, status, services_data, context.get("latest_handoffs", [])))
+
     lines.extend([
         "",
         "## Bootstrap commands",
-        "- python3 tools/bootstrap_context.py --print",
+        "- python3 tools/bootstrap_context.py --print  # Modo completo por defecto",
+        "- python3 tools/bootstrap_context.py --fast   # Modo rápido opcional",
         "- python3 tools/doctor.py --startup",
         "- python3 tools/selftest.py",
         "- python3 tools/context_builder.py --limit 12",
@@ -258,6 +279,96 @@ def format_markdown(context: Dict[str, Any]) -> str:
         "- python3 tools/optimize_agent.py --context",
     ])
     return "\n".join(lines) + "\n"
+
+
+def _build_bootstrap_checklist(
+    context: Dict[str, Any],
+    files: Dict[str, Any],
+    status: Dict[str, Any],
+    services_data: Dict[str, Any],
+    handoffs: List[Dict[str, Any]],
+) -> List[str]:
+    commit = context.get("git", {}).get("latest_commit", {})
+    checks = [
+        (
+            "1",
+            "PROJECT_META",
+            files.get("project_meta", {}).get("exists"),
+            "Leer PROJECT_META.md",
+        ),
+        (
+            "2",
+            "USER_CONTEXT",
+            files.get("user_context", {}).get("exists"),
+            "Leer USER_CONTEXT.md",
+        ),
+        (
+            "3",
+            "PERSONALITY",
+            files.get("personality", {}).get("exists"),
+            "Leer user_personality.md",
+        ),
+        (
+            "4",
+            "START_CONTEXT",
+            files.get("start_context", {}).get("exists"),
+            "Leer START_CONTEXT.md",
+        ),
+        (
+            "5",
+            "BOOTSTRAP",
+            True,
+            "Ejecutar bootstrap_context.py --print",
+        ),
+        (
+            "6",
+            "SESSION_BOOTSTRAP",
+            None,
+            "Ejecutar session_bootstrap.py --print (flujo externo, opcional)",
+        ),
+        (
+            "7",
+            "HANDOFFS",
+            len(handoffs) > 0,
+            f"Leer handoffs recientes ({len(handoffs)} encontrados)",
+        ),
+        (
+            "8",
+            "GIT",
+            commit.get("hash") is not None,
+            "Verificar Git (rama, commit y status)",
+        ),
+        (
+            "9",
+            "SERVICES",
+            services_data.get("checked") is not False,
+            "Verificar Redis/sala/panel",
+        ),
+        (
+            "10",
+            "CONTINUITY",
+            True,
+            "Continuar desde último handoff relevante",
+        ),
+    ]
+    lines = [
+        "",
+        "## Bootstrap checklist (10 pasos)",
+        "",
+    ]
+    for num, key, ok, desc in checks:
+        if key == "USER_CONTEXT" and ok is False:
+            icon = "OPTIONAL"
+        elif key == "START_CONTEXT" and ok is False:
+            icon = "OPTIONAL"
+        elif key == "SESSION_BOOTSTRAP":
+            icon = "INFO"
+        elif ok:
+            icon = "OK"
+        else:
+            icon = "NO"
+        lines.append(f"- [{num}] {icon}: {desc}")
+    return lines
 
 
 def _atomic_write_json(path: Path, data: Dict[str, Any]) -> None:
@@ -321,7 +432,20 @@ def _validate_session_schema(session: Dict[str, Any]) -> None:
         raise ValueError(f"SESIÓN inválida: faltan secciones en 'state' {missing}")
 
 
-def write_session_md(context: Dict[str, Any]) -> None:
+def _update_canonical_backup(session: Dict[str, Any]) -> None:
+    """Actualiza el backup canónico local con el estado actual de la sesión."""
+    try:
+        canonical_path = WS_ROOT / ".memento_runtime" / "session_canonical.json"
+        canonical_path.parent.mkdir(parents=True, exist_ok=True)
+        backup = dict(session)
+        backup["canonical_version"] = 1
+        backup["last_verified"] = datetime.now().isoformat(timespec="seconds")
+        canonical_path.write_text(json.dumps(backup, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    except Exception:
+        pass  # Non-fatal
+
+
+def write_session_md(context: Dict[str, Any]) -> Dict[str, Any]:
     session_file = WS_ROOT / "SESSION.md"
     git = context.get("git", {})
     services_data = context.get("services", {})
@@ -384,7 +508,7 @@ def write_session_md(context: Dict[str, Any]) -> None:
             ".memento/**",
             "archive/**",
         ],
-        "entrypoint": "python3 tools/session_bootstrap.py",
+        "entrypoint": "python3 tools/bootstrap_context.py --print",
     }
 
     # Reconstruir activos desde memoria / filesystem cuando corresponda
@@ -436,6 +560,7 @@ def write_session_md(context: Dict[str, Any]) -> None:
                 _atomic_write_json(session_file, reloaded)
     except Exception:
         pass
+    return session
 
 
 def main(argv: Optional[List[str]] = None) -> int:
@@ -448,6 +573,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     parser.add_argument("--index", default=None, help="Ruta del índice de memoria")
     parser.add_argument("--no-services", action="store_true", help="No verificar servicios locales/remotos")
     parser.add_argument("--fresh-health", action="store_true", help="Forzar chequeo de servicios sin usar caché")
+    parser.add_argument("--fast", action="store_true", help="Arranque rápido: omite checklist detallado y lectura de personalidad")
     args = parser.parse_args(argv or sys.argv[1:])
 
     context = build_context(
@@ -457,9 +583,11 @@ def main(argv: Optional[List[str]] = None) -> int:
         index_path=Path(args.index) if args.index else None,
         check_services=not args.no_services,
         fresh_health=args.fresh_health,
+        fast_mode=args.fast,
     )
 
-    write_session_md(context)
+    session = write_session_md(context)
+    _update_canonical_backup(session)
 
     if args.json:
         print(json.dumps(context, indent=2, ensure_ascii=False))

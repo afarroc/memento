@@ -26,7 +26,7 @@ class QuickScan:
         self.index = load_index(self.index_path)
         self.new_count = 0
 
-    def scan(self, incremental_path: Optional[str] = None, build_manifest_output: bool = True, replace_existing: bool = False) -> Dict[str, Any]:
+    def scan(self, incremental_path: Optional[str] = None, build_manifest_output: bool = True, replace_existing: bool = False, prune_missing: bool = False) -> Dict[str, Any]:
         self.projects.mkdir(parents=True, exist_ok=True)
         self.index_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -73,6 +73,21 @@ class QuickScan:
                         self.new_count += 1
                     else:
                         existing_ids.add(entry["id"])
+
+        if prune_missing:
+            to_remove = []
+            for entry_id, entry in list(self.index.items()):
+                if not isinstance(entry, dict):
+                    continue
+                path = entry.get("path")
+                if not path:
+                    continue
+                candidate = (self.workspace / path).expanduser()
+                if not candidate.exists():
+                    to_remove.append(entry_id)
+            for entry_id in to_remove:
+                del self.index[entry_id]
+            self.new_count -= len(to_remove)
 
         saved = save_index(self.index, self.index_path)
         manifest = None
@@ -148,6 +163,7 @@ def main(argv: Optional[list[str]] = None) -> int:
     parser.add_argument("--json", action="store_true", help="Imprimir resultado en JSON")
     parser.add_argument("--replace", action="store_true", help="Reemplazar entradas existentes durante el escaneo completo")
     parser.add_argument("--verify-all", action="store_true", help="Verificar integridad del índice: duplicados, paths perdidos e identidad")
+    parser.add_argument("--prune", action="store_true", help="Eliminar entradas del índice cuyos archivos no existen en el filesystem")
     args = parser.parse_args(argv)
 
     if args.verify_all:
@@ -171,14 +187,14 @@ def main(argv: Optional[list[str]] = None) -> int:
 
     workspace = Path(args.workspace).resolve() if args.workspace else detect_workspace()
     scanner = QuickScan(workspace=workspace, index_path=Path(args.index) if args.index else None)
-    result = scanner.scan(incremental_path=args.incremental_path, build_manifest_output=not args.no_manifest, replace_existing=args.replace)
+    result = scanner.scan(incremental_path=args.incremental_path, build_manifest_output=not args.no_manifest, replace_existing=args.replace, prune_missing=args.prune)
 
     if args.json:
         print(json.dumps(result, indent=2, ensure_ascii=False))
     else:
         print(f"Scanning projects...")
         print(f"Total: {result['total']} entries (nuevos: {result['new']})")
-        print(f"Index: {result['index_path']}")
+        print(f"Index: {rel(Path(result['index_path']))}")
         if result.get("manifest"):
             print(f"Manifest: {result['manifest']['updated_at']}")
     return 0
