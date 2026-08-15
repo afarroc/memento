@@ -43,6 +43,7 @@ etl/
 
 # === CONFIG WITH LOCAL PATHS ===
 config.json
+config/services.json
 
 # === PYTHON ARTIFACTS ===
 __pycache__/
