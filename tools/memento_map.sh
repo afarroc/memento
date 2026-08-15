@@ -191,7 +191,7 @@ EOFMARKER
 }
 
 _mode_app() {
-  APP_DIR="$(realpath "${APP_ARG:-./core}")"
+  APP_DIR="$(cd "${APP_ARG:-./core}" && pwd)"
   [[ -d "$APP_DIR" ]] || { err "No se encontró: $APP_DIR"; exit 1; }
   APP_NAME="$(basename "$APP_DIR")"
   APP_UPPER="$(echo "$APP_NAME" | tr '[:lower:]' '[:upper:]')"
@@ -211,52 +211,107 @@ _mode_app() {
 
 ---
 EOFMARKER
-  declare -A CAT_COUNT
-  while IFS= read -r f; do
-    c=$(categorize "$f" "$APP_DIR")
-    CAT_COUNT[$c]=$((${CAT_COUNT[$c]:-0} + 1))
-  done < <(find "$APP_DIR" -type f \( -name "*.py" -o -name "*.html" -o -name "*.js" -o -name "*.css" -o -name "*.json" -o -name "*.md" -o -name "*.sh" -o -name "*.yaml" -o -name "*.yml" -o -name "*.sql" -o -name "*.toml" \) ! -path "*/__pycache__/*" ! -path "*/.git/*" ! -path "*/node_modules/*" ! -path "*/migrations/*" ! -name "*.pyc" ! -name ".DS_Store" | sort)
-  cat >> "$OUT" <<'EOFMARKER'
-## Índice
-| # | Categoría | Archivos |
-|---|-----------|----------|
-EOFMARKER
-  idx=1
-  for cat in views templates models forms services utils urls admin management static tests config migrations memory core tools docs projects archive other pycache git node venv; do
-    cnt="${CAT_COUNT[$cat]:-0}"; [[ $cnt -eq 0 ]] && continue
-    icon="📄"
-    case "$cat" in
-      views) icon="👁";; templates) icon="🎨";; models) icon="🗃";;
-      forms) icon="📝";; services) icon="⚙️";; utils) icon="🔧";;
-      urls) icon="🔗";; admin) icon="🛡";; tests) icon="🧪";;
-      static) icon="📦";; migrations) icon="🔄";; config) icon="🔧";;
-      memory) icon="🧠";; core) icon="⚙️";; tools) icon="🛠";;
-      docs) icon="📚";; projects) icon="📂";; archive) icon="🗄";;
-      venv) icon="🌿";;
-    esac
-    echo "| $idx | $icon \`$cat\` | $cnt |" >> "$OUT"
-    idx=$((idx+1))
-  done
-  cat >> "$OUT" <<'EOFMARKER'
+  python3 - "$APP_DIR" "$OUT" <<'PYINDEX'
+import os, sys, collections
+app_dir = sys.argv[1]
+out = sys.argv[2]
+files = []
+for root, dirs, names in os.walk(app_dir):
+    dirs[:] = [d for d in dirs if d not in {'__pycache__', '.git', 'node_modules', 'migrations', 'venv', '.venv', '.django_cache'}]
+    for n in names:
+        if n.endswith('.pyc') or n == '.DS_Store':
+            continue
+        ext = os.path.splitext(n)[1]
+        if ext in {'.py', '.html', '.js', '.css', '.json', '.md', '.sh', '.yaml', '.yml', '.sql', '.toml'}:
+            files.append(os.path.join(root, n))
 
----
+def categorize(path):
+    rel = path.replace(app_dir + '/', '')
+    if '__pycache__' in rel or rel.startswith('.git'):
+        return 'pycache' if '__pycache__' in rel else 'git'
+    if 'node_modules' in rel:
+        return 'node'
+    if '/migrations/' in rel:
+        return 'migrations'
+    if '/venv/' in rel or rel.startswith('.venv/'):
+        return 'venv'
+    if '/tests/' in rel or 'test' in os.path.basename(path):
+        return 'tests'
+    if '/templates/' in rel:
+        return 'templates'
+    if '/static/' in rel:
+        return 'static'
+    if '/services/' in rel:
+        return 'services'
+    if '/utils/' in rel:
+        return 'utils'
+    if '/views/' in rel or 'views' in os.path.basename(path):
+        return 'views'
+    if '/models/' in rel or 'models' in os.path.basename(path):
+        return 'models'
+    if '/urls/' in rel or 'urls' in os.path.basename(path):
+        return 'urls'
+    if '/admin/' in rel or 'admin' in os.path.basename(path):
+        return 'admin'
+    if '/forms/' in rel or 'forms' in os.path.basename(path):
+        return 'forms'
+    if '/core/' in rel:
+        return 'core'
+    if '/tools/' in rel:
+        return 'tools'
+    if '/memory/' in rel:
+        return 'memory'
+    if '/config/' in rel or ext in {'.cfg', '.ini', '.toml', '.yaml', '.yml'}:
+        return 'config'
+    if '/docs/' in rel or path.endswith('.md'):
+        return 'docs'
+    if '/projects/' in rel:
+        return 'projects'
+    if '/scripts/' in rel:
+        return 'scripts'
+    if '/memento/' in rel:
+        return 'memento'
+    if '/management/' in rel:
+        return 'management'
+    if rel.endswith('.sql'):
+        return 'migrations'
+    return 'other'
 
-## Archivos por Categoría
-EOFMARKER
-  for cat in views templates models forms services utils urls admin management static tests config migrations memory core tools docs projects archive other pycache git node venv; do
-    cnt="${CAT_COUNT[$cat]:-0}"; [[ $cnt -eq 0 ]] && continue
-    echo "" >> "$OUT"
-    echo "### $(echo "$cat" | tr '[:lower:]' '[:upper:]') ($cnt archivos)" >> "$OUT"
-    echo "" >> "$OUT"
-    echo "| Archivo | Líneas | Ruta relativa |" >> "$OUT"
-    echo "|---------|--------|---------------|" >> "$OUT"
-    while IFS= read -r f; do
-      [[ $(categorize "$f" "$APP_DIR") != "$cat" ]] && continue
-      rel="${f#$APP_DIR/}"
-      lines=$(wc -l < "$f" 2>/dev/null || echo "?")
-      echo "| \`$(basename "$f")\` | $lines | \`$rel\` |" >> "$OUT"
-    done < <(find "$APP_DIR" -type f \( -name "*.py" -o -name "*.html" -o -name "*.js" -o -name "*.css" -o -name "*.json" -o -name "*.md" -o -name "*.sh" -o -name "*.yaml" -o -name "*.yml" -o -name "*.sql" -o -name "*.toml" \) ! -path "*/__pycache__/*" ! -path "*/.git/*" ! -path "*/node_modules/*" ! -path "*/migrations/*" ! -name "*.pyc" ! -name ".DS_Store" | sort)
-  done
+cats = collections.Counter(categorize(f) for f in files)
+order = ['views','templates','models','forms','services','utils','urls','admin','management','static','tests','config','migrations','memory','core','tools','docs','projects','archive','other','pycache','git','node','venv']
+icons = {
+    'views':'👁','templates':'🎨','models':'🗃','forms':'📝','services':'⚙️','utils':'🔧',
+    'urls':'🔗','admin':'🛡','tests':'🧪','static':'📦','migrations':'🔄','config':'🔧',
+    'memory':'🧠','core':'⚙️','tools':'🛠','docs':'📚','projects':'📂','archive':'🗄',
+    'other':'📄','pycache':'🌿','git':'🗄','node':'📦','venv':'🌿','management':'📂'
+}
+with open(out, 'a', encoding='utf-8') as fh:
+    fh.write('\n## Índice\n| # | Categoría | Archivos |\n|---|-----------|----------|\n')
+    idx = 1
+    for cat in order:
+        cnt = cats.get(cat, 0)
+        if cnt == 0:
+            continue
+        icon = icons.get(cat, '📄')
+        fh.write('| {} | {} `{}` | {} |\n'.format(idx, icon, cat, cnt))
+        idx += 1
+    fh.write('\n---\n\n## Archivos por Categoría\n')
+    for cat in order:
+        cnt = cats.get(cat, 0)
+        if cnt == 0:
+            continue
+        fh.write('\n### {} ({} archivos)\n\n'.format(cat.upper(), cnt))
+        fh.write('| Archivo | Líneas | Ruta relativa |\n|---------|--------|---------------|\n')
+        for path in sorted(files):
+            if categorize(path) != cat:
+                continue
+            rel = path.replace(app_dir + '/', '')
+            try:
+                lines = sum(1 for _ in open(path, 'rb'))
+            except Exception:
+                lines = '?'
+            fh.write('| `{}` | {} | `{}` |\n'.format(os.path.basename(path), lines, rel))
+PYINDEX
   cat >> "$OUT" <<'EOFMARKER'
 
 ---

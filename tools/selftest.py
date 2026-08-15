@@ -151,6 +151,50 @@ def test_context_retriever_search() -> Dict[str, Any]:
         }
 
 
+def test_memory_index_structure() -> Dict[str, Any]:
+    """Validar que memory_index.json tenga estructura homogénea, sin IDs duplicados ni tipos minúsculos."""
+    index_path = resolve_index_path()
+    if not index_path.exists():
+        return {"name": "memory_index_structure", "ok": True, "detail": "index missing, skipped"}
+    try:
+        data = json.loads(index_path.read_text(encoding="utf-8"))
+    except Exception as exc:
+        return {"name": "memory_index_structure", "ok": False, "detail": f"invalid json: {exc}"}
+
+    problems: List[str] = []
+
+    if not isinstance(data, dict):
+        problems.append("index root is not a dict")
+    else:
+        if "index" in data and isinstance(data.get("index"), list):
+            problems.append("found legacy array key 'index'")
+        non_dict = [key for key, value in data.items() if not isinstance(value, dict)]
+        if non_dict:
+            problems.append(f"non-dict entries: {non_dict[:5]}")
+
+        ids = [value.get("id") for value in data.values() if isinstance(value, dict) and value.get("id")]
+        unique_ids = set(ids)
+        if len(ids) != len(unique_ids):
+            from collections import Counter
+            dupes = [item for item, count in Counter(ids).items() if count > 1]
+            problems.append(f"duplicate ids: {dupes[:5]}")
+
+        bad_types = []
+        for value in data.values():
+            if isinstance(value, dict):
+                type_value = value.get("type")
+                if isinstance(type_value, str) and type_value != type_value.upper():
+                    bad_types.append(type_value)
+        if bad_types:
+            problems.append(f"lowercase types: {sorted(set(bad_types))[:5]}")
+
+    return {
+        "name": "memory_index_structure",
+        "ok": not problems,
+        "detail": problems,
+    }
+
+
 def main() -> int:
     tests = [
         test_quick_scan_empty_workspace,
@@ -160,6 +204,7 @@ def main() -> int:
         test_gitignore_rules,
         test_no_hardcoded_workspace_in_core_tools,
         test_context_retriever_search,
+        test_memory_index_structure,
     ]
     results = [test() for test in tests]
     failures = [result for result in results if not result.get("ok")]

@@ -355,7 +355,7 @@ def build_session() -> Dict[str, Any]:
             ".memento/**",
             "archive/**",
         ],
-        "entrypoint": "python3 tools/session_bootstrap.py --print",
+        "entrypoint": "python3 tools/bootstrap_context.py --print",
         "lessons_learned": _load_lessons() or existing.get("lessons_learned", []),
     }
 
@@ -404,6 +404,16 @@ def render_markdown(session: Dict[str, Any]) -> str:
         lines.append(f"- {b}")
     lines += [
         "",
+        "## Lo aprendido",
+    ]
+    lessons = session.get("lessons_learned") or []
+    if lessons:
+        for lesson in lessons:
+            lines.append(f"- {lesson}")
+    else:
+        lines.append("- (sin lecciones registradas en el último handoff)")
+    lines += [
+        "",
         "## Próxima revisión",
         f"- {s.get('next_review', '?')}",
         "",
@@ -423,6 +433,40 @@ def _sync_user_context(session: Dict[str, Any]) -> None:
         next_step = active.get("next_step")
         git = session.get("state", {}).get("git", {})
         memory = session.get("state", {}).get("memory", {})
+
+        # Preservar prioridades existentes del USER_CONTEXT.md si existe
+        user_context_path = WS_ROOT / ".agent_context" / "secure" / "USER_CONTEXT.md"
+        existing_priorities: List[str] = []
+        if user_context_path.exists():
+            try:
+                text = user_context_path.read_text(encoding="utf-8", errors="replace")
+                in_section = False
+                for line in text.splitlines():
+                    stripped = line.strip()
+                    if stripped.startswith("## Proyectos prioritarios"):
+                        in_section = True
+                        continue
+                    if in_section and stripped.startswith("## "):
+                        in_section = False
+                    if in_section and stripped.startswith("-"):
+                        existing_priorities.append(stripped)
+            except Exception:
+                pass
+
+        if not existing_priorities:
+            existing_priorities = [
+                f"2. `Administracion_UPN`",
+                "3. `mementobloom`",
+                "4. `Ventas_Porta`",
+            ]
+
+        # Asegurar que el proyecto activo esté primero
+        active_line = f"1. `{project}` (activo actual — app `{app or 'N/D'}`)"
+        if existing_priorities and existing_priorities[0].startswith("1."):
+            existing_priorities[0] = active_line
+        else:
+            existing_priorities.insert(0, active_line)
+
         lines = [
             "# Contexto de Usuario MementoBloom",
             "",
@@ -452,37 +496,36 @@ def _sync_user_context(session: Dict[str, Any]) -> None:
             "",
             "## Proyectos prioritarios",
             "",
-            f"1. `{project}` (activo actual — app `{app or 'N/D'}`)",
-            "2. `Administracion_UPN`",
-            "3. `mementobloom`",
-            "4. `Ventas_Porta`",
+        ]
+        lines.extend(existing_priorities)
+        lines.extend([
             "",
             "## Estado actual del proyecto",
             f"- Rama principal: `{git.get('branch', '?')}`",
             f"- Último commit: `{git.get('commit_hash', '?')}` {git.get('commit_message', '')}",
             f"- Memoria indexada: {memory.get('indexed_entries', '?')} entradas",
-        ]
+        ])
         if entrypoints:
-            lines += [
+            lines.extend([
                 "",
                 "## Puntos de retorno",
-            ]
+            ])
             for ep in entrypoints:
                 lines.append(f"- `{ep}`")
         if example:
-            lines += [
+            lines.extend([
                 "",
                 "## Ejemplo activo",
                 f"- Lote: `{example.get('lote')}`",
                 f"- Documento: `{example.get('documento')}`",
-            ]
+            ])
         if next_step:
-            lines += [
+            lines.extend([
                 "",
                 "## Próximo paso recomendado",
                 f"- {next_step}",
-            ]
-        lines += [
+            ])
+        lines.extend([
             "",
             "## Reglas operativas preferidas",
             "",
@@ -492,7 +535,7 @@ def _sync_user_context(session: Dict[str, Any]) -> None:
             "- No commitear sin solicitud explícita.",
             "- No ejecutar operaciones destructivas.",
             "- Publicar resúmenes en la sala cuando el usuario lo pida.",
-        ]
+        ])
         user_context_path = WS_ROOT / ".agent_context" / "secure" / "USER_CONTEXT.md"
         user_context_path.parent.mkdir(parents=True, exist_ok=True)
         _atomic_write_text(user_context_path, "\n".join(lines) + "\n")
@@ -606,6 +649,11 @@ def main() -> int:
         print(f"Servicios: sala={session['state']['services']['sala']}, panel={session['state']['services']['panel']}, redis={session['state']['services']['redis']}")
         print(f"Memoria: {session['state']['memory']['indexed_entries']} entradas")
         print(f"Pendientes: {len(session['pending_tasks'])} tareas")
+        lessons = session.get("lessons_learned") or []
+        if lessons:
+            print("Lo aprendido:")
+            for lesson in lessons:
+                print(f"- {lesson}")
         if session["blockers"]:
             print("Bloqueos:")
             for b in session["blockers"]:
