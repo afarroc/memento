@@ -2,7 +2,8 @@
 
 Memoria operativa:
 - Prioriza HANDOFF recientes.
-- Usa `python3 tools/quick_scan.py <HANDOFF_PATH>` para indexar handoffs nuevos.
+- Usa `python3 tools/quick_scan.py` para escanear todos los proyectos y regenerar el índice.
+- Usa `python3 tools/quick_scan.py <HANDOFF_PATH>` para indexar un handoff o archivo `*_CONTEXT.md` específico.
 - Usa `python3 tools/context_builder.py --limit N` para obtener contexto ranked.
 - Mantén trazabilidad entre seed → instrucciones → contexto → handoff → acción.
 - Si una tarea modifica memoria, handoffs o índices, valida que el cambio sea intencional.

@@ -11,16 +11,21 @@ Al iniciar, usa este flujo modelo-agnóstico:
 
 ```bash
 # Contexto universal puro (stdout JSON/MD listo para cualquier modelo/CLI)
-python3 tools/session_bootstrap.py --print      # alias de --json
-python3 tools/session_bootstrap.py --md         # alias markdown
+python3 tools/bootstrap_context.py --print     # modo completo por defecto
+python3 tools/bootstrap_context.py --fast      # modo rápido opcional
 
-# Flujo completo (prepara seed + contexto + invoca session_bootstrap.py internamente)
-python3 tools/session_start.py --print          # para agentes externos
+# Flujo de sesión canónica (JSON de sesión)
+python3 tools/session_bootstrap.py --print     # alias de --json
+python3 tools/session_bootstrap.py --md        # alias markdown
+
+# Para agentes externos: seed + contexto + sesión
+python3 tools/session_start.py --print         # flujo completo
 python3 tools/session_start.py --print --launch-agent   # idem + lanza MEMENTO_AGENT_CMD
 
 # Contexto ranked y curación
 python3 tools/context_builder.py --limit 20
-python3 tools/quick_scan.py <HANDOFF_PATH>
+python3 tools/quick_scan.py                    # escanea todos los proyectos
+python3 tools/quick_scan.py <HANDOFF_PATH>     # indexa solo ese archivo
 ```
 
 ## Sources

@@ -14,7 +14,8 @@ Meta del proyecto:
 Arranque recomendado:
 - Ejecuta `python3 tools/bootstrap_context.py --print` cuando necesites reconstruir contexto para cualquier modelo.
 - Ejecuta `python3 tools/context_builder.py --limit 20` cuando necesites contexto ranked.
-- Ejecuta `python3 tools/quick_scan.py <HANDOFF_PATH>` cuando aparezca un handoff nuevo.
+- Ejecuta `python3 tools/quick_scan.py` para escanear todos los proyectos cuando quieras refrescar el índice completo.
+- Ejecuta `python3 tools/quick_scan.py <HANDOFF_PATH>` cuando aparezca un handoff nuevo y quieras indexar solo ese archivo.
 
 Seguridad:
 - No expongas secretos ni contenido de vault.
