@@ -3,10 +3,9 @@
 Contexto inicial:
 - Lee primero `.agent_context/START_CONTEXT.md` si existe, pero no lo trackees.
 - Si el usuario pide contexto, ejecuta `python3 tools/context_builder.py --limit 20`.
-- Por defecto, inicia cada sesión con el flujo completo: `python3 tools/bootstrap_context.py --print`.
-  - Este modo ejecuta y verifica los 10 pasos de arranque de `PROJECT_META.md` e incluye el checklist y la personalidad del usuario en el output.
-- Si el usuario pide explícitamente arranque rápido, usa `python3 tools/bootstrap_context.py --fast`.
-  - Omite el checklist detallado y la lectura de `memory/personality/user_personality.md`.
+- Por defecto, inicia cada sesión con el flujo completo: `python3 tools/session_start.py --print`.
+  - Este flujo prepara el agent seed, carga todas las instrucciones, actualiza `START_CONTEXT.md` y expande el contexto universal de `bootstrap_context.py`.
+- Si el usuario pide explícitamente arranque rápido, usa `python3 tools/session_start.py --print --fast`.
 - Usa `.agent_context/START_CONTEXT.md` solo como contexto local regenerable.
 - Usa `memory/graph/memory_index.json` como índice compacto de memoria.
 

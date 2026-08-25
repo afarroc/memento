@@ -119,15 +119,24 @@ mementobloom/
 │   ├── paths.py
 │   └── services.py
 ├── docs
-│   ├── ANALISIS_M360_INTEGRACION.md
+│   ├── AGENTE_TUTOR_CURSOS.md
+│   ├── ARQUITECTURA_AGENTE_2026.md
+│   ├── AUDITORIA_PROYECTO.md
 │   ├── CLEAN_INSTALL_GUARANTEE.md
-│   ├── CONTROL_GESTION_M360.md
+│   ├── CONTEXT_TREE.md
 │   ├── FASE_1_REORGANIZACION.md
 │   ├── FASE_3_ESTRUCTURA_ORG_DOCUMENTACION.md
 │   ├── FASE_3_FLUJO_OPERATIVO.md
 │   ├── FASE_3_INTEGRACION_M360.md
+│   ├── FASE_3_M360_API_SPEC.md
+│   ├── ITCSS_M360_LAYOUT_STANDARD.md
+│   ├── PERSONALIDAD_AGENTE.md
 │   ├── PROJECT_CONTEXT.md
-│   └── STARTUP_OPTIMIZATION_PLAN.md
+│   ├── SESSION_CONTRACT.md
+│   ├── STARTUP_OPTIMIZATION_PLAN.md
+│   ├── tickets.md
+│   └── guides
+│       └── register-client.md
 ├── memory
 │   └── graph
 │       ├── graph.json
@@ -177,11 +186,17 @@ mementobloom/
 | `FASE_3_ESTRUCTURA_ORG_DOCUMENTACION.md` | Arquitectura, requisitos y protocolos de Fase 3 |
 | `FASE_3_FLUJO_OPERATIVO.md` | Metodología de sprints y flujo de trabajo |
 | `FASE_3_INTEGRACION_M360.md` | Especificación técnica de integración con M360 |
-| `ANALISIS_M360_INTEGRACION.md` | Análisis exhaustivo de M360 (proyecto externo) |
-| `CONTROL_GESTION_M360.md` | Protocolo de operación de M360 como gestor de proyectos |
 | `CLEAN_INSTALL_GUARANTEE.md` | Garantía de amnesia limpia en instalaciones cliente |
 | `STARTUP_OPTIMIZATION_PLAN.md` | Plan de optimización de arranque |
 | `PROJECT_CONTEXT.md` | Este documento: índice maestro de contexto |
+| `tickets.md` | Sistema de tickets de servicio |
+| `guides/register-client.md` | Procedimiento de registro/migración de clientes |
+
+### Documentación de proyectos cliente
+
+- `projects/Management360/docs/` — análisis, control de gestión, contexto de events, tareas pendientes/finales y mapa de reemplazo ITCSS de events.
+- `projects/TaxiLima2026/docs/` — migración a M360 y optimización de arquitectura de simulación.
+- `projects/Administracion_UPN/docs/` — arquitectura de digitalización/linea de producción de microformatos, sílabos y material de ciclo.
 
 ---
 

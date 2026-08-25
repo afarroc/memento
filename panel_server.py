@@ -13,6 +13,14 @@ from typing import Any, Dict, List, Optional
 
 from core.paths import ROOT, detect_project_name, workspace_root
 from core.services import find_free_port
+from core.tickets import (
+    create_ticket,
+    delete_ticket,
+    get_ticket,
+    list_tickets,
+    stats as ticket_stats,
+    update_ticket,
+)
 
 _env_path = ROOT / ".env"
 if _env_path.exists():
@@ -165,7 +173,7 @@ def get_sala_stats():
 
 # Base HTML template with integrated navbar
 def render_page(content: str, title: str, active: str = "dashboard") -> str:
-    nav_items = [("/", "Dashboard"), ("/services", "Servicios"), ("/handoffs", "Handoffs"), ("/config", "Config")]
+    nav_items = [("/", "Dashboard"), ("/services", "Servicios"), ("/handoffs", "Handoffs"), ("/tickets", "Tickets"), ("/config", "Config")]
     nav_html = '<header style="padding:12px 16px;background:#0f1419;border-bottom:1px solid #1f2933"><h1 style="font-size:18px;color:#e5e7eb">🜄 MementoBloom · Panel de Control</h1></header><nav style="padding:8px 16px;background:#0f1419;border-bottom:1px solid #1f2933;display:flex;gap:8px;flex-wrap:wrap">'
     for href, label in nav_items:
         is_active = "active" if href.strip("/") == active else ""
@@ -311,6 +319,132 @@ class PanelHandler(BaseHTTPRequestHandler):
             })
         elif self.path == "/api/services":
             self._send_json(get_all_services_status())
+        elif self.path == "/api/tickets":
+            payload = self._read_body() if self.command == "POST" else {}
+            status = payload.get("status") if isinstance(payload, dict) else None
+            source = payload.get("source") if isinstance(payload, dict) else None
+            tags = payload.get("tags") if isinstance(payload, dict) else None
+            if isinstance(tags, str):
+                tags = [tags]
+            tickets = list_tickets(status=status, source=source, tags=tags)
+            self._send_json([t.to_dict() for t in tickets])
+        elif self.path == "/api/tickets/stats":
+            self._send_json(ticket_stats())
+        elif self.path.startswith("/api/tickets/") and self.path.endswith("/close"):
+            ticket_id = self.path.split("/")[-2]
+            updated = update_ticket(ticket_id, status="closed", resolution="Cerrado desde panel")
+            if not updated:
+                self._send_json({"error": "close failed"}, 500)
+                return
+            self._send_json(updated.to_dict())
+        elif self.path.startswith("/api/tickets/") and self.path.endswith("/resolve"):
+            ticket_id = self.path.split("/")[-2]
+            updated = update_ticket(ticket_id, status="resolved")
+            if not updated:
+                self._send_json({"error": "resolve failed"}, 500)
+                return
+            self._send_json(updated.to_dict())
+        elif self.path.startswith("/api/tickets/") and self.path.endswith("/link-m360"):
+            ticket_id = self.path.split("/")[-2]
+            payload = self._read_body()
+            ticket = get_ticket(ticket_id)
+            if not ticket:
+                self._send_json({"error": "ticket not found"}, 404)
+                return
+            m360_links = dict(ticket.m360_links)
+            if isinstance(payload, dict):
+                for key in ("project_id", "project_title", "task_id", "task_title", "event_id", "event_title", "reminder_id", "inbox_item_id"):
+                    if key in payload and payload[key] not in (None, ""):
+                        m360_links[key] = payload[key]
+            updated = update_ticket(ticket_id, m360_links=m360_links)
+            if not updated:
+                self._send_json({"error": "link failed"}, 500)
+                return
+            self._send_json(updated.to_dict())
+        elif self.path.startswith("/api/tickets/"):
+            ticket_id = self.path.split("/")[-1]
+            ticket = get_ticket(ticket_id)
+            if not ticket:
+                self._send_json({"error": "ticket not found"}, 404)
+                return
+            if self.command == "GET":
+                self._send_json(ticket.to_dict())
+            elif self.command == "PUT":
+                payload = self._read_body()
+                if not isinstance(payload, dict):
+                    self._send_json({"error": "invalid payload"}, 400)
+                    return
+                allowed = {
+                    "title", "description", "status", "priority",
+                    "assigned_to", "tags", "source", "m360_links", "context", "resolution"
+                }
+                changes = {k: v for k, v in payload.items() if k in allowed}
+                updated = update_ticket(ticket_id, **changes)
+                if not updated:
+                    self._send_json({"error": "update failed"}, 500)
+                    return
+                self._send_json(updated.to_dict())
+            elif self.command == "DELETE":
+                if delete_ticket(ticket_id):
+                    self._send_json({"ok": True})
+                else:
+                    self._send_json({"error": "delete failed"}, 500)
+            else:
+                self._send_json({"error": "method not allowed"}, 405)
+        elif self.path == "/tickets":
+            tickets = list_tickets()
+            content = '<h2 style="color:#e5e7eb;margin-bottom:12px">Tickets de Servicio</h2>'
+            content += '<div style="margin-bottom:12px"><a href="/tickets/new" class="btn">Nuevo Ticket</a></div>'
+            if not tickets:
+                content += '<p style="color:#9ca3af">Sin tickets.</p>'
+            else:
+                content += '<table><tr><th>ID</th><th>Título</th><th>Estado</th><th>Prioridad</th><th>Creado</th><th>M360</th><th>Acciones</th></tr>'
+                for t in tickets:
+                    m360 = []
+                    if t.m360_links.get("project_id"):
+                        m360.append(f"proyecto {t.m360_links['project_id']}")
+                    if t.m360_links.get("task_id"):
+                        m360.append(f"tarea {t.m360_links['task_id']}")
+                    if t.m360_links.get("event_id"):
+                        m360.append(f"evento {t.m360_links['event_id']}")
+                    m360_text = ", ".join(m360) if m360 else "-"
+                    content += f'<tr><td>{t.id}</td><td>{t.title}</td><td>{t.status}</td><td>{t.priority}</td><td>{t.created_at}</td><td>{m360_text}</td>'
+                    content += f'<td><a class="btn" href="/tickets/{t.id}">Ver</a> <a class="btn" href="/api/tickets/{t.id}/resolve" onclick="fetch(\'/api/tickets/{t.id}/resolve\',{{method:\'POST\'}}).then(()=>location.reload());return false;">Resolver</a> <a class="btn" href="/api/tickets/{t.id}/close" onclick="fetch(\'/api/tickets/{t.id}/close\',{{method:\'POST\'}}).then(()=>location.reload());return false;">Cerrar</a></td></tr>'
+                content += '</table>'
+            self._send_html(render_page(content, "Tickets", "tickets"))
+        elif self.path.startswith("/tickets/") and len(self.path.split("/")) == 3 and self.path.split("/")[2] != "new":
+            ticket_id = self.path.split("/")[-1]
+            ticket = get_ticket(ticket_id)
+            if not ticket:
+                self._send_html(render_page('<p style="color:#f87171">Ticket no encontrado</p>', "Tickets", "tickets"))
+                return
+            content = f'<h2 style="color:#e5e7eb;margin-bottom:12px">{ticket.id} — {ticket.title}</h2>'
+            content += f'<div class="card"><h3>Estado</h3><p>{ticket.status} | Prioridad: {ticket.priority} | Fuente: {ticket.source}</p></div>'
+            content += f'<div class="card"><h3>Descripción</h3><p style="white-space:pre-wrap">{ticket.description}</p></div>'
+            if ticket.m360_links:
+                content += '<div class="card"><h3>Vínculos M360</h3><table>'
+                for k, v in ticket.m360_links.items():
+                    if v:
+                        content += f'<tr><td>{k}</td><td>{v}</td></tr>'
+                content += '</table></div>'
+            if ticket.context:
+                content += '<div class="card"><h3>Contexto</h3><pre style="white-space:pre-wrap;word-wrap:break-word">' + json.dumps(ticket.context, ensure_ascii=False, indent=2) + '</pre></div>'
+            if ticket.resolution:
+                content += f'<div class="card"><h3>Resolución</h3><p style="white-space:pre-wrap">{ticket.resolution}</p></div>'
+            content += f'<div style="margin-top:12px"><a href="/tickets" class="btn">Volver</a></div>'
+            self._send_html(render_page(content, ticket.id, "tickets"))
+        elif self.path == "/tickets/new":
+            content = '<h2 style="color:#e5e7eb;margin-bottom:12px">Nuevo Ticket</h2>'
+            content += '<form id="ticketForm" style="background:#111318;border:1px solid #1f2933;border-radius:8px;padding:16px">'
+            content += '<div style="margin-bottom:8px"><label style="color:#d4d4d4;display:block;margin-bottom:4px">Título</label><input name="title" required style="width:100%;padding:8px;background:#0a0c10;color:#e5e7eb;border:1px solid #374151;border-radius:4px"></div>'
+            content += '<div style="margin-bottom:8px"><label style="color:#d4d4d4;display:block;margin-bottom:4px">Descripción</label><textarea name="description" rows="4" required style="width:100%;padding:8px;background:#0a0c10;color:#e5e7eb;border:1px solid #374151;border-radius:4px"></textarea></div>'
+            content += '<div style="margin-bottom:8px"><label style="color:#d4d4d4;display:block;margin-bottom:4px">Prioridad</label><select name="priority" style="width:100%;padding:8px;background:#0a0c10;color:#e5e7eb;border:1px solid #374151;border-radius:4px"><option value="low">Baja</option><option value="medium" selected>Media</option><option value="high">Alta</option><option value="critical">Crítica</option></select></div>'
+            content += '<div style="margin-bottom:8px"><label style="color:#d4d4d4;display:block;margin-bottom:4px">Fuente</label><select name="source" style="width:100%;padding:8px;background:#0a0c10;color:#e5e7eb;border:1px solid #374151;border-radius:4px"><option value="manual">Manual</option><option value="assistant">Asistente</option><option value="bridge">Bridge</option></select></div>'
+            content += '<div style="margin-bottom:8px"><label style="color:#d4d4d4;display:block;margin-bottom:4px">Etiquetas (coma)</label><input name="tags" placeholder="cv, m360, digitalizacion" style="width:100%;padding:8px;background:#0a0c10;color:#e5e7eb;border:1px solid #374151;border-radius:4px"></div>'
+            content += '<div style="margin-bottom:8px"><label style="color:#d4d4d4;display:block;margin-bottom:4px">Contexto JSON (opcional)</label><textarea name="context" rows="3" placeholder=\'{"session_id":"..."}\' style="width:100%;padding:8px;background:#0a0c10;color:#e5e7eb;border:1px solid #374151;border-radius:4px;font-family:monospace"></textarea></div>'
+            content += '<button type="submit" class="btn">Crear Ticket</button></form>'
+            content += '<script>document.getElementById("ticketForm").onsubmit=e=>{e.preventDefault();const fd=new FormData(e.target);const payload=Object.fromEntries(fd.entries());if(payload.tags)payload.tags=payload.tags.split(",").map(s=>s.trim()).filter(Boolean);if(payload.context){try{payload.context=JSON.parse(payload.context);}catch{}}fetch("/api/tickets",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)}).then(r=>r.json()).then(d=>{if(d.id){alert("Ticket "+d.id+" creado");location.href="/tickets";}else{alert("Error: "+(d.error||"unknown"));}});}</script>'
+            self._send_html(render_page(content, "Nuevo Ticket", "tickets"))
         elif self.path == "/api/handoffs":
             self._send_json(get_handoffs_list())
         else:
@@ -359,6 +493,58 @@ class PanelHandler(BaseHTTPRequestHandler):
                 self._send_json({"ok": True, "output": f"service {svc_name} added"})
             else:
                 self._send_json({"ok": False, "error": "missing fields"})
+        elif self.path == "/api/tickets":
+            payload = self._read_body()
+            if not isinstance(payload, dict):
+                self._send_json({"error": "invalid payload"}, 400)
+                return
+            title = payload.get("title", "")
+            description = payload.get("description", "")
+            if not title or not description:
+                self._send_json({"error": "title and description are required"}, 400)
+                return
+            ticket = create_ticket(
+                title=title,
+                description=description,
+                created_by=payload.get("created_by", "assistant"),
+                priority=payload.get("priority", "medium"),
+                source=payload.get("source", "manual"),
+                tags=payload.get("tags") or [],
+                m360_links=payload.get("m360_links") or {},
+                context=payload.get("context") or {},
+            )
+            self._send_json(ticket.to_dict())
+        elif self.path.startswith("/api/tickets/") and self.path.endswith("/close"):
+            ticket_id = self.path.split("/")[-2]
+            updated = update_ticket(ticket_id, status="closed", resolution="Cerrado desde panel")
+            if not updated:
+                self._send_json({"error": "close failed"}, 500)
+                return
+            self._send_json(updated.to_dict())
+        elif self.path.startswith("/api/tickets/") and self.path.endswith("/resolve"):
+            ticket_id = self.path.split("/")[-2]
+            updated = update_ticket(ticket_id, status="resolved")
+            if not updated:
+                self._send_json({"error": "resolve failed"}, 500)
+                return
+            self._send_json(updated.to_dict())
+        elif self.path.startswith("/api/tickets/") and self.path.endswith("/link-m360"):
+            ticket_id = self.path.split("/")[-2]
+            payload = self._read_body()
+            ticket = get_ticket(ticket_id)
+            if not ticket:
+                self._send_json({"error": "ticket not found"}, 404)
+                return
+            m360_links = dict(ticket.m360_links)
+            if isinstance(payload, dict):
+                for key in ("project_id", "project_title", "task_id", "task_title", "event_id", "event_title", "reminder_id", "inbox_item_id"):
+                    if key in payload and payload[key] not in (None, ""):
+                        m360_links[key] = payload[key]
+            updated = update_ticket(ticket_id, m360_links=m360_links)
+            if not updated:
+                self._send_json({"error": "link failed"}, 500)
+                return
+            self._send_json(updated.to_dict())
         else:
             self._send_json({"error": "not found"}, 404)
 

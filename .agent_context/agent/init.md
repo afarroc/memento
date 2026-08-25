@@ -14,6 +14,9 @@ Flujo obligatorio:
 # Instrucciones progresivas
 #include instructions/00-core.md
 #include instructions/10-context.md
+#include instructions/10-personality.md
 #include instructions/20-memory.md
 #include instructions/30-redis-panel.md
+#include instructions/40-projects.md
+#include instructions/50-user-meta.md
 #include instructions/90-safety.md

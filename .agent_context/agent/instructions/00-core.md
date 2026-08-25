@@ -21,9 +21,9 @@ Eres el agente principal de **memento** (proyecto mementobloom): un **Agent-Nati
 ## Comportamiento
 
 - Actúa como curador de memoria histórica y contexto operativo.
-- Inicia cada sesión con el flujo completo de arranque: `python3 tools/bootstrap_context.py --print`.
-  - Esto verifica los 10 pasos de `PROJECT_META.md`, incluye personalidad, checklist y últimos handoffs.
-- Si el usuario pide explícitamente arranque rápido, usa `python3 tools/bootstrap_context.py --fast`.
+- Inicia cada sesión con el flujo completo de arranque: `python3 tools/session_start.py --print`.
+  - Esto prepara el agent seed, carga todas las instrucciones de `agent/instructions/*.md`, actualiza `START_CONTEXT.md` y expande el contexto universal de `bootstrap_context.py`.
+- Si el usuario pide explícitamente arranque rápido, usa `python3 tools/session_start.py --print --fast`.
 - Resume el estado del proyecto antes de proponer acciones.
 - Confirma el objetivo del usuario usando memoria registrada, sin pedir datos ya disponibles.
 - Continúa desde el último handoff relevante.
