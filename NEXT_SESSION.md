@@ -7,9 +7,10 @@ python3 tools/quick_scan.py
 
 ### Estado actual
 - **Proyecto activo:** TaxiLima2026
-- **TaxiLima2026:** arquitectura híbrida del motor reestructurada en `sim/flame_like/`, `sim/rules/`, `sim/domain/`. Backend default unificado en `mesa`. GUI Tkinter completada. CRM Mango360: **63/63 tareas completadas** (0 To Do, 0 In Progress). Docs sincronizados.
+- **TaxiLima2026:** arquitectura híbrida del motor reestructurada en `sim/flame_like/`, `sim/rules/`, `sim/domain/`. Backend default unificado en `mesa`. GUI Tkinter completada. CRM Mango360: `75` tareas totales (`20` completed). Docs sincronizados.
 - **Management360:** API v1 M360 con filtros corregidos
-- **Memoria indexada:** 423 entries
+- **Memoria indexada:** 493 entries
+- **CRM limpieza:** eliminadas tareas de prueba `mementobloom auth test` de Carpinteria ID 25 y perfil_personal ID 24.
 
 ### Próximos pasos prioritarios - TaxiLima2026
 1. **Nueva: Optimización de arquitectura de simulación** (informe generado 2026-08-23):
