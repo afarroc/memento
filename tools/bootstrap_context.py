@@ -39,6 +39,41 @@ START_CONTEXT = WS_ROOT / ".agent_context" / "START_CONTEXT.md"
 AGENT_INIT = WS_ROOT / ".agent_context" / "agent" / "init.md"
 SECURE_CONTEXT = WS_ROOT / ".agent_context" / "secure" / "SECURE.md"
 PERSONALITY = WS_ROOT / "memory" / "personality" / "user_personality.md"
+AGENT_INSTRUCTIONS_DIR = WS_ROOT / ".agent_context" / "agent" / "instructions"
+
+
+def _load_agent_instructions() -> Dict[str, Any]:
+    """Carga todos los archivos de instrucciones del agente como parte obligatoria del contexto."""
+    result: Dict[str, Any] = {
+        "exists": False,
+        "path": rel(AGENT_INSTRUCTIONS_DIR),
+        "files": {},
+        "total_files": 0,
+        "summary": "",
+    }
+    if not AGENT_INSTRUCTIONS_DIR.exists() or not AGENT_INSTRUCTIONS_DIR.is_dir():
+        return result
+    md_files = sorted(AGENT_INSTRUCTIONS_DIR.glob("*.md"))
+    if not md_files:
+        return result
+    result["exists"] = True
+    result["total_files"] = len(md_files)
+    parts: List[str] = []
+    for md_file in md_files:
+        text = md_file.read_text(encoding="utf-8", errors="replace")
+        result["files"][md_file.name] = {
+            "path": rel(md_file),
+            "lines": len(text.splitlines()),
+            "chars": len(text),
+        }
+        # Extract first meaningful line after title for summary
+        for line in text.splitlines():
+            stripped = line.strip()
+            if stripped and not stripped.startswith("#"):
+                parts.append(stripped)
+                break
+    result["summary"] = " ".join(parts[:10])
+    return result
 
 
 def load_project_priority() -> List[str]:
@@ -138,6 +173,7 @@ def build_context(
     start_context = read_file(START_CONTEXT) if include_files else {"exists": START_CONTEXT.exists(), "path": rel(START_CONTEXT)}
     agent_init = read_file(AGENT_INIT) if include_files else {"exists": AGENT_INIT.exists(), "path": rel(AGENT_INIT)}
     personality = read_file(PERSONALITY) if include_files and not fast_mode else {"exists": PERSONALITY.exists(), "path": rel(PERSONALITY), "fast_skipped": fast_mode}
+    agent_instructions = _load_agent_instructions() if include_files else {"exists": AGENT_INSTRUCTIONS_DIR.exists(), "path": rel(AGENT_INSTRUCTIONS_DIR)}
     services = service_status(fresh=fresh_health) if check_services else {"checked": False, "reason": "services disabled"}
     active_projects = merged_active_projects([entry for entry in index.values() if isinstance(entry, dict)])
     return {
@@ -152,6 +188,7 @@ def build_context(
             "user_context": user_context,
             "start_context": start_context,
             "agent_init": agent_init,
+            "agent_instructions": agent_instructions,
             "personality": personality,
             "user_context_ignored": check_ignore(rel(USER_CONTEXT)) if USER_CONTEXT.exists() else {"ignored": True, "rule": "optional"},
         },
@@ -172,7 +209,8 @@ def build_context(
         "services": services,
         "fast_mode": fast_mode,
         "bootstrap_commands": {
-            "universal": "python3 tools/bootstrap_context.py --print",
+            "universal": "python3 tools/session_start.py --print  # Flujo único de arranque del agente main",
+            "internal": "python3 tools/bootstrap_context.py --print  # Herramienta interna usada por session_start.py",
             "startup_doctor": "python3 tools/doctor.py --startup",
             "selftest": "python3 tools/selftest.py",
             "ranked_context": "python3 tools/context_builder.py --limit 12",
@@ -203,6 +241,7 @@ def format_markdown(context: Dict[str, Any]) -> str:
         f"- USER_CONTEXT.md: {'OK' if files.get('user_context', {}).get('exists') else 'OPTIONAL'}",
         f"- START_CONTEXT.md: {'OK' if files.get('start_context', {}).get('exists') else 'OPTIONAL'}",
         f"- Agent init: {'OK' if files.get('agent_init', {}).get('exists') else 'NO'}",
+        f"- Agent instructions: {'OK' if files.get('agent_instructions', {}).get('exists') else 'NO'} ({files.get('agent_instructions', {}).get('total_files', 0)} files)",
         f"- USER_CONTEXT ignored by Git: {'OK' if files.get('user_context_ignored', {}).get('ignored') else 'NO'}",
         "",
         "## Project meta summary",
@@ -210,6 +249,9 @@ def format_markdown(context: Dict[str, Any]) -> str:
         "",
         "## User context summary",
         files.get("user_context", {}).get("summary", "No user context file found or optional."),
+        "",
+        "## Agent instructions",
+        files.get("agent_instructions", {}).get("summary", "No agent instructions found.") if not fast_mode else "(omitido en modo rápido)",
         "",
         "## Personality",
         files.get("personality", {}).get("summary", "No personality file found.") if not fast_mode else "(omitido en modo rápido)",
@@ -268,7 +310,8 @@ def format_markdown(context: Dict[str, Any]) -> str:
     lines.extend([
         "",
         "## Bootstrap commands",
-        "- python3 tools/bootstrap_context.py --print  # Modo completo por defecto",
+        "- python3 tools/session_start.py --print  # Flujo único de arranque del agente main",
+        "- python3 tools/bootstrap_context.py --print  # Herramienta interna de contexto universal",
         "- python3 tools/bootstrap_context.py --fast   # Modo rápido opcional",
         "- python3 tools/doctor.py --startup",
         "- python3 tools/selftest.py",
@@ -310,42 +353,54 @@ def _build_bootstrap_checklist(
         ),
         (
             "4",
+            "AGENT_INIT",
+            files.get("agent_init", {}).get("exists"),
+            "Leer agent/init.md",
+        ),
+        (
+            "4.1",
+            "AGENT_INSTRUCTIONS",
+            files.get("agent_instructions", {}).get("exists"),
+            "Cargar TODAS las instrucciones de agent/instructions/*.md (obligatorio para agente main)",
+        ),
+        (
+            "5",
             "START_CONTEXT",
             files.get("start_context", {}).get("exists"),
             "Leer START_CONTEXT.md",
         ),
         (
-            "5",
+            "6",
             "BOOTSTRAP",
             True,
             "Ejecutar bootstrap_context.py --print",
         ),
         (
-            "6",
+            "7",
             "SESSION_BOOTSTRAP",
             None,
             "Ejecutar session_bootstrap.py --print (flujo externo, opcional)",
         ),
         (
-            "7",
+            "8",
             "HANDOFFS",
             len(handoffs) > 0,
             f"Leer handoffs recientes ({len(handoffs)} encontrados)",
         ),
         (
-            "8",
+            "9",
             "GIT",
             commit.get("hash") is not None,
             "Verificar Git (rama, commit y status)",
         ),
         (
-            "9",
+            "10",
             "SERVICES",
             services_data.get("checked") is not False,
             "Verificar Redis/sala/panel",
         ),
         (
-            "10",
+            "11",
             "CONTINUITY",
             True,
             "Continuar desde último handoff relevante",
@@ -353,7 +408,7 @@ def _build_bootstrap_checklist(
     ]
     lines = [
         "",
-        "## Bootstrap checklist (10 pasos)",
+        "## Bootstrap checklist (11 pasos)",
         "",
     ]
     for num, key, ok, desc in checks:

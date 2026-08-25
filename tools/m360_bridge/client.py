@@ -574,3 +574,85 @@ class M360Client:
             "enlace": kwargs.get("enlace", ""),
         }
         return self._request_json("/api/v1/bibliografia/", payload, method="POST")
+
+    # ======================
+    # MEMENTO TICKETS
+    # ======================
+    def m360_link_ticket(
+        self,
+        ticket_id: str,
+        project_id: Optional[int] = None,
+        project_title: str = "",
+        task_id: Optional[int] = None,
+        task_title: str = "",
+        event_id: Optional[int] = None,
+        event_title: str = "",
+        reminder_id: Optional[int] = None,
+        inbox_item_id: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        payload: Dict[str, Any] = {}
+        if project_id is not None:
+            payload["project_id"] = project_id
+            payload["project_title"] = project_title
+        if task_id is not None:
+            payload["task_id"] = task_id
+            payload["task_title"] = task_title
+        if event_id is not None:
+            payload["event_id"] = event_id
+            payload["event_title"] = event_title
+        if reminder_id is not None:
+            payload["reminder_id"] = reminder_id
+        if inbox_item_id is not None:
+            payload["inbox_item_id"] = inbox_item_id
+        return self._request_json(f"/api/tickets/{ticket_id}/link-m360", payload, method="POST")
+
+    def m360_create_ticket_from_task(
+        self,
+        task_id: int,
+        created_by: str = "assistant",
+        priority: str = "medium",
+        source: str = "bridge",
+    ) -> Dict[str, Any]:
+        task = self.api_v1_get_task(task_id)
+        if not isinstance(task, dict) or task.get("http_error") or task.get("network_error"):
+            return task
+        title = task.get("title") or task.get("name") or f"Tarea {task_id}"
+        description = task.get("description") or ""
+        project = task.get("project") or {}
+        project_id = project.get("id") if isinstance(project, dict) else task.get("project_id")
+        project_title = project.get("title") if isinstance(project, dict) else ""
+        payload: Dict[str, Any] = {
+            "title": title,
+            "description": description,
+            "created_by": created_by,
+            "priority": priority,
+            "source": source,
+            "m360_links": {},
+        }
+        if project_id:
+            payload["m360_links"]["project_id"] = project_id
+            payload["m360_links"]["project_title"] = project_title or ""
+        payload["m360_links"]["task_id"] = task_id
+        payload["m360_links"]["task_title"] = title
+        return self._request_json("/api/tickets", payload, method="POST")
+
+    def m360_sync_tickets_for_project(self, project_id: int, created_by: str = "assistant") -> Dict[str, Any]:
+        tasks = self.api_v1_list_tasks(project_id=project_id)
+        if not isinstance(tasks, dict):
+            return {"error": "invalid_tasks_response", "raw": str(tasks)[:200]}
+        data = tasks.get("data") or tasks.get("results") or tasks.get("items") or []
+        if not isinstance(data, list):
+            return {"error": "invalid_tasks_data", "raw": str(tasks)[:200]}
+        summary: Dict[str, Any] = {"project_id": project_id, "total_tasks": len(data), "created_tickets": 0, "skipped": 0, "errors": []}
+        for task in data:
+            task_id = task.get("id")
+            title = task.get("title") or task.get("name")
+            if not task_id or not title:
+                summary["skipped"] += 1
+                continue
+            ticket = self.m360_create_ticket_from_task(task_id, created_by=created_by, source="bridge")
+            if isinstance(ticket, dict) and ticket.get("id"):
+                summary["created_tickets"] += 1
+            else:
+                summary["errors"].append({"task_id": task_id, "result": ticket})
+        return summary
