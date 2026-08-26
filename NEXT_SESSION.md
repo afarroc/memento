@@ -7,23 +7,22 @@ python3 tools/quick_scan.py
 
 ### Estado actual
 - **Proyecto activo:** TaxiLima2026
-- **TaxiLima2026:** arquitectura híbrida del motor reestructurada en `sim/flame_like/`, `sim/rules/`, `sim/domain/`. Backend default unificado en `mesa`. GUI Tkinter completada. CRM Mango360: `75` tareas totales (`20` completed). Docs sincronizados.
+- **TaxiLima2026:** arquitectura híbrida del motor reestructurada en `sim/flame_like/`, `sim/rules/`, `sim/domain/`. Mesa-Frames/Polars operativos en venv. `MesaFramesEngine` real implementado. `Coordinator` integrado en `sim/api.py`. Persistencia JSON implementada en `sim/api.py.load()`. CRM Mango360: `75` tareas totales (`20` completed). Docs sincronizados.
 - **Management360:** API v1 M360 con filtros corregidos
 - **Memoria indexada:** 493 entries
 - **CRM limpieza:** eliminadas tareas de prueba `mementobloom auth test` de Carpinteria ID 25 y perfil_personal ID 24.
+- **Tickets:** TICK-0028 abierto para backend Mesa-Frames real y coordinador integrado.
 
 ### Próximos pasos prioritarios - TaxiLima2026
-1. **Nueva: Optimización de arquitectura de simulación** (informe generado 2026-08-23):
-   - Migrar a Mesa-Frames con Polars (prioridad ALTA)
-   - Optimizar espacio discreto con shuffle_do y cache is_empty (prioridad ALTA)
-   - Crear capa de orquestación desacoplada simulación/reglas (prioridad MEDIA)
-   - Preparar arquitectura multijugador con estado compartido (prioridad BAJA/FUTURO)
-    - Ver: `projects/TaxiLima2026/docs/optimizacion_arquitectura.md`
-2. Ninguna pendiente técnica activa en CRM Mango360.
-3. Pendientes no técnicas:
+1. **Completado:** Migración a Mesa-Frames con Polars — instalado y backend `MesaFramesEngine` funcional
+2. **Completado:** Integración de `Coordinator` en `sim/api.py` — desacopla UI del backend
+3. **Completado:** Persistencia de partidas — `sim/api.py.load()` implementado con formato JSON
+4. Pendiente: buscar y completar wiring físico de `Coordinator` en `dashboard/app.py`, `sim_gui/main.py` y frontend web
+5. Pendiente: corregir bug pre-existente de `MetricsCalculator`/`WorldState` si se requieren métricas completas en `MesaFramesEngine`
+6. Pendientes no técnicas:
    - Validar cotización renting `TAXI-FIN-006` con Tair Renting / LeasyAuto cuando corresponda.
    - Preparar despliegue o compartición del sitio Django cuando corresponda.
-4. Trabajo en progreso en mementobloom:
+7. Trabajo en progreso en mementobloom:
    - Sistema de tickets local (`core/tickets.py`, `tools/ticket.py`) en desarrollo.
    - `m360_task_results.json` contiene resultados de creación de tickets M360 (pendiente de limpiar/archivar).
 
