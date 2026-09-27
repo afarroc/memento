@@ -19,13 +19,13 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 # Resolve workspace first before importing core modules
-from core.path_resolver import RESOLVER
-WS_ROOT = RESOLVER.WS_ROOT
-MEMENTO_ROOT = RESOLVER.ROOT
-SCRIPT_ROOT = MEMENTO_ROOT
-
-# Add mementobloom directory to path for core imports
+SCRIPT_ROOT = Path(__file__).resolve().parent
+MEMENTO_ROOT = SCRIPT_ROOT.parent
 sys.path.insert(0, str(MEMENTO_ROOT))
+
+from core.path_resolver import RESOLVER
+
+WS_ROOT = RESOLVER.WS_ROOT
 
 from core.git import check_ignore, git_diff_stat, git_status, latest_commit
 from core.index import count_by, latest_handoffs, load_index, resolve_index_path, top_entries

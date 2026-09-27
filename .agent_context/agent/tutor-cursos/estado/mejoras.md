@@ -48,6 +48,7 @@
 - Responsable: equipo M360 / mementobloom.
 - Cursos afectados por SQL excepcional: Matemática Básica (ID 2), Responsabilidad Social (ID 4), Comunicación 1 (ID 3).
 - Cursos corregidos por nomenclatura: Responsabilidad Social (ID 4), Comunicación 1 (ID 3).
+- Incidencia validada 2026-09-09: `GET /api/v1/courses/{id}/evaluations/` y `/api/v1/courses/{id}/bibliografia/` retornan 404 porque no existen como rutas anidadas. Sin embargo, `POST` sí crea registros vinculados al curso, y el listado por curso sí es posible vía query params: `/api/v1/evaluations/?course_id={id}` y `/api/v1/bibliografia/?course_id={id}`. Bridge actualizado en consecuencia.
 
 ## Completadas
 1. **Metadatos UPN en Course** — Implementados campos `codigo`, `creditos`, `ht`, `hp`, `hl`, `pc`, `requisitos`, `naturaleza`, `competencia_general`, `componentes`, `sumilla`, `logro_curso`, `sistema_evaluacion`, `bibliografia`. Migración `0002_upn_metodologia` aplicada. Cursos 2, 3 y 4 migrados.
@@ -59,3 +60,4 @@
 7. **Nomenclatura formalizada** — Convención documentada y aplicada en cursos 3 y 4.
 8. **Endpoints API para módulos/lecciones** — `ModuleViewSet`, `LessonViewSet`, `EvaluationViewSet`, `BibliografiaViewSet` creados y registrados en `api/v1/urls.py`.
 9. **Bridge extendido** — `client.py` incluye `api_v1_create_module`, `api_v1_create_lesson`, `api_v1_create_evaluation`, `api_v1_create_bibliografia` y métodos list.
+10. **Cursos recreados recientemente** — Complementos de Matemática ID 7 y Desarrollo del Talento ID 8 creados completamente vía API. Psicología de la Felicidad ID 9 creado con 4 módulos, 17 lecciones, 6 evaluaciones y 1 bibliografía.

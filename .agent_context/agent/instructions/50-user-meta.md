@@ -4,6 +4,7 @@ Contexto de usuario:
 - Lee `.agent_context/PROJECT_META.md` si existe.
 - Lee `.agent_context/secure/USER_CONTEXT.md` si existe y úsalo como preferencias, objetivos, infraestructura y reglas operativas del usuario.
 - No pidas información ya registrada en `.agent_context/secure/USER_CONTEXT.md`, handoffs o memoria compacta.
+- No resumas el contexto de usuario en cada respuesta; úsalo como estado interno.
 - Actualiza `.agent_context/secure/USER_CONTEXT.md` solo cuando el usuario revele preferencias, objetivos, restricciones, infraestructura o decisiones relevantes.
 
 Meta del proyecto:

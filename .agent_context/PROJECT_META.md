@@ -21,6 +21,16 @@ Reglas universales de arranque:
 8. Verificar Redis/sala si la tarea involucra panel o comunicación.
 9. Continuar desde el último handoff relevante sin pedir información ya registrada.
 
+## Regla de gestión de proyectos (sin excepción)
+
+Para cualquier gestión de un proyecto cliente, el asistente debe:
+1. Abrir/atender un ticket de asistencia y mantenimiento en mementobloom.
+2. Mantener sincronizadas las tareas del proyecto en el CRM.
+3. Acceder al CRM exclusivamente por bridge: `tools/m360_bridge/client.py`.
+4. El bridge obtiene credenciales/configuración desde `.env`. No usar credenciales hardcodeadas ni rutas alternativas.
+
+Esta regla es implícita en toda atención de proyecto y debe quedar reflejada en el contexto del ticket/handoff cuando se gestione un proyecto.
+
 > Nota: `python3 tools/bootstrap_context.py --print` es la herramienta interna que expande el contexto universal dentro del flujo de `session_start.py`. No es un punto de entrada separado para el agente main.
 
 ## Configuración del proyecto
@@ -30,13 +40,28 @@ Ver `.agent_context/secure/USER_CONTEXT.md` para configuración contextual espec
 ### Proyectos cliente registrados
 - **perfil_personal** (Arturo) — Cuadro de mando personal, M360 ID 24, Ticket TICK-0013
   - Naturaleza: dashboard web, no almacena datos físicos
-  - Datos organizados en `/Volumes/Macintosh HD - Datos/01_CV..08_Config`
+  - Ruta gestión memento: `mementobloom/projects/perfil_personal/`
+  - Datos: `/Volumes/Macintosh HD - Datos/01_CV..08_Config`
   - Stack: HTML/CSS/JS vanilla, puerto 8080
 - **Carpinteria** — Proyecto de carpintería/bricolaje digital, M360 ID 25, Tickets TICK-0027/TICK-0028/TICK-0029
   - Naturaleza: documentación + scaffolding Django + HTMX
+  - Ruta gestión memento: `mementobloom/projects/Carpinteria/`
   - Ruta física código fuente: `/Volumes/Macintosh HD - Datos/projects/Carpinteria/src/carpinteria_project/`
   - Stack objetivo: Django + HTMX + Alpine.js + Tailwind; Fase 3 React + Three.js
-  - Seguimiento memento: `mementobloom/projects/Carpinteria/`
+- **Management360**
+  - Ruta gestión memento: `mementobloom/projects/Management360/`
+  - Ruta física: `/Volumes/Macintosh HD - Datos/projects/Management360`
+- **TaxiLima2026**
+  - Ruta gestión memento: `mementobloom/projects/TaxiLima2026/`
+  - Ruta física: `/Volumes/Macintosh HD - Datos/projects/TaxiLima2026`
+- **Administracion_UPN**
+  - Ruta gestión memento: `mementobloom/projects/Administracion_UPN/`
+  - Ruta física: no documentada en PROJECT_CONTEXT.md; confirmar antes de acceder a código fuente
+
+Regla de ruteo:
+- Para documentación, handoffs, nomenclatura y gestión memento → usar rutas bajo `mementobloom/projects/<cliente>/`.
+- Para código fuente, assets, venv y ejecución física → usar rutas físicas documentadas arriba o en `client_projects.json`.
+- Nunca asumir que una ruta `projects/<cliente>/` bajo mementobloom es la ruta física del proyecto cliente.
 
 Arquitectura de continuidad:
 

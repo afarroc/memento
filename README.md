@@ -1,8 +1,9 @@
 # MementoBloom - Sistema de Memoria Histórica para IA
 
-**Estado:** Activo - Sprint 3 en progreso  
-**Memoria:** 160 entradas indexadas  
-**Commit:** c72c1fb (T3.5 completado)
+**Estado:** Activo - gestión continua de proyectos cliente  
+**Memoria:** 573 entradas indexadas  
+**Commit Management360:** 7e40e075 (`m360(digitalizacion): add module README`)  
+**Último commit mementobloom:** 6c046db (docs: keep TaxiLima2026 web Django as active view)
 
 ---
 
@@ -40,32 +41,64 @@ bash memento_install --auto
 | Diagnóstico | `python3 tools/doctor.py --startup` |
 | Tests | `python3 tools/selftest.py` |
 | Registrar cliente | `python3 tools/register_client.py --name <proyecto>` |
+| Escanear memoria | `python3 tools/quick_scan.py` |
 
 ---
 
 ## Proyectos registrados
 
-| Proyecto | Entries | Estado |
-|----------|---------|--------|
-| mementobloom | 131 | Desarrollo |
-| m360 | 22 | Bridge API implementado |
-| Ventas_Porta | 15 | Catálogo retail |
-| Administracion_UPN | 9 | Fase 2 GTD |
+| Proyecto | M360 ID | Nomenclatura | Estado |
+|----------|---------|--------------|--------|
+| mementobloom | — | — | Activo |
+| perfil_personal | 24 | `PERFIL-*` | Activo |
+| TaxiLima2026 | 23 | `TAXI-*` | Activo |
+| Carpinteria | 25 | `CARP-*` | Activo |
+| poco_xiaomi | 26 | `POCO-*` | Activo |
+  - Código fuente: `/Volumes/Macintosh HD - Datos/projects/poco_xiaomi/`
+  - Documentación de gestión: `mementobloom/projects/poco_xiaomi/`
+| Management360 | 22 | `M360-*`, `DIGIT-*`, `CV-REVIEW-*`, `TASK-BITACORA-*` | Activo |
+| Ventas_Porta | — | — | Registrado |
+| Administracion_UPN | — | — | Registrado |
+| jewelry_catalog | — | — | Registrado |
+| LaMarca | — | — | Registrado |
+| miui_termux | — | — | Registrado |
+| novela_bl | — | — | Registrado |
+| adherence_test | — | — | Registrado |
+| banca_telefonica | — | — | Registrado |
+| civilizaciones | — | — | Registrado |
 
 ---
 
-## Blockers
+## Servicios
 
-- **Management360:** Connection refused (servicio no disponible)
+| Servicio | Estado |
+|----------|--------|
+| Redis | OK (cloud) |
+| Sala | STARTED (8767) |
+| Panel | STARTED (8766) |
 
 ---
 
-## Sprint 3 pendiente
+## Documentación
 
-- T3.1: Vault Fernet encoding
-- T3.2: Exclusiones Git cliente
-- T3.3: Validación .env
-- T3.4: Sanitizar rutas
+| Documento | Propósito |
+|-----------|-----------|
+| `docs/PROJECT_CONTEXT.md` | Índice maestro de contexto |
+| `docs/tickets.md` | Sistema de tickets de servicio |
+| `docs/CONTEXT_TREE.md` | Árbol de memoria jerárquico |
+| `docs/guides/register-client.md` | Registro de clientes |
+| `projects/<cliente>/docs/nomenclatura_tareas.md` | Nomenclatura por proyecto |
+
+---
+
+## Próximos pasos
+
+1. Resolver tareas Mango360 sin prefijo documentado
+2. Crear tareas faltantes para `poco_xiaomi`
+3. Sincronizar tickets corregidos con panel/bridge
+4. Verificar persistencia LLM en `poco_xiaomi` tras reinicio
+5. Validar flujo `/digitalizacion/auditoria/<id>/` → aprobar → `/digitalizacion/certificar/<id>/` en Management360
+6. Revisar `doc.refresh_from_db()` en `auditoria_documento` POST para evitar loop auditoría→certificación
 
 ---
 

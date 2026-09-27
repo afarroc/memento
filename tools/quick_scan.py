@@ -101,21 +101,36 @@ class QuickScan:
             "manifest": manifest,
         }
 
+    def _extract_project(self, path: Path) -> str:
+        """Extract project name from path, handling handoffs/ subdirectories."""
+        parts = path.parts
+        # Buscar 'projects' en la ruta y tomar el siguiente componente
+        for i, part in enumerate(parts):
+            if part == "projects" and i + 1 < len(parts):
+                return parts[i + 1]
+        return path.parent.name
+
+    def _path_scope(self, path: Path) -> str:
+        """Determine whether an indexed entry belongs to memento management or client physical codebase."""
+        try:
+            rel_path = path.relative_to(self.projects)
+        except ValueError:
+            return "client_physical"
+        # Everything under projects/ in mementobloom is management/routing data.
+        # Actual client physical codebases are expected to be outside the workspace.
+        return "memento_management"
+
+    def _canonical_root(self, path: Path, project: str) -> str:
+        """Return the canonical root path for the project."""
+        return f"projects/{project}"
+
     def _parse_handoff(self, f: Path) -> Dict[str, Any]:
         content = f.read_text(encoding="utf-8", errors="replace")[:500]
         date_m = HANDOFF_RE.search(f.name)
-
-        def _extract_project(path: Path) -> str:
-            """Extract project name from path, handling handoffs/ subdirectories."""
-            parts = path.parts
-            # Buscar 'projects' en la ruta y tomar el siguiente componente
-            for i, part in enumerate(parts):
-                if part == "projects" and i + 1 < len(parts):
-                    return parts[i + 1]
-            return path.parent.name
-
-        project = _extract_project(f)
+        project = self._extract_project(f)
         identity_valid = bool(IDENTITY_RE.search(content))
+        path_scope = self._path_scope(f)
+        canonical_root = self._canonical_root(f, project)
         return {
             "id": f"h_{project}_{f.stem}",
             "type": "HANDOFF",
@@ -124,22 +139,17 @@ class QuickScan:
             "path": rel(f, self.workspace),
             "summary": content[:100],
             "identity_valid": identity_valid,
+            "path_scope": path_scope,
+            "canonical_root": canonical_root,
         }
 
     def _parse_context(self, f: Path) -> Dict[str, Any]:
         content = f.read_text(encoding="utf-8", errors="replace")[:500]
-
-        def _extract_project(path: Path) -> str:
-            """Extract project name from path, handling handouts/ subdirectories."""
-            parts = path.parts
-            for i, part in enumerate(parts):
-                if part == "projects" and i + 1 < len(parts):
-                    return parts[i + 1]
-            return path.parent.name
-
-        project = _extract_project(f)
+        project = self._extract_project(f)
         # Usar mtime como fallback para archivos CONTEXT sin fecha en el nombre
         fallback_ts = _dt.datetime.fromtimestamp(f.stat().st_mtime).isoformat(timespec="seconds")[:19]
+        path_scope = self._path_scope(f)
+        canonical_root = self._canonical_root(f, project)
         return {
             "id": f"c_{project}_{f.stem}",
             "type": "CONTEXT",
@@ -147,6 +157,8 @@ class QuickScan:
             "ts": fallback_ts,
             "path": rel(f, self.workspace),
             "summary": content[:100],
+            "path_scope": path_scope,
+            "canonical_root": canonical_root,
         }
 
 

@@ -161,6 +161,7 @@ class M360Sync:
         password: Optional[str] = None,
         timeout: Optional[int] = None,
         env_path: Optional[str] = None,
+        panel_url: Optional[str] = None,
     ) -> None:
         env_path = env_path or str(Path(__file__).resolve().parent.parent.parent / ".env")
         if os.path.exists(env_path):
@@ -174,7 +175,8 @@ class M360Sync:
         username = username or os.environ.get("M360_USERNAME", "")
         password = password or os.environ.get("M360_PASSWORD", "")
         timeout = timeout if timeout is not None else int(os.environ.get("M360_TIMEOUT", "10"))
-        self.client = M360Client(base_url=base_url, username=username, password=password)
+        panel_url = panel_url or os.environ.get("MEMENTO_PANEL_URL", "") or None
+        self.client = M360Client(base_url=base_url, username=username, password=password, panel_url=panel_url)
         self._timeout = timeout
 
     def sync_sprint(self, sprint_id: str, project_id: Optional[int] = None) -> SyncResult:

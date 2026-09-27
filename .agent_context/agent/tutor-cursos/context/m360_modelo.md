@@ -44,5 +44,10 @@ VALUES (456, 'Semana 1', '', 'semana-1', 'TEXT', '# Contenido', '[]'::jsonb, '',
 - Lecciones: `Semana 1: Intervalos e Inecuaciones Lineales`, `Semana 2: Inecuaciones Cuadráticas`, etc.
 - Evaluaciones: semana 4 `quiz`, semana 8 `quiz`, semana 12 `quiz`, semana 15 `assignment`, semana 16 `quiz`, semana 17 `quiz`.
 
+## Validación por curso
+- Usar `client.api_v1_list_evaluations(course_id=...)` en vez de `/api/v1/courses/{id}/evaluations/`.
+- Usar `client.api_v1_list_bibliografia(course_id=...)` en vez de `/api/v1/courses/{id}/bibliografia/`.
+- Creación: sigue siendo por API con `api_v1_create_evaluation(...)` y `api_v1_create_bibliografia(...)`.
+
 ## Campos API cursos (mapeo bridge)
 - `api_v1_create_course`: title, slug, project_id (default 0), description, short_description, tutor_id, category_id, level, price, duration_hours, is_published, is_featured.

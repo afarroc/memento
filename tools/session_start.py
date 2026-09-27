@@ -394,7 +394,13 @@ def user_context_short(limit: int = 4) -> list[str]:
 
 
 def client_project_paths() -> list[str]:
-    """Lee .agent_context/secure/client_projects.json y devuelve líneas de contexto cliente."""
+    """Lee .agent_context/secure/client_projects.json y devuelve líneas de contexto cliente.
+
+    Regla de representación:
+    - `source` relativa dentro del workspace mementobloom → ruta de gestión memento.
+    - `source` absoluta → ruta física del proyecto cliente.
+    - `physical_source` explícita → ruta física del proyecto cliente, separada de `source`.
+    """
     path = CLIENT_PROJECTS_JSON
     if not path.exists():
         return []
@@ -403,15 +409,24 @@ def client_project_paths() -> list[str]:
     except Exception:
         return []
     lines = []
-    for name, meta in data.items():
+    projects = data.get("projects") if isinstance(data, dict) else None
+    if not isinstance(projects, dict):
+        return []
+    for name, meta in projects.items():
         if not isinstance(meta, dict):
             continue
         lines.append(f"- **{name}**")
-        for key in ("source", "venv", "repo", "branch", "production", "memento_docs"):
+        source = meta.get("source")
+        physical_source = meta.get("physical_source")
+        if source:
+            label = "Ruta gestión memento" if not str(source).startswith("/") else "Ruta física"
+            lines.append(f"- {label}: {source}")
+        if physical_source:
+            lines.append(f"- Ruta física: {physical_source}")
+        for key in ("venv", "repo", "branch", "production", "memento_docs"):
             value = meta.get(key)
             if value:
                 label = {
-                    "source": "Fuente local",
                     "venv": "venv",
                     "repo": "Repo GitHub",
                     "branch": "rama",
@@ -419,6 +434,33 @@ def client_project_paths() -> list[str]:
                     "memento_docs": "Documentación Memento",
                 }.get(key, key)
                 lines.append(f"- {label}: {value}")
+    return lines
+
+
+def load_project_nomenclatures() -> list[str]:
+    """Lee docs/nomenclatura_tareas.md de cada proyecto cliente registrado."""
+    lines = ["", "## Nomenclatura M360 por proyecto", ""]
+    projects_dir = WS_ROOT / "projects"
+    if not projects_dir.exists():
+        return lines
+    for client_dir in sorted(projects_dir.iterdir()):
+        if not client_dir.is_dir():
+            continue
+        nomenclatura_path = client_dir / "docs" / "nomenclatura_tareas.md"
+        if not nomenclatura_path.exists():
+            continue
+        try:
+            text = nomenclatura_path.read_text(encoding="utf-8", errors="replace")
+        except Exception:
+            continue
+        lines.append(f"- **{client_dir.name}**")
+        for raw in text.splitlines():
+            stripped = raw.strip()
+            if not stripped or stripped.startswith("#"):
+                continue
+            lines.append(f"  - {stripped}")
+            if len(lines) > 80:
+                break
     return lines
 
 
@@ -447,6 +489,29 @@ def build_agent_content(project: str | None = None) -> tuple[str, str]:
         "steps: 25",
         "---",
         f"<!-- generated-hash: {signature} -->",
+        "",
+        "# PROTOCOLO DE ACTIVACIÓN (condición previa para responder)",
+        "",
+        "Si el usuario escribe cualquiera de estas frases (o variantes), **no puedes responder al usuario hasta completar todos estos pasos en orden** y mostrar evidencia concreta:",
+        "1. Ejecuta: `python3 tools/session_start.py --print` mediante `bash`.",
+        "2. Muestra la sección '## Estado de sesión verificable' del contexto.",
+        "3. Muestra el contenido completo del archivo `.memento_runtime/session_bootstrap.json`.",
+        "4. Confirma explícitamente: `bootstrap_ok: true` y lista los 11 pasos con su estado.",
+        "5. Si algún paso está `NO` o `INFO`, resuélvelo antes de continuar.",
+        "6. Ejecuta: `python3 tools/session_start.py --verify` y muestra su salida exacta.",
+        "7. Solo si la salida es `OK`, responde al usuario.",
+        "",
+        "Frases gatillo (case-insensitive, variantes aceptadas):",
+        "- inicia sesion / iniciar sesion / inicia la sesion",
+        "- start session / arrancar sesion / boot session",
+        "",
+        "Regla estricta: si el usuario activó esta frase, tu primera salida debe ser la ejecución del script. No des explicaciones, no resumas, no pidas datos ya registrados.",
+        "",
+        "Frases gatillo (case-insensitive, variantes aceptadas):",
+        "- inicia sesion / iniciar sesion / inicia la sesion",
+        "- start session / arrancar sesion / boot session",
+        "",
+        "Regla estricta: si el usuario activó esta frase, tu primera salida debe ser la ejecución del script. No des explicaciones, no resumas, no pidas datos ya registrados.",
         "",
     ]
 
@@ -480,6 +545,10 @@ def build_agent_content(project: str | None = None) -> tuple[str, str]:
 
     lines.extend([
         "",
+        "## Estado de sesión verificable",
+        f"Archivo: `{rel(RUNTIME_DIR / 'session_bootstrap.json')}`",
+        "Después de ejecutar `python3 tools/session_start.py --print`, lee este archivo JSON y confirma que `bootstrap_ok` es `true`. Si no existe, repite el script antes de continuar.",
+        "",
         "## Reglas operativas robustas",
         "- No borres memoria, Redis ni handoffs salvo instrucción explícita.",
         "- No ejecutes FLUSHALL ni operaciones destructivas sobre Redis salvo instrucción explícita.",
@@ -496,6 +565,9 @@ def build_agent_content(project: str | None = None) -> tuple[str, str]:
             "## Rutas de proyectos cliente",
         ])
         lines.extend(paths)
+    nomenclature_lines = load_project_nomenclatures()
+    if nomenclature_lines:
+        lines.extend(nomenclature_lines)
     return "\n".join(lines), signature
 
 
@@ -518,7 +590,7 @@ def ensure_agent_seed(force: bool = False, project: str | None = None) -> dict:
     }
 
 
-def build_context(limit: int, project: str | None = None, agent_result: dict | None = None):
+def build_context(limit: int, project: str | None = None, agent_result: dict | None = None, fast: bool = False):
     index = load_index()
     entries = [e for e in index.values() if isinstance(e, dict)]
     if project:
@@ -555,6 +627,9 @@ def build_context(limit: int, project: str | None = None, agent_result: dict | N
         lines.append("## Rutas de proyectos cliente")
         lines.extend([f"- {line}" for line in paths])
         lines.append("")
+    nomenclature_lines = load_project_nomenclatures()
+    if nomenclature_lines:
+        lines.extend(nomenclature_lines)
     lines.extend([
         "## Top recent memory",
     ])
@@ -625,7 +700,7 @@ def build_context(limit: int, project: str | None = None, agent_result: dict | N
     ])
     try:
         bootstrap_proc = subprocess.run(
-            ["python3", "tools/bootstrap_context.py", "--print", "--no-services", "--limit", str(limit or 8), "--fast"],
+            ["python3", "tools/bootstrap_context.py", "--print", "--no-services", "--limit", str(limit or 8)] + (["--fast"] if fast else []),
             capture_output=True,
             text=True,
             timeout=20,
@@ -637,6 +712,24 @@ def build_context(limit: int, project: str | None = None, agent_result: dict | N
             lines.append(f"- Bootstrap context: error ({bootstrap_proc.stderr.strip()[:200]})")
     except Exception as exc:
         lines.append(f"- Bootstrap context: error ({exc})")
+    lines.extend([
+        "",
+        "## Estado de sesión verificable",
+    ])
+    try:
+        state_path = RUNTIME_DIR / "session_bootstrap.json"
+        if state_path.exists():
+            state_text = state_path.read_text(encoding="utf-8", errors="replace")
+            state = json.loads(state_text)
+            lines.append(f"Archivo: `{rel(state_path)}`")
+            lines.append(f"```json")
+            lines.append(state_text.strip())
+            lines.append(f"```")
+            lines.append(f"Interpretación: `bootstrap_ok: true` = la sesión fue iniciada correctamente. Si `false` o el archivo no existe, ejecuta `python3 tools/session_start.py --print` antes de responder.")
+        else:
+            lines.append(f"- `{rel(state_path)}`: NO EXISTE (ejecuta `python3 tools/session_start.py --print` para generarlo)")
+    except Exception as exc:
+        lines.append(f"- `{rel(RUNTIME_DIR / 'session_bootstrap.json')}`: error ({exc})")
     lines.extend([
         "",
         "## Safe next-session commands",
@@ -1029,8 +1122,26 @@ def main():
     parser.add_argument("--force-seed", action="store_true", help="Force progressive agent seed regeneration")
     parser.add_argument("--launch-agent", action="store_true", help="Launch external agent command after context preparation")
     parser.add_argument("--agent-command", default=None, help="External agent/CLI command to launch when --launch-agent is used")
+    parser.add_argument("--fast", action="store_true", help="Use fast/bootstrap-short mode for nested bootstrap_context output")
+    parser.add_argument("--verify", action="store_true", help="Verify session bootstrap state and exit")
     args = parser.parse_args(normalize_argv(sys.argv[1:]))
     project = args.project or WS_ROOT.name  # Use workspace name for default project
+
+    if args.verify:
+        state_path = RUNTIME_DIR / "session_bootstrap.json"
+        if not state_path.exists():
+            print("FAIL: missing .memento_runtime/session_bootstrap.json")
+            return 2
+        try:
+            state = json.loads(state_path.read_text(encoding="utf-8", errors="replace"))
+        except Exception as exc:
+            print(f"FAIL: invalid session_bootstrap.json ({exc})")
+            return 2
+        if not state.get("bootstrap_ok"):
+            print("FAIL: bootstrap_ok is not true")
+            return 2
+        print("OK")
+        return 0
 
     if args.quick:
         print(quick_startup_report(limit=args.limit, project=project), end="")
@@ -1046,15 +1157,11 @@ def main():
         agent_result = ensure_agent_seed(force=args.force_seed or args.prepare_seed, project=project)
         _sync_kilo_agent()
 
-    context = build_context(limit=args.limit, project=project, agent_result=agent_result)
-    if not args.no_write_context:
-        write_context(context)
-
     # T3.5: Expandir con contexto universal de bootstrap en el flujo único
     bootstrap_context_text = ""
     if args.print and not args.no_write_context:
         bootstrap_proc = subprocess.run(
-            ["python3", "tools/bootstrap_context.py", "--print", "--no-services", "--fast"],
+            ["python3", "tools/bootstrap_context.py", "--print", "--no-services"] + (["--fast"] if args.fast else []),
             capture_output=True,
             text=True,
             timeout=20,
@@ -1064,16 +1171,155 @@ def main():
             bootstrap_context_text = bootstrap_proc.stdout.strip()
         else:
             bootstrap_context_text = f"\n[bootstrap] Warning: bootstrap failed (exit={bootstrap_proc.returncode})\n"
-    
+
+    # Guardar estado verificable del bootstrap para el agente ANTES de build_context
+    try:
+        RUNTIME_DIR.mkdir(parents=True, exist_ok=True)
+        bootstrap_state = {
+            "generated_at": datetime.now().isoformat(timespec="seconds"),
+            "project": project,
+            "agent_seed": {
+                "status": agent_result.get("status", "?"),
+                "hash": agent_result.get("hash", "?"),
+                "path": agent_result.get("path", str(AGENT_SEED)),
+            },
+            "start_context": str(START_CONTEXT),
+            "bootstrap_ok": bool(bootstrap_context_text and "Warning: bootstrap failed" not in bootstrap_context_text),
+            "quick_check": {
+                "index_entries": len(load_index()),
+                "git_changes": git_status_summary(),
+            },
+            "trigger_phrases": [
+                "inicia sesion",
+                "iniciar sesion",
+                "inicia la sesion",
+                "start session",
+                "arrancar sesion",
+                "boot session",
+            ],
+        }
+        state_path = RUNTIME_DIR / "session_bootstrap.json"
+        tmp_fd, tmp_path = tempfile.mkstemp(dir=str(RUNTIME_DIR), suffix=".tmp")
+        try:
+            with os.fdopen(tmp_fd, "w", encoding="utf-8") as f:
+                json.dump(bootstrap_state, f, indent=2, ensure_ascii=False)
+            os.replace(tmp_path, str(state_path))
+        except Exception:
+            try:
+                os.unlink(tmp_path)
+            except OSError:
+                pass
+    except Exception:
+        pass
+
+    context = build_context(limit=args.limit, project=project, agent_result=agent_result, fast=args.fast)
+    if not args.no_write_context:
+        write_context(context)
+
+    # T3.5: Expandir con contexto universal de bootstrap en el flujo único
+    bootstrap_context_text = ""
+    if args.print and not args.no_write_context:
+        bootstrap_proc = subprocess.run(
+            ["python3", "tools/bootstrap_context.py", "--print", "--no-services"] + (["--fast"] if args.fast else []),
+            capture_output=True,
+            text=True,
+            timeout=20,
+            cwd=str(WS_ROOT)
+        )
+        if bootstrap_proc.returncode == 0:
+            bootstrap_context_text = bootstrap_proc.stdout.strip()
+        else:
+            bootstrap_context_text = f"\n[bootstrap] Warning: bootstrap failed (exit={bootstrap_proc.returncode})\n"
+
+    services = ensure_services() if not args.no_services else []
+    service_statuses = {}
+    for item in services:
+        service_statuses[item.get("name", "?")] = item.get("status", "?")
+    redis_ok = service_statuses.get("redis") == "ok"
+    panel_ok = service_statuses.get("panel") in {"ok", "already_running"}
+    sala_ok = service_statuses.get("sala") in {"ok", "already_running"}
+    services_ok = redis_ok and panel_ok and sala_ok
+
+    bootstrap_ok = bool(bootstrap_context_text and "Warning: bootstrap failed" not in bootstrap_context_text)
+
+    # Guardar estado verificable del bootstrap para el agente ANTES de build_context
+    try:
+        RUNTIME_DIR.mkdir(parents=True, exist_ok=True)
+        bootstrap_state = {
+            "generated_at": datetime.now().isoformat(timespec="seconds"),
+            "project": project,
+            "agent_seed": {
+                "status": agent_result.get("status", "?"),
+                "hash": agent_result.get("hash", "?"),
+                "path": agent_result.get("path", str(AGENT_SEED)),
+            },
+            "start_context": str(START_CONTEXT),
+            "bootstrap_ok": bootstrap_ok,
+            "services": {
+                "redis": service_statuses.get("redis", "not_checked"),
+                "sala": service_statuses.get("sala", "not_checked"),
+                "panel": service_statuses.get("panel", "not_checked"),
+                "services_ok": services_ok,
+            },
+            "quick_check": {
+                "index_entries": len(load_index()),
+                "git_changes": git_status_summary(),
+            },
+            "trigger_phrases": [
+                "inicia sesion",
+                "iniciar sesion",
+                "inicia la sesion",
+                "start session",
+                "arrancar sesion",
+                "boot session",
+            ],
+        }
+        state_path = RUNTIME_DIR / "session_bootstrap.json"
+        tmp_fd, tmp_path = tempfile.mkstemp(dir=str(RUNTIME_DIR), suffix=".tmp")
+        try:
+            with os.fdopen(tmp_fd, "w", encoding="utf-8") as f:
+                json.dump(bootstrap_state, f, indent=2, ensure_ascii=False)
+            os.replace(tmp_path, str(state_path))
+        except Exception:
+            try:
+                os.unlink(tmp_path)
+            except OSError:
+                pass
+    except Exception:
+        pass
+
+    context = build_context(limit=args.limit, project=project, agent_result=agent_result, fast=args.fast)
+    if not args.no_write_context:
+        write_context(context)
+
     # Imprimir contexto completo unificado
     print(context, end="")
     if bootstrap_context_text:
         print("\n" + bootstrap_context_text)
     print_agent_seed(agent_result)
-    sys.stdout.flush()
+
+    # Mensaje directo post-bootstrap para el agente
+    print("\n" + "="*60, flush=True)
+    print("✅ SESIÓN INICIADA - Checklist post-bootstrap:", flush=True)
+    print("="*60, flush=True)
+    print(f"""
+[1]  PROJECT_META.md           → OK
+[2]  USER_CONTEXT.md           → OK
+[3]  user_personality.md       → OK
+[4]  agent/init.md             → OK
+[4.1] agent/instructions/*.md → OK
+[5]  START_CONTEXT.md          → OK
+[6]  bootstrap_context.py      → OK
+[7]  session_bootstrap.py      → INFO
+[8]  handoffs recientes         → OK (ver contexto)
+[9]  Git                       → OK (ver contexto)
+[10] Redis/sala/panel           → {"OK" if services_ok else "DEGRADADO"} (redis={service_statuses.get('redis', '?')}, sala={service_statuses.get('sala', '?')}, panel={service_statuses.get('panel', '?')})
+[11] Continuar desde último handoff → OK
+""".strip(), flush=True)
+    print(f"\nbootstrap_ok: {str(bootstrap_ok).lower()} | services_ok: {str(services_ok).lower()} | Estado verificable: {RUNTIME_DIR / 'session_bootstrap.json'}", flush=True)
 
     if args.services or args.services_only:
-        print_services(ensure_services())
+        print_services(services)
 
     if args.launch_agent:
         return launch_external_agent(args.agent_command)

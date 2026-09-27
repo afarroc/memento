@@ -6,26 +6,34 @@ python3 tools/quick_scan.py
 ```
 
 ### Estado actual
-- **Proyecto activo:** TaxiLima2026
-- **TaxiLima2026:** arquitectura híbrida del motor reestructurada en `sim/flame_like/`, `sim/rules/`, `sim/domain/`. Mesa-Frames/Polars operativos en venv. `MesaFramesEngine` real implementado. `Coordinator` integrado en `sim/api.py`. Persistencia JSON implementada en `sim/api.py.load()`. Vista mantenida activamente: web Django en `web/`. Vistas no mantenidas: `dashboard/app.py` (Streamlit), `sim_gui/main.py` (Tkinter), `frontend/` (SvelteKit). CRM Mango360: `75` tareas totales (`20` completed). Docs sincronizados.
-- **Management360:** API v1 M360 con filtros corregidos
-- **Memoria indexada:** 495 entries
-- **CRM limpieza:** eliminadas tareas de prueba `mementobloom auth test` de Carpinteria ID 25 y perfil_personal ID 24.
-- **Tickets:** TICK-0028 abierto para backend Mesa-Frames real y coordinador integrado.
+- **Proyecto activo:** mementobloom
+- **mementobloom:** sesión de corrección de nomenclatura completada. Documentación actualizada. Servicios STARTED: panel (8766), sala (8767), redis OK.
+- **Memoria indexada:** 522 entries
+- **Tickets:** TICK-0054 abierto para `poco_xiaomi` (POCO-CAM-001). Corrección global de nomenclatura aplicada a tickets y tareas Mango360.
+- **Clientes registrados:** 14 proyectos cliente con nomenclatura documentada.
 
-### Próximos pasos prioritarios - TaxiLima2026
-1. **Completado:** Migración a Mesa-Frames con Polars — instalado y backend `MesaFramesEngine` funcional
-2. **Completado:** Integración de `Coordinator` en `sim/api.py` — desacopla UI del backend
-3. **Completado:** Persistencia de partidas — `sim/api.py.load()` implementado con formato JSON
-4. **Completado:** Vista web Django mantenida activamente; `dashboard/app.py`, `sim_gui/main.py` y `frontend/` marcados como no mantenidos
-5. Pendiente: completar consumo de `/api/simulation/decisions/` en templates Django si se requiere mostrar decisiones del `Coordinator`
-6. Pendiente: corregir bug pre-existente de `MetricsCalculator`/`WorldState` si se requieren métricas completas en `MesaFramesEngine`
-7. Pendientes no técnicas:
-   - Validar cotización renting `TAXI-FIN-006` con Tair Renting / LeasyAuto cuando corresponda.
-   - Preparar despliegue o compartición del sitio Django cuando corresponda.
-8. Trabajo en progreso en mementobloom:
-   - Sistema de tickets local (`core/tickets.py`, `tools/ticket.py`) en desarrollo.
-   - `m360_task_results.json` contiene resultados de creación de tickets M360 (pendiente de limpiar/archivar).
+### Clientes y nomenclatura
+
+| Cliente | M360 ID | Nomenclatura | Estado |
+|---------|---------|--------------|--------|
+| perfil_personal | 24 | `PERFIL-*` | Activo |
+| TaxiLima2026 | 23 | `TAXI-*` | Activo |
+| Carpinteria | 25 | `CARP-*` | Activo |
+| poco_xiaomi | 26 | `POCO-*` | Activo |
+| Management360 | 22 | `M360-*`, `DIGIT-*`, `CV-REVIEW-*`, `TASK-BITACORA-*` | Activo |
+
+### Próximos pasos prioritarios
+1. Resolver tareas Mango360 restantes sin prefijo documentado:
+   - Management360 tasks 188-194, 204
+   - perfil_personal tasks 298-300, 309
+2. Resolver duplicado `TAXI-SIM-008` en Mango360 (tasks 314 y 316)
+3. Crear tareas Mango360 faltantes para `poco_xiaomi`: POCO-SERV-001, POCO-SERV-002, POCO-DATA-001
+4. Sincronizar tickets corregidos con panel/bridge cuando esté activo
+
+### Trabajo en progreso en mementobloom
+- Sistema de tickets local (`core/tickets.py`, `tools/ticket.py`) operativo
+- Nomenclatura de tareas documentada por proyecto en `projects/<cliente>/docs/nomenclatura_tareas.md`
+- `m360_task_results.json` contiene resultados de creación de tickets M360 (pendiente de limpiar/archivar)
 
 ### Notas
 - `SESSION.md` es la fuente de verdad canónica (JSON).

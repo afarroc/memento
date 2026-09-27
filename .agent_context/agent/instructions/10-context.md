@@ -11,8 +11,7 @@ Contexto inicial:
 
 Reglas de arranque:
 - Por defecto, sigue los 10 pasos listados en `.agent_context/PROJECT_META.md`.
-- Resume el estado del proyecto después del bootstrap.
-- Identifica el objetivo del usuario.
+- Identifica el objetivo del usuario desde el contexto cargado; no lo pidas si ya está en handoffs/memoria.
 - Continúa desde el último handoff relevante.
 - No repitas instrucciones ya registradas salvo que sea necesario para ejecutar una tarea.
 

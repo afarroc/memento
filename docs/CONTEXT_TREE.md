@@ -14,9 +14,17 @@ Cada entrada pertenece a un dominio. Dominios actuales:
 | `jewelry_catalog` | Cliente jewelry_catalog |
 | `Ventas_Porta` | Cliente Ventas_Porta |
 | `Carpinteria` | Cliente Carpinteria (carpintería/bricolaje digital) |
+| `TaxiLima2026` | Cliente TaxiLima2026 (movilidad/negocio) |
+| `perfil_personal` | Cliente perfil_personal (cuadro de mando Arturo) |
+| `poco_xiaomi` | Cliente poco_xiaomi (servidor Termux POCO X3 NFC) |
+| `miui_termux` | Cliente miui_termux (dispositivo MIUI con Termux) |
+| `LaMarca` | Cliente LaMarca |
+| `novela_bl` | Cliente novela_bl |
+| `adherence_test` | Proyecto de prueba |
+| `banca_telefonica` | Cliente banca_telefonica |
+| `civilizaciones` | Cliente civilizaciones |
 | `docs` | Documentación permanente del proyecto mementobloom |
 | `analyst` | Análisis / investigación |
-| `adherence_test` | Proyecto de prueba |
 | `tickets` | Tickets de servicio de mementobloom |
 
 ## 2. Temas (Tema = campo `type` + `tags`)
@@ -44,9 +52,20 @@ Toda nueva memoria se indexa con `python3 tools/quick_scan.py <HANDOFF>` y queda
 
 ## 7. Documentación por proyecto
 - `docs/` → documentación permanente de **mementobloom**.
-- `projects/Management360/docs/` → documentación del cliente Management360.
-- `projects/TaxiLima2026/docs/` → documentación del cliente TaxiLima2026.
+- `projects/Management360/docs/` → documentación del cliente Management360. Nomenclatura: `M360-*`, `DIGIT-*`, `CV-REVIEW-*`, `TASK-BITACORA-*`.
+- `projects/TaxiLima2026/docs/` → documentación del cliente TaxiLima2026. Nomenclatura: `TAXI-*`.
+- `projects/Carpinteria/docs/` → documentación del cliente Carpinteria. Nomenclatura: `CARP-*`.
+- `projects/perfil_personal/docs/` → documentación del cliente perfil_personal. Nomenclatura: `PERFIL-*`.
+- `projects/poco_xiaomi/docs/` → documentación del cliente poco_xiaomi. Nomenclatura: `POCO-*`.
+- `projects/miui_termux/docs/` → documentación del cliente miui_termux.
+- `projects/Ventas_Porta/docs/` → documentación del cliente Ventas_Porta.
 - `projects/Administracion_UPN/docs/` → documentación del cliente Administracion_UPN.
+- `projects/jewelry_catalog/docs/` → documentación del cliente jewelry_catalog.
+- `projects/LaMarca/docs/` → documentación del cliente LaMarca.
+- `projects/novela_bl/docs/` → documentación del cliente novela_bl.
+- `projects/adherence_test/docs/` → documentación del cliente adherence_test.
+- `projects/banca_telefonica/docs/` → documentación del cliente banca_telefonica.
+- `projects/civilizaciones/docs/` → documentación del cliente civilizaciones.
 - En general: `projects/<cliente>/docs/` es la ruta de documentación específica de cada proyecto cliente.
 
 ## 8. Actualización de estructura de clientes
@@ -56,14 +75,18 @@ Toda nueva memoria se indexa con `python3 tools/quick_scan.py <HANDOFF>` y queda
 - La memoria indexada y los handoffs no se tocan durante la migración.
 - El dominio de memoria por cliente se define en `PROJECT_CONTEXT.md` y se respeta en el Context Tree.
 
-## 8. Regla de `description` / detalle en M360
+## 9. Regla de `description` / detalle en M360
 - En Management360, `description` es el campo de detalle de proyectos, tareas, eventos, inbox, cursos, módulos, lecciones, evaluaciones y bibliografía.
 - Todo item creado o modificado por `tools/m360_bridge/client.py` debe incluir `description` con contenido real.
 - Si falta detalle completo, usar al menos: fuente + criterio + nota de completado posterior.
 - Correcciones históricas: actualizar `description` antes de cambiar estados o cerrar items.
 - Referencia: `projects/Management360/docs/guides/bridge-usage.md` sección 5.
 
-## 9. Sistema de tickets de servicio
+## 10. Nomenclatura por proyecto
+- Cada proyecto cliente documenta su nomenclatura de tareas Mango360 en `projects/<cliente>/docs/nomenclatura_tareas.md`.
+- La nomenclatura se aplica al crear/actualizar tareas en Mango360 vía `tools/m360_bridge/client.py`.
+- Proyectos con nomenclatura documentada: Management360, TaxiLima2026, Carpinteria, perfil_personal, poco_xiaomi.
+- Referencia: `docs/guides/register-client.md` sección 5.
 - Dominio de memoria: `tickets`.
 - Storage primario: `.memento_runtime/tickets.json`.
 - Storage opcional: Redis key `memento_tickets`.
@@ -72,4 +95,4 @@ Toda nueva memoria se indexa con `python3 tools/quick_scan.py <HANDOFF>` y queda
 - CLI: `tools/ticket.py` con comandos `create`, `update`, `show`, `delete`, `list`, `stats`, `resolve`, `close`, `link-m360`.
 - Bridge M360: `tools/m360_bridge/client.py` incluye helpers `m360_link_ticket(...)`, `m360_create_ticket_from_task(...)`, `m360_sync_tickets_for_project(...)`.
 - Regla: todo ticket debe poder vincularse a objetos M360: `project_id`, `task_id`, `event_id`, `reminder_id`, `inbox_item_id`.
-- Handoff referencia: `projects/mementobloom/HANDOFF_2026-08-16_tickets_servicio.md`.
+- Handoff referencia: `projects/mementobloom/HANDOFF_2026-08-31_actualizacion_contexto_documentacion.md`.

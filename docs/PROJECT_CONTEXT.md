@@ -37,6 +37,7 @@
 python3 tools/m360_auth_test.py
 python3 tools/project_status.py
 ```
+
 | Panel | `panel_server.py` | Dashboard HTTP (8766) |
 | Sala | `sala.py` | Sala de mensajes HTTP+Redis (8767) |
 | Vault | `vault_*.py` | Gestión de credenciales |
@@ -151,9 +152,32 @@ mementobloom/
 │   │   ├── .agent_context
 │   │   ├── .memento_runtime
 │   │   └── HANDOFF_*.md
-│   └── mementobloom
-│       ├── HANDOFF_*.md
-│       └── ...
+│   ├── mementobloom
+│   │   └── HANDOFF_*.md
+│   ├── Management360
+│   │   ├── docs
+│   │   │   └── guides
+│   │   │       └── nomenclatura.md
+│   ├── TaxiLima2026
+│   │   ├── docs
+│   │   └── handoffs
+│   │       └── HANDOFF_2026-08-16_nomenclatura_tareas.md
+│   ├── Carpinteria
+│   │   ├── docs
+│   │   │   ├── nomenclatura_tareas.md
+│   │   │   └── tareas_proyecto.md
+│   │   └── handoffs
+│   │       └── HANDOFF_2026-08-25_ajuste_nomenclatura_tareas_m360.md
+│   ├── perfil_personal
+│   │   ├── docs
+│   │   │   └── nomenclatura_tareas.md
+│   │   └── handoffs
+│   ├── poco_xiaomi
+│   │   ├── docs
+│   │   │   ├── nomenclatura_tareas.md
+│   │   │   └── tareas_proyecto.md
+│   │   └── handoffs
+│   └── ...
 ├── tools
 │   ├── m360_bridge/
 │   ├── projects/
@@ -191,11 +215,18 @@ mementobloom/
 | `PROJECT_CONTEXT.md` | Este documento: índice maestro de contexto |
 | `tickets.md` | Sistema de tickets de servicio |
 | `guides/register-client.md` | Procedimiento de registro/migración de clientes |
+| `informe_perfil_schedule_m360.md` | Informe de integración del tab Horario de perfil_personal con M360 |
+| `nomenclatura_m360.md` | Nomenclatura oficial de tareas M360 por proyecto |
 
 ### Documentación de proyectos cliente
 
-- `projects/Management360/docs/` — análisis, control de gestión, contexto de events, tareas pendientes/finales y mapa de reemplazo ITCSS de events.
-- `projects/TaxiLima2026/docs/` — migración a M360 y optimización de arquitectura de simulación.
+- `projects/Management360/docs/` — análisis, control de gestión, contexto de events, tareas pendientes/finales y mapa de reemplazo ITCSS de events. Nomenclatura: `M360-*`, `DIGIT-*`, `CV-REVIEW-*`, `TASK-BITACORA-*`.
+- `projects/TaxiLima2026/docs/` — migración a M360 y optimización de arquitectura de simulación. Nomenclatura: `TAXI-*`.
+- `projects/Carpinteria/docs/` — ecosistema software abierto para carpintería/bricolaje. Nomenclatura: `CARP-*`.
+- `projects/perfil_personal/docs/` — dashboard personal Arturo. Nomenclatura: `PERFIL-*`.
+- `projects/poco_xiaomi/docs/` — servidor Termux POCO X3 NFC. Nomenclatura: `POCO-*`.
+  - Código fuente real: `/Volumes/Macintosh HD - Datos/projects/poco_xiaomi/`
+  - Documentación de gestión memento: `mementobloom/projects/poco_xiaomi/`
 - `projects/Administracion_UPN/docs/` — arquitectura de digitalización/linea de producción de microformatos, sílabos y material de ciclo.
 
 ---
@@ -216,29 +247,94 @@ Handoffs relevantes por tema:
 | Cierre sesión | `HANDOFF_2026-06-26_cierre_sesion.md` |
 | Auth M360 v1 | `projects/Management360/handoffs/HANDOFF_2026-06-27_174500_mb_auth_strategy.md` |
 | Cierre sesión 2026-06-27 | `projects/mementobloom/HANDOFF_2026-06-27_183500_cierre_sesion.md` |
+| Corrección nomenclatura tickets | `HANDOFF_2026-08-31_correccion_nomenclatura_tickets.md` |
+| Corrección nomenclatura tareas M360 | `HANDOFF_2026-08-31_correccion_nomenclatura_tareas_m360.md` |
+| Ticket cámara POCO | `HANDOFF_2026-08-31_ticket_camara_poco_reconocimiento.md` |
+| Fix timeouts Daphne API v1 tasks | `HANDOFF_2026-09-08_m360_daphne_timeout_fix.md` |
 
-_El índice completo está en `memory/graph/memory_index.json` (162 entradas)._
+_El índice completo está en `memory/graph/memory_index.json` (528 entradas)._
 
 ---
 
 ## Estado sincronizado en Management360
 
-- **Proyecto M360:** ID `78` — `MementoBloom - S-27-06`
-- **Tareas Sprint 0:** IDs `278`–`280` → `Completed` + `done=True`
-- **Tareas Sprint 2:** IDs `285`–`288` → `To Do` (T2.1–T2.4)
+- **Repositorio:** `/Volumes/Macintosh HD - Datos/projects/Management360`
+- **Rama:** `main`
+- **Último commit:** `7e40e075` (`m360(digitalizacion): add module README`)
+- **Commits recientes (2026-09-25):**
+  - `61d82616` `m360(digitalizacion): fix checksum pipeline and preprocessor validation`
+  - `5159eab5` `m360(digitalizacion): renew quality and certification templates`
+  - `c6e4cec5` `m360(digitalizacion): renew preparation, reception and navigation layouts`
+  - `3dc922e3` `m360(digitalizacion): implement OCR/PDF/A, LLM assistant and websocket support`
+  - `38e78139` `m360(cv): refactor curriculum templates, models and styles`
+  - `d5fc9886` `m360(api): extend v1 API and task views`
+  - `61ee906a` `m360(panel): update asgi settings and routing`
+  - `111db3e8` `m360(global): unify styles and base layout`
+  - `b97dab01` `m360(vision): add object detection module and utilities`
+  - `5c4c61ed` `m360(infra): update dependencies, tooling and project docs`
+  - `d643d7a5` `m360(accounts): unify login template and styles`
+  - `f92c62e7` `m360(bitacora): remove crispy forms dependency from templates`
+  - `7e40e075` `m360(digitalizacion): add module README`
+- **Working tree:** limpio
+- **Proyecto M360:** ID `22` — `Management360`
+- **Proyectos registrados:**
+  - `perfil_personal` ID `24` — `55` tareas, `6` completadas
+  - `TaxiLima2026` ID `23` — `75` tareas, `20` completadas
+  - `Carpinteria` ID `25` — `15` tareas
+  - `poco_xiaomi` ID `26` — `11` tareas
+  - `Management360` ID `22` — `86` tareas, `2` completadas
+  - `Memento` ID `21` — `31` tareas
 - **Auth:** Bearer `M360_API_KEY` activo para escritura en `/api/v1/`
 - **Cliente:** `tools/m360_bridge/client.py` actualizado para usar `task_status_id` en updates
+- **Bitácora API v1:** expuesta en `/api/v1/bitacora/` y `/api/v1/bitacora/attachments/`
+  - `BitacoraEntrySerializer` + `BitacoraEntryViewSet` en `api/v1/serializers.py` y `api/v1/views.py`
+  - Filtros: `categoria`, `mood`, `project_id`, `task_id`, `event_id`, `is_public`
+  - `BitacoraAttachmentViewSet` en `/api/v1/bitacora/attachments/`
+- **Optimizaciones aplicadas (2026-09-08):**
+  - `TaskViewSet.queryset` incluye `prefetch_related("dependencies", "reminder_set")`
+  - Vistas de tareas reemplazan N+1 en `taskstate_set` por `Prefetch` precomputado
+  - `TaskSerializer` calcula `dependencies`, `events_linked` y `reminders_linked` solo con `?include=...`
+  - Tiempos de respuesta medidos entre `~5.2s` y `~6.4s` para `limit=20` en listados por proyecto
+- **Digitalización:**
+  - Pipeline: Recepcion → Preparacion → Digitalizacion → CC1 → Preprocesamiento → Metadatos/OCR → QC2 → Auditoria → Certificacion
+  - Checksum pipeline fix: `SHA-256`/`MD5` calculados en preprocesamiento/metadatos antes de QC2
+  - Preprocesamiento DPI default: `300`, detección de `original_dpi`, advertencia si `< 300`
+  - QC2 manual approve respetado; vista no fuerza rechazo automático
+  - Auditoría renovada: layout `audit-layout`, preview OCR, timeline pipeline
+  - LLM assistant: `llm_service.py` contra POCO, template `asistente_documento.html`
+  - WebSockets: `consumers.py`, `routing.py`
+  - Documentación: `digitalizacion/docs/**`, `digitalizacion/tests/**`
+  - Vision: módulo `vision/**`, utilities `src/vision_api_service.py`
+- **Handoffs M360 recientes:**
+  - `HANDOFF_2026-09-25_qc2_checksum_pipeline_fix.md`
+  - `HANDOFF_2026-09-25_auditoria_vista_renovada.md`
+  - `HANDOFF_2026-09-25_auditoria_template_recreado.md`
+  - `HANDOFF_2026-09-25_preprocesamiento_dpi_default_advertencia.md`
+  - `HANDOFF_2026-09-25_preprocessor_binarization_fix.md`
+  - `HANDOFF_2026-09-25_qc2_aprobacion_manual_advertencias.md`
+  - `HANDOFF_2026-09-25_anotador_optimizacion_init.md`
+  - `HANDOFF_2026-09-25_preprocesamiento_comparison_metadata_zoom.md`
 
 ---
 
-## Cliente Ventas_Porta (`projects/Ventas_Porta/`)
+## Clientes registrados
 
-| Componente | Estado |
-|------------|--------|
-| `.agent_context/` | Instalado |
-| `memory/graph/memory_index.json` | Inicializado (vacío) |
-| `selftest` | OK |
-| `doctor --startup` | OK |
+| Cliente | M360 ID | Nomenclatura tareas | Estado |
+|---------|---------|---------------------|--------|
+| perfil_personal | 24 | `PERFIL-*` | Activo |
+| TaxiLima2026 | 23 | `TAXI-*` | Activo |
+| Carpinteria | 25 | `CARP-*` | Activo |
+| poco_xiaomi | 26 | `POCO-*` | Activo |
+| Management360 | 22 | `M360-*`, `DIGIT-*`, `CV-REVIEW-*`, `TASK-BITACORA-*` | Activo |
+| Ventas_Porta | — | — | Registrado |
+| Administracion_UPN | — | — | Registrado |
+| jewelry_catalog | — | — | Registrado |
+| LaMarca | — | — | Registrado |
+| miui_termux | — | — | Registrado |
+| novela_bl | — | — | Registrado |
+| adherence_test | — | — | Registrado |
+| banca_telefonica | — | — | Registrado |
+| civilizaciones | — | — | Registrado |
 
 ---
 
@@ -246,6 +342,19 @@ _El índice completo está en `memory/graph/memory_index.json` (162 entradas)._
 
 | Servicio | Estado |
 |----------|--------|
-| Redis | NO (sin servidor local) |
-| Sala | OK en http://127.0.0.1:8767 |
-| Panel | OK en http://127.0.0.1:8766 |
+| Redis | OK (cloud: redis-11059.c81.us-east-1-2.ec2.cloud.redislabs.com:11059) |
+| Sala | STARTED (http://127.0.0.1:8767) |
+| Panel | STARTED (http://127.0.0.1:8766) |
+| M360 backend | OK (http://127.0.0.1:8000) |
+| perfil_personal frontend | OK (http://127.0.0.1:8080) |
+| perfil_personal chat | OK |
+
+---
+
+## Próximos pasos globales
+
+1. Aplicar el mismo patrón de `Prefetch` en vistas HTML que iteran `taskstate_set`.
+2. Evaluar cache Redis para listados de tareas por proyecto.
+3. Revisar timeouts de Daphne/ASGI si persiste lentitud en picos de carga.
+4. Sincronizar tickets bridge con el estado actual de M360 cuando se requiera.
+5. Verificar persistencia del servicio LLM en `poco_xiaomi` tras reinicio.
