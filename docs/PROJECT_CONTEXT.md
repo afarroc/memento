@@ -153,11 +153,16 @@ mementobloom/
 │   │   ├── .memento_runtime
 │   │   └── HANDOFF_*.md
 │   ├── mementobloom
-│   │   └── HANDOFF_*.md
+│   │   ├── docs
+│   │   │   ├── tickets.md
+│   │   │   └── tareas_proyecto.md
 │   ├── Management360
 │   │   ├── docs
-│   │   │   └── guides
-│   │   │       └── nomenclatura.md
+│   │   │   ├── guides
+│   │   │   │   └── nomenclatura.md
+│   │   │   ├── tareas_proyecto.md
+│   │   │   ├── tareas_final.md
+│   │   │   └── pending_tasks.md
 │   ├── TaxiLima2026
 │   │   ├── docs
 │   │   └── handoffs
