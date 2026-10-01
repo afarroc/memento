@@ -87,6 +87,17 @@ build/
 .agent_context/node_modules/
 .agent_context/package-lock.json
 
+# === TEMP / DEBUG / TEST ARTIFACTS ===
+_replace_section.py
+cookies.txt
+test_emociones.html
+test_selenium_metadatos.py
+tmp/
+tools/create_rebuild_tickets.py
+tools/playwright_pipeline_test.py
+tools/repair_handoff_identity.py
+tools/selenium_pipeline_test.py
+
 # === BACKUPS LOCALES (NO VERSIONAR) ===
 .backups/
 
