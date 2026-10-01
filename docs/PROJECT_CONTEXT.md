@@ -218,10 +218,13 @@ mementobloom/
 | `CLEAN_INSTALL_GUARANTEE.md` | Garantía de amnesia limpia en instalaciones cliente |
 | `STARTUP_OPTIMIZATION_PLAN.md` | Plan de optimización de arranque |
 | `PROJECT_CONTEXT.md` | Este documento: índice maestro de contexto |
-| `tickets.md` | Sistema de tickets de servicio |
 | `guides/register-client.md` | Procedimiento de registro/migración de clientes |
 | `informe_perfil_schedule_m360.md` | Informe de integración del tab Horario de perfil_personal con M360 |
 | `nomenclatura_m360.md` | Nomenclatura oficial de tareas M360 por proyecto |
+
+### Documentación de gestión de mementobloom
+
+- `projects/mementobloom/docs/` — documentos de gestión del proyecto mementobloom: `tickets.md`, `tareas_proyecto.md`.
 
 ### Documentación de proyectos cliente
 

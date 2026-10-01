@@ -84,7 +84,7 @@ bash memento_install --auto
 | Documento | Propósito |
 |-----------|-----------|
 | `docs/PROJECT_CONTEXT.md` | Índice maestro de contexto |
-| `docs/tickets.md` | Sistema de tickets de servicio |
+| `projects/mementobloom/docs/tickets.md` | Sistema de tickets de servicio |
 | `docs/CONTEXT_TREE.md` | Árbol de memoria jerárquico |
 | `docs/guides/register-client.md` | Registro de clientes |
 | `projects/<cliente>/docs/nomenclatura_tareas.md` | Nomenclatura por proyecto |
