@@ -3,8 +3,10 @@
 Fuente: `projects/Management360/courses/models.py` (Postgres Aiven `management360_dev`).
 
 ## Entidades (tablas)
-- `courses_course` — curso. Campos relevantes: id, title, slug, description, short_description, tutor_id, category_id, level ('beginner'|'intermediate'|'advanced'), price (numeric), duration_hours (int), thumbnail, is_published, is_featured, students_count, average_rating, created_at, updated_at, published_at.
-- `courses_coursecategory` — categoría (name, description, slug).
+- `courses_career` — carrera/programa. Campos: id, name, code, description, is_active, created_at, updated_at.
+- `courses_academiccycle` — ciclo/periodo académico. Campos: id, name, code, start_date, end_date, is_active, created_at, updated_at.
+- `courses_coursecategory` — categoría temática (name, description, slug). Ya no se usa como ciclo.
+- `courses_course` — curso. Campos relevantes: id, title, slug, description, short_description, tutor_id, category_id, career_id, cycle_id, level ('beginner'|'intermediate'|'advanced'), price (numeric), duration_hours (int), thumbnail, is_published, is_featured, students_count, average_rating, created_at, updated_at, published_at.
 - `courses_module` — unidad. Campos: id, course_id (FK), title, description, order (positive int).
 - `courses_lesson` — lección/semana. Campos: id, module_id (FK nullable), title, description, slug, lesson_type ('VIDEO'|'TEXT'|'QUIZ'|'ASSIGNMENT'), content (text/markdown), structured_content (jsonb), video_url, duration_minutes, order, is_published, is_featured, is_free, quiz_questions (jsonb), assignment_instructions, assignment_file, assignment_due_date, author_id, created_at, updated_at.
 - `courses_enrollment` — matrícula.
@@ -12,7 +14,7 @@ Fuente: `projects/Management360/courses/models.py` (Postgres Aiven `management36
 - `courses_review` — reseña.
 
 ## Relación
-Course 1─* Module 1─* Lesson. Category es FK opcional en Course.
+Career 1─* AcademicCycle 1─* Course 1─* Module 1─* Lesson. Category es FK opcional en Course. Enrollment y Progress se mantienen vinculados a Course.
 
 ## Notas de validación (B-M360)
 - `Course.save()` exige que el tutor tenga un `Curriculum` asociado; POST/PATCH por API puede fallar con 500 si no se cumple.
@@ -22,8 +24,8 @@ Course 1─* Module 1─* Lesson. Category es FK opcional en Course.
 ## Templates SQL (solo para fallback excepcional)
 ```sql
 -- Curso (fallback excepcional)
-INSERT INTO courses_course (title, slug, description, short_description, tutor_id, category_id, level, price, duration_hours, thumbnail, is_published, is_featured, students_count, average_rating, created_at, updated_at)
-VALUES ('UPN Responsabilidad Social', 'upn-responsabilidad-social', '', '', 1, NULL, 'beginner', 0, 2, NULL, true, false, 0, 0, NOW(), NOW());
+INSERT INTO courses_course (title, slug, description, short_description, tutor_id, category_id, career_id, cycle_id, level, price, duration_hours, thumbnail, is_published, is_featured, students_count, average_rating, created_at, updated_at)
+VALUES ('UPN Responsabilidad Social', 'upn-responsabilidad-social', '', '', 1, NULL, NULL, NULL, 'beginner', 0, 2, NULL, true, false, 0, 0, NOW(), NOW());
 
 -- Módulo (fallback excepcional)
 INSERT INTO courses_module (course_id, title, description, "order", created_at, updated_at)
@@ -50,4 +52,5 @@ VALUES (456, 'Semana 1', '', 'semana-1', 'TEXT', '# Contenido', '[]'::jsonb, '',
 - Creación: sigue siendo por API con `api_v1_create_evaluation(...)` y `api_v1_create_bibliografia(...)`.
 
 ## Campos API cursos (mapeo bridge)
-- `api_v1_create_course`: title, slug, project_id (default 0), description, short_description, tutor_id, category_id, level, price, duration_hours, is_published, is_featured.
+- `api_v1_create_course`: title, slug, project_id (default 0), description, short_description, tutor_id, category_id, career_id, cycle_id, level, price, duration_hours, is_published, is_featured.
+- `api_v1_update_course`: mismos campos anteriores.

@@ -65,7 +65,30 @@ memento-quick-scan = "tools.quick_scan:main"
 
 _Wrappers bash en raíz:_ `memento-init`, `session_start`, `bootstrap_context`, `quick_scan`, `optimize_agent`, `optimize_memento`, `memento-clean`, `memento-export`
 
-_Servicios:_ `panel_server.py` (8766), `sala.py` (8767)
+_Servicios:_ `panel_server.py` (8766), `sala.py` (8767), `agente_local.py` (5000, requiere `AGENT_LOCAL_TOKEN`)
+
+## Estado actual
+- Filtros AJAX implementados en /courses/courses/ y /courses/lessons/.
+- Bootstrap/Bootstrap Icons eliminados; Font Awesome unificado como biblioteca oficial.
+- Bridge M360 extendido con campos UPN para cursos.
+- Curso Comunicación 1 (ID 10) creado en M360: 3 módulos, 17 lecciones.
+- Ciclo confirmado: UPN Ciclo 01 (`cycle_id=1`).
+- Contenido generado: lecciones 153 y 154 pobladas con contenido oficial extraído desde PDFs UPN mediante pipeline de digitalización M360 (OCR Tesseract).
+- Contenido oficial asignado a lecciones 155-168 desde sílabo y PDFs UPN.
+- Documentación actualizada: README del bridge, bridge-usage.md, PROJECT_CONTEXTs.
+- Listo para continuar creación/edición de cursos desde sílabo o actualizaciones.
+- Working directory: `/Volumes/Macintosh HD - Datos/mementobloom`
+- Entorno verificado: Django cargado con `panel.settings`, OCR Tesseract en `/opt/local/bin/tesseract`, PyMuPDF disponible, digitalización operativa.
+
+## Handoffs relevantes
+- `projects/mementobloom/handoffs/HANDOFF_2026-10-01_courses_bootstrap_cleanup.md`
+- `projects/mementobloom/handoffs/HANDOFF_2026-10-01_creacion_curso_comunicacion1.md`
+
+## Notas operativas
+- Credenciales M360 en `.env` de mementobloom; no commitear.
+- Usar `python tools/quick_scan.py` para refrescar índices después de cambios.
+- Para crear cursos desde sílabo UPN, ver ejemplo en `tools/m360_bridge/README.md`.
+- manage.py check: 0 issues.
 
 ---
 

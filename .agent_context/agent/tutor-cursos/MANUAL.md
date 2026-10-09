@@ -38,8 +38,12 @@ Mapa de instrucciones para recrear un curso UPN en M360. Este manual es autónom
 - Si el curso ya existe en M360 pero falta información UPN, usar `client.api_v1_update_course(course_id, ...)` con los mismos metadatos UPN.
 - Registrar en `estado/indice_cursos.md` columna `Metadatos UPN = Migrado`.
 
-## Paso 2 — Categoría (opcional)
-- Preferir API: `client.api_v1_create_course_category(name="UPN Ciclo 02")`.
+## Paso 2 — Carrera y ciclo (recomendado; opcional en el modelo)
+- Crear/obtener carrera/programa académico. Preferir API `client.api_v1_create_career(name="Administración")` si aplica.
+- Crear/obtener ciclo académico. Preferir API `client.api_v1_create_academic_cycle(name="Ciclo 02", code="2026-2")` si aplica.
+- Asignar `career_id` y `cycle_id` al crear/editar el curso cuando existan; el backend acepta NULL (FK `null=True`, serializer `required=False`), así que no bloquean la creación.
+
+> Nota: `CourseCategory` ahora es exclusivamente temática. No crear categorías con nombre de ciclo.
 
 ## Paso 3 — Módulos (unidades del sílabo)
 - **Convención de título:** `Unidad I: <titulo de la unidad>`, `Unidad II: <titulo>`, etc.

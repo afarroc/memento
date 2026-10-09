@@ -7,6 +7,7 @@ import os
 import urllib.error
 import urllib.parse
 import urllib.request
+from pathlib import Path
 from typing import Any, Dict, Optional
 
 
@@ -402,6 +403,8 @@ class M360Client:
             ("short_description", kwargs.get("short_description", "")),
             ("tutor_id", kwargs.get("tutor_id")),
             ("category_id", kwargs.get("category_id")),
+            ("career_id", kwargs.get("career_id")),
+            ("cycle_id", kwargs.get("cycle_id")),
             ("level", kwargs.get("level", "beginner")),
             ("price", kwargs.get("price", 0)),
             ("duration_hours", kwargs.get("duration_hours", 0)),
@@ -430,6 +433,7 @@ class M360Client:
     def api_v1_update_course(self, course_id: int, **kwargs: Any) -> Dict[str, Any]:
         allowed_fields = {
             "title", "description", "short_description", "tutor_id", "category_id",
+            "career_id", "cycle_id",
             "level", "price", "duration_hours", "is_published", "is_featured", "published_at",
             "codigo", "creditos", "ht", "hp", "hl", "pc", "requisitos", "naturaleza",
             "competencia_general", "componentes", "sumilla", "logro_curso",
@@ -545,36 +549,19 @@ class M360Client:
             payload["module"] = module_id
         return self._request_json("/api/v1/lessons/", payload, method="POST")
 
-    def api_v1_list_evaluations(self, **params: Any) -> Dict[str, Any]:
-        qs = urllib.parse.urlencode({k: v for k, v in params.items() if v not in (None, "")})
-        path = "/api/v1/evaluations/" + (f"?{qs}" if qs else "")
-        return self._get_request(path)
-
-    def api_v1_create_evaluation(self, course_id: int, nombre: str, peso: float, semana: int, **kwargs: Any) -> Dict[str, Any]:
-        payload: Dict[str, Any] = {
-            "course": course_id,
-            "nombre": nombre,
-            "peso": peso,
-            "semana": semana,
-            "descripcion": kwargs.get("descripcion", ""),
+    def api_v1_update_lesson(self, lesson_id: int, **kwargs: Any) -> Dict[str, Any]:
+        allowed_fields = {
+            "title", "description", "lesson_type", "module", "order",
+            "content", "structured_content", "video_url", "duration_minutes",
+            "is_published", "is_featured", "is_free", "quiz_questions",
+            "assignment_instructions", "assignment_file", "assignment_due_date",
+            "logro_semana", "saberes_esenciales", "actividades", "trabajo_campo",
         }
-        return self._request_json("/api/v1/evaluations/", payload, method="POST")
+        payload: Dict[str, Any] = {k: v for k, v in kwargs.items() if k in allowed_fields and v not in (None, "")}
+        return self._request_json(f"/api/v1/lessons/{lesson_id}/", payload, method="PATCH")
 
-    def api_v1_list_bibliografia(self, **params: Any) -> Dict[str, Any]:
-        qs = urllib.parse.urlencode({k: v for k, v in params.items() if v not in (None, "")})
-        path = "/api/v1/bibliografia/" + (f"?{qs}" if qs else "")
-        return self._get_request(path)
-
-    def api_v1_create_bibliografia(self, course_id: int, autor: str, titulo: str, **kwargs: Any) -> Dict[str, Any]:
-        payload: Dict[str, Any] = {
-            "course": course_id,
-            "autor": autor,
-            "titulo": titulo,
-            "anio": kwargs.get("anio", ""),
-            "enlace": kwargs.get("enlace", ""),
-        }
-        return self._request_json("/api/v1/bibliografia/", payload, method="POST")
-
+    # ======================
+    # DIGITALIZACION API v1
     # ======================
     # MEMENTO TICKETS
     # ======================
@@ -656,3 +643,74 @@ class M360Client:
             else:
                 summary["errors"].append({"task_id": task_id, "result": ticket})
         return summary
+
+    # ======================
+    # DIGITALIZACION API v1
+    # ======================
+    def api_v1_digi_cargar_lote(self, nombre_lote: str, ruta_base: str, modo: str = "existing", created_by_id: Optional[int] = None, metadata_proyecto: Optional[Dict[str, Any]] = None, ruta_fuente: Optional[str] = None) -> Dict[str, Any]:
+        payload: Dict[str, Any] = {
+            "nombre_lote": nombre_lote,
+            "ruta_fuente": ruta_fuente or ruta_base,
+            "ruta_base": ruta_base,
+            "modo": modo,
+            "created_by_id": created_by_id,
+            "metadata_proyecto": metadata_proyecto or {},
+        }
+        return self._request_json("/api/v1/digitalizacion/lotes/cargar/", payload, method="POST")
+
+    def digi_cargar_lote(self, folder_path: str, nombre_lote: Optional[str] = None, metadata_proyecto: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        """Alias de compatibilidad de `digi_ingestar_lote` (born-digital)."""
+        return self.digi_ingestar_lote(folder_path, nombre_lote=nombre_lote, metadata_proyecto=metadata_proyecto)
+
+    def digi_ingestar_lote(self, folder_path: str, nombre_lote: Optional[str] = None, metadata_proyecto: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        """Registrar lote born-digital desde carpeta existente en M360.
+
+        Envía la carpeta al endpoint de digitalización con modo "existing".
+        La characterisation técnica, el checksum y la validación de
+        autenticidad las ejecuta el backend de M360 sobre los archivos
+        ingestados; este método solo valida que la carpeta exista localmente.
+
+        Args:
+            folder_path: Carpeta con archivos born-digital.
+            nombre_lote: Nombre del lote; si es None se usa el nombre de la carpeta.
+            metadata_proyecto: Contexto organizacional y técnico adicional.
+
+        Returns:
+            Respuesta del endpoint (`ok`, `lote_id`, `documentos`, ...) o
+            `{"ok": False, "error": ...}` si la carpeta no existe.
+        """
+        folder = Path(folder_path)
+        if not folder.exists() or not folder.is_dir():
+            return {"ok": False, "error": f"carpeta_no_encontrada: {folder_path}"}
+        nombre_lote = nombre_lote or f"{folder.name}"
+        return self.api_v1_digi_cargar_lote(
+            nombre_lote=nombre_lote,
+            ruta_base=str(folder),
+            modo="existing",
+            metadata_proyecto=metadata_proyecto,
+        )
+
+    def digi_validar_documento(self, file_path: str) -> Dict[str, Any]:
+        """Validar documento born-digital y extraer metadatos técnicos.
+
+        NOTA: la validación real (checksum SHA-256, characterisation,
+        antivirus) aún no está implementada en el bridge; el método
+        falla cerrado hasta que exista implementación local o de backend.
+
+        Args:
+            file_path: Ruta al archivo PDF/DOCX/XLSX, etc.
+
+        Returns:
+            Diccionario con `ok`, `format`, `metadata`, `checksum` y `errors`.
+        """
+        path = Path(file_path)
+        if not path.exists() or not path.is_file():
+            return {"ok": False, "error": f"archivo_no_encontrado: {file_path}"}
+        return {
+            "ok": False,
+            "error": "validacion_no_implementada",
+            "format": path.suffix.lower().lstrip("."),
+            "metadata": {},
+            "checksum": {},
+            "errors": ["validacion_no_implementada: falta checksum SHA-256 y characterisation"],
+        }
