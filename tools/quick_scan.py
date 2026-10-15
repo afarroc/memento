@@ -15,7 +15,11 @@ from core.index import build_manifest, load_index, resolve_index_path, save_inde
 from core.paths import detect_workspace_root, rel
 
 HANDOFF_RE = re.compile(r"(\d{4}-\d{2}-\d{2})")
-IDENTITY_RE = re.compile(r"<!-- IDENTIDAD:\s*project_type=(self|cliente),\s*target_path=[^ ]+/ -->", re.IGNORECASE)
+# Acepta self/cliente/client (inglés y español): los handoffs de proyectos
+# cliente usaron históricamente "client"; sin este alias quedaban
+# identity_valid=false y el ranking/contexto compacto los ocultaba al
+# siguiente agente (pérdida de tiempo reconstruyendo lo ya documentado).
+IDENTITY_RE = re.compile(r"<!-- IDENTIDAD:\s*project_type=(self|cliente|client),\s*target_path=[^ ]+/ -->", re.IGNORECASE)
 
 
 class QuickScan:
