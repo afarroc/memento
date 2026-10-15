@@ -8,7 +8,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 
 class M360Client:
@@ -136,7 +136,7 @@ class M360Client:
         except (urllib.error.URLError, TimeoutError, OSError) as exc:
             return {"network_error": str(exc)}
 
-    def _get_request(self, path: str) -> Dict[str, Any]:
+    def _get_request(self, path: str, _retry: bool = False) -> Dict[str, Any]:
         if self._csrf is None:
             self._init_session()
         url = f"{self.base_url}{path}"
@@ -170,8 +170,106 @@ class M360Client:
                 parsed = json.loads(body)
             except Exception:
                 parsed = {"raw": body[:500]}
-            return {"http_error": exc.code, "reason": str(exc), **parsed}
+            result = {"http_error": exc.code, "reason": str(exc), **parsed}
+            if exc.code in (301, 302, 303, 307, 308) and "Location" in exc.headers:
+                result["redirect"] = exc.headers["Location"]
+                result["ok"] = True
+            if exc.code in (401, 403) and not _retry:
+                self._csrf = None
+                self._session_user = None
+                self._init_session()
+                return self._get_request(path, _retry=True)
+            return result
         except (urllib.error.URLError, TimeoutError, OSError) as exc:
+            return {"network_error": str(exc)}
+
+    def _unwrap_list(self, resp: Any) -> List[Any]:
+        """Desenvuelve respuestas de lista de la API v1 (data/results/items)."""
+        if isinstance(resp, list):
+            return resp
+        if isinstance(resp, dict):
+            for key in ("data", "results", "items"):
+                value = resp.get(key)
+                if isinstance(value, list):
+                    return value
+        return []
+
+    def _post_vista(
+        self,
+        path: str,
+        data: Any,
+        content_type: str,
+        timeout: int = 120,
+        content_length: Optional[int] = None,
+        _retry: bool = False,
+    ) -> Dict[str, Any]:
+        """POST a una vista Django con sesión+CSRF del cliente.
+
+        A diferencia de _request_json, apunta a vistas de la app (no a /api/v1):
+        acepta `data` como bytes o como iterable de bytes (streaming; en ese
+        caso el llamador DEBE fijar content_length). Nunca lanza excepciones:
+        devuelve {"ok", "status", "final_url"} o un dict de error estándar
+        {"http_error"|"network_error"|"timeout": ...}.
+
+        NO envía Authorization Bearer: las vistas de app se autentican por
+        cookie de sesión (+CSRF), y urllib reenviaría ese header en redirects
+        a cualquier host (fuga de credencial cross-origen). Detecta respuestas
+        de login/form-error aunque el status sea 200 y la URL no contenga
+        "login" (fail-closed, no asume éxito).
+        """
+        import socket
+
+        url = f"{self.base_url}{path}"
+        if self._csrf is None:
+            self._init_session()
+        csrf = self._current_csrf()
+        req = urllib.request.Request(url, data=data, method="POST")
+        req.add_header("Content-Type", content_type)
+        req.add_header("Referer", url)
+        if content_length is not None:
+            req.add_header("Content-Length", str(content_length))
+        if csrf:
+            req.add_header("X-CSRFToken", csrf)
+        try:
+            with self._opener.open(req, timeout=timeout) as resp:
+                final_url = resp.geturl()
+                body = resp.read().decode("utf-8", errors="replace")
+                body_lower = body.lower()
+                login_markers = (
+                    'type="password"',
+                    "errorlist",
+                    "this field is required",
+                )
+                if "login" in final_url or any(m in body_lower for m in login_markers):
+                    return {
+                        "http_error": resp.status,
+                        "reason": f"respuesta de login/error en {final_url}",
+                        "body": body[:500],
+                    }
+                return {"ok": True, "status": resp.status, "final_url": final_url}
+        except urllib.error.HTTPError as exc:
+            body = exc.read().decode("utf-8", errors="replace") if exc.fp else ""
+            try:
+                parsed = json.loads(body)
+            except Exception:
+                parsed = {"raw": body[:500]}
+            result = {"http_error": exc.code, "reason": str(exc), **parsed}
+            # Re-auth solo con cuerpo en memoria: un generador de stream ya se
+            # consumió y el reintento enviaría un body vacío/parcial (fail-closed
+            # en ese caso: se devuelve el error para que el llamador gestione).
+            if exc.code in (401, 403) and not _retry and isinstance(data, (bytes, bytearray)):
+                self._csrf = None
+                self._session_user = None
+                self._init_session()
+                return self._post_vista(path, data, content_type, timeout, content_length, _retry=True)
+            return result
+        except TimeoutError as exc:
+            return {"timeout": True, "reason": f"timeout tras {timeout}s: {exc}"}
+        except urllib.error.URLError as exc:
+            if isinstance(getattr(exc, "reason", None), (TimeoutError, socket.timeout)):
+                return {"timeout": True, "reason": f"timeout tras {timeout}s: {exc.reason}"}
+            return {"network_error": str(exc)}
+        except OSError as exc:
             return {"network_error": str(exc)}
 
     def _request_json(self, path: str, payload: Optional[Dict[str, Any]] = None, method: str = "POST", _retry: bool = False) -> Dict[str, Any]:
@@ -373,12 +471,16 @@ class M360Client:
         return self._request_json(f"/api/v1/tasks/{task_id}/status/", {"task_status_id": task_status_id}, method="POST")
 
     def api_v1_update_task(self, task_id: int, **kwargs: Any) -> Dict[str, Any]:
-        """Actualiza campos de una tarea existente (title, description, etc.)."""
+        """Actualiza campos de una tarea existente (title, description, etc.).
+
+        Usa PATCH: el endpoint rechaza PUT completo (400 por campos
+        obligatorios faltantes) — verificado contra M360 2026-10-10.
+        """
         allowed_fields = {"title", "description", "important", "ticket_price", "due_date", "assigned_to_id", "task_status_id"}
         payload = {k: v for k, v in kwargs.items() if k in allowed_fields and v is not None}
         if not payload:
             return {"http_error": 400, "reason": "No valid fields provided for update"}
-        return self._request_json(f"/api/v1/tasks/{task_id}/", payload, method="PUT")
+        return self._request_json(f"/api/v1/tasks/{task_id}/", payload, method="PATCH")
 
     # ======================
     # COURSES API v1
@@ -446,6 +548,36 @@ class M360Client:
 
     def api_v1_delete_course(self, course_id: int) -> Dict[str, Any]:
         return self._request_json(f"/api/v1/courses/{course_id}/", {}, method="DELETE")
+
+    # ======================
+    # DIGITALIZACION API v1
+    #
+    # Nota (2026-10-14): el metadata OPTIONS de los endpoints de
+    # digitalización sololista PUT, pero DELETE SÍ funciona en el servidor
+    # (verificado: 204 No Content). Los DELETE existen en DRF pese a no
+    # aparecer en la introspección.
+    # ======================
+
+    def api_v1_delete_document(self, documento_id: int) -> Dict[str, Any]:
+        """Elimina un documento digitalizado (DELETE real, 204 si ok)."""
+        return self._request_json(f"/api/v1/digitalizacion/documentos/{documento_id}/", {}, method="DELETE")
+
+    def api_v1_delete_lote(self, lote_id: int, forzar: bool = False) -> Dict[str, Any]:
+        """Elimina un lote de digitalización (cascada: documentos y etapas).
+
+        Guarda de archivo legal: rechaza lotes certificados salvo forzar=True.
+        La verificación vive en la primitiva (no solo en el tool wrapper) para
+        que ningún otro caller futuro la evite.
+        """
+        if not forzar:
+            prev = self._get_request(f"/api/v1/digitalizacion/lotes/{lote_id}/")
+            estado = (prev or {}).get("estado") if isinstance(prev, dict) else None
+            if estado == "certificado":
+                return {
+                    "http_error": 409,
+                    "reason": f"Lote {lote_id} CERTIFICADO (archivo legal): requiere forzar=True explícito.",
+                }
+        return self._request_json(f"/api/v1/digitalizacion/lotes/{lote_id}/", {}, method="DELETE")
 
     def api_v1_list_course_categories(self, **params: Any) -> Dict[str, Any]:
         qs = urllib.parse.urlencode({k: v for k, v in params.items() if v not in (None, "")})
@@ -625,11 +757,14 @@ class M360Client:
 
     def m360_sync_tickets_for_project(self, project_id: int, created_by: str = "assistant") -> Dict[str, Any]:
         tasks = self.api_v1_list_tasks(project_id=project_id)
-        if not isinstance(tasks, dict):
+        if not isinstance(tasks, (dict, list)):
             return {"error": "invalid_tasks_response", "raw": str(tasks)[:200]}
-        data = tasks.get("data") or tasks.get("results") or tasks.get("items") or []
-        if not isinstance(data, list):
-            return {"error": "invalid_tasks_data", "raw": str(tasks)[:200]}
+        # Fail-closed: un fallo de API (auth/red/500/timeout) NO debe reportarse
+        # como "sincronicé 0 tareas" con pinta de éxito.
+        if isinstance(tasks, dict) and any(tasks.get(k) for k in ("http_error", "network_error", "timeout")):
+            return {"ok": False, "error_code": "SYNC_TASKS_FALLO", "raw": str(tasks)[:200]}
+        # Lista vacía es válida (proyecto sin tareas -> resumen con 0), no error.
+        data = self._unwrap_list(tasks)
         summary: Dict[str, Any] = {"project_id": project_id, "total_tasks": len(data), "created_tickets": 0, "skipped": 0, "errors": []}
         for task in data:
             task_id = task.get("id")
