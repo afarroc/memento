@@ -35,6 +35,33 @@ UPLOAD_DIR = Path(__file__).resolve().parent / "uploads"
 MAX_UPLOAD_SIZE = int(os.environ.get("MEMENTO_MAX_UPLOAD_SIZE", str(10 * 1024 * 1024)))
 redis_ok = False
 
+# --- Dual-write a M360 (TICK-M360-0001 / M360-CHAT-005) ---
+# Opt-in con SALA_DUAL_WRITE=1: cada mensaje de la sala se publica también
+# en el chat M300 (identidad bot-mento vía facade). Migración sin cambio de
+# interfaz para optimize_agent, memento_cli y restore_sala.
+_facade_cache = None
+
+def _dual_write_m360(payload, msg_type):
+    if os.environ.get("SALA_DUAL_WRITE", "") not in ("1", "true", "True"):
+        return
+    global _facade_cache
+    try:
+        if _facade_cache is None:
+            import sys
+            sys_path = str(Path(__file__).parent / "tools" / "m360_bridge")
+            if sys_path not in sys.path:
+                sys.path.insert(0, sys_path)
+            from chat_facade import ChatFacade
+            _facade_cache = ChatFacade.desde_env()
+        meta = payload.get("meta") or {}
+        proyecto = meta.get("project") or "mementobloom"
+        sala = meta.get("sala") or "general"
+        texto = payload.get("text") or payload.get("code") or payload.get("html") or ""
+        _facade_cache.enviar(texto, proyecto=proyecto, sala=sala, tipo=msg_type)
+    except Exception as exc:
+        import sys
+        print(f"[dual-write M360 falló, la sala continúa] {exc}", file=sys.stderr)
+
 STYLE_PRESETS = {
     "info": {"bg": "#0b1d2e", "border": "#1f4f7a", "color": "#dcecff", "badgeBg": "#102a43"},
     "success": {"bg": "#0b261b", "border": "#1f8a5b", "color": "#dcfce7", "badgeBg": "#0f2f22"},
@@ -534,6 +561,7 @@ class H(BaseHTTPRequestHandler):
                 msg = self._handle_text(payload)
             if redis_ok:
                 redis_cmd(["rpush", os.environ.get("REDIS_KEY", "memento_panel_items"), json.dumps(msg, ensure_ascii=False)])
+            _dual_write_m360(payload, msg_type)
             self._send_json({"ok": True, "message": msg})
             return
 
