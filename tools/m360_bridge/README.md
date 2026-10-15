@@ -1,5 +1,9 @@
 # M360 Bridge — diagnóstico y uso
 
+## Flujo de digitalización por ESCANEO (agentes LLM)
+
+Las 10 herramientas de function-calling para digitalizar documentos físicos (crear lote → catalogar → subir escaneos → avanzar etapas, más borrado defensivo con previsualización→confirmar) están documentadas en **[DIGITALIZACION_ESCANEO.md](DIGITALIZACION_ESCANEO.md)**. Incluye las reglas duras (scoping por fd, fecha ISO estricta, timeouts como estado desconocido, verificación de etapas, guardas de certificado con motivo, coerción de booleanos) y los comportamientos no documentados de la API verificados en producción (OPTIONS miente sobre DELETE, offset/search ignorados, borrado DB-only con archivos persistentes).
+
 ## Diagnóstico: `python3 tools/m360_bridge/client.py task show 385` no produce salida
 
 **Causa raíz:** `tools/m360_bridge/client.py` define la clase `M360Client`, pero **no expone una CLI**.  
