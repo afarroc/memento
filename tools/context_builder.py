@@ -2,9 +2,15 @@
 """Context Builder - Autorreferencia desde índice compacto"""
 
 import json
+import sys
 from pathlib import Path
 from typing import Dict, List, Optional
 import re
+from datetime import datetime as _dt_mod
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from core.index import parse_ts
+
+_DT_MIN = _dt_mod.min
 try:
     from .optimize_memento import MementoOptimizer
 except ImportError:
@@ -55,17 +61,34 @@ class ContextBuilder:
         return results[:limit]
 
     def _scored_entry(self, entry: Dict) -> float:
-        base = float(entry.get("score", 0))
-        ts = str(entry.get("ts", ""))
-        if ts and "2026-06-1" in ts and "unknown" not in ts:
-            base += 0.1
+        """Ranking: recencia manda, luego identidad válida y tipo HANDOFF.
+
+        Antes solo daba +0.1 a entradas con ts en junio-2026 (ventana
+        hardcoded): los 221 handoffs de sep-oct 2026 empataban en 0 y el
+        orden era el de inserción del JSON — el agente veía handoffs viejos
+        sobre los nuevos (autoopt 2026-10-15).
+        """
+        try:
+            base = float(entry.get("score") or 0)
+        except (TypeError, ValueError):
+            base = 0.0
+        ts = parse_ts(entry.get("ts"))
+        if ts != _DT_MIN:
+            # timestamp/1e10 ≈ 0.2: la recencia domina pero no aplasta
+            # los boosts de identidad/tipo (suman ~1.5).
+            base += 10.0 + ts.timestamp() / 1e10
+        if entry.get("identity_valid"):
+            base += 1.0
+        if str(entry.get("type")) == "HANDOFF":
+            base += 0.5
         return base
-    
+
     def _format_context(self, entries: List[Dict]) -> str:
         lines = ["# 🜄 MEMENTO CONTEXT // Ranked"]
         for e in entries:
             header = e.get("summary", "")[:120].replace("\n", " ")
-            keywords = ", ".join(e.get("keywords", [])[:5])
+            kws = e.get("keywords") or []
+            keywords = ", ".join(str(k) for k in (kws if isinstance(kws, (list, tuple)) else [kws])[:5])
             score = e.get("score", "?")
             path = e.get("path", "?")
             lines.append(f"- [{e.get('id', '?')}] {e.get('type', '?')} :: {e.get('project', '?')} | {e.get('ts', '?')} | score={score} | {keywords} | {header}")

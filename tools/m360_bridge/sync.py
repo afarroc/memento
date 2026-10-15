@@ -176,7 +176,11 @@ class M360Sync:
         password = password or os.environ.get("M360_PASSWORD", "")
         timeout = timeout if timeout is not None else int(os.environ.get("M360_TIMEOUT", "10"))
         panel_url = panel_url or os.environ.get("MEMENTO_PANEL_URL", "") or None
-        self.client = M360Client(base_url=base_url, username=username, password=password, panel_url=panel_url)
+        # Autoopt 2026-10-15: M360Client no acepta panel_url (TypeError al
+        # instanciar → el sync de sprint estaba 100% muerto). Se conserva la
+        # variable para uso futuro del panel, pero no se pasa al cliente.
+        self.panel_url = panel_url
+        self.client = M360Client(base_url=base_url, username=username, password=password)
         self._timeout = timeout
 
     def sync_sprint(self, sprint_id: str, project_id: Optional[int] = None) -> SyncResult:

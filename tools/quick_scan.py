@@ -36,47 +36,59 @@ class QuickScan:
 
         existing_ids = set(self.index.keys())
 
+        def _accion(entry):
+            """new = id nuevo; refresh = contenido cambió (fingerprint distinto);
+            None = sin cambios → skip. Antes un archivo modificado nunca se
+            refrescaba salvo --replace: el índice servía el summary viejo
+            (handoff_gen.py reescribe el mismo nombre cada día)."""
+            eid = entry["id"]
+            if eid not in self.index:
+                return "new"
+            prev = self.index[eid]
+            if not isinstance(prev, dict):
+                return "refresh"
+            if replace_existing:
+                return "refresh"
+            return "refresh" if prev.get("fingerprint") != entry.get("fingerprint") else None
+
         if incremental_path:
             f = Path(incremental_path)
             if not f.is_absolute():
                 f = self.workspace / f
             if f.name.startswith("HANDOFF") and f.suffix == ".md":
                 entry = self._parse_handoff(f)
-                if entry and (replace_existing or entry["id"] not in existing_ids):
-                    self.index[entry["id"]] = entry
-                    if replace_existing and entry["id"] in existing_ids:
-                        self.new_count += 0  # replacement not counted as new
-                    else:
+                if entry:
+                    accion = _accion(entry)
+                    if accion == "new":
                         self.new_count += 1
+                    if accion:
+                        self.index[entry["id"]] = entry
             elif f.name.endswith("_CONTEXT.md"):
                 entry = self._parse_context(f)
-                if entry and (replace_existing or entry["id"] not in existing_ids):
-                    self.index[entry["id"]] = entry
-                    if replace_existing and entry["id"] in existing_ids:
-                        self.new_count += 0
-                    else:
+                if entry:
+                    accion = _accion(entry)
+                    if accion == "new":
                         self.new_count += 1
+                    if accion:
+                        self.index[entry["id"]] = entry
         else:
             for f in self.projects.rglob("HANDOFF*.md"):
                 entry = self._parse_handoff(f)
-                if entry and (replace_existing or entry["id"] not in existing_ids):
-                    self.index[entry["id"]] = entry
-                    if not replace_existing:
-                        existing_ids.add(entry["id"])
+                if entry:
+                    accion = _accion(entry)
+                    if accion == "new":
                         self.new_count += 1
-                    else:
-                        # ensure id stays in set for subsequent dedup if needed
-                        existing_ids.add(entry["id"])
+                    if accion:
+                        self.index[entry["id"]] = entry
 
             for f in self.projects.rglob("*_CONTEXT.md"):
                 entry = self._parse_context(f)
-                if entry and (replace_existing or entry["id"] not in existing_ids):
-                    self.index[entry["id"]] = entry
-                    if not replace_existing:
-                        existing_ids.add(entry["id"])
+                if entry:
+                    accion = _accion(entry)
+                    if accion == "new":
                         self.new_count += 1
-                    else:
-                        existing_ids.add(entry["id"])
+                    if accion:
+                        self.index[entry["id"]] = entry
 
         if prune_missing:
             to_remove = []
@@ -91,7 +103,6 @@ class QuickScan:
                     to_remove.append(entry_id)
             for entry_id in to_remove:
                 del self.index[entry_id]
-            self.new_count -= len(to_remove)
 
         saved = save_index(self.index, self.index_path)
         manifest = None
@@ -128,41 +139,67 @@ class QuickScan:
         """Return the canonical root path for the project."""
         return f"projects/{project}"
 
+    def _entry_id(self, prefix: str, f: Path, project: str) -> str:
+        """ID único que incluye el subdirectorio relativo.
+
+        Antes: h_<proyecto>_<stem> — dos archivos con el mismo stem en
+        projects/<p>/ y projects/<p>/handoffs/ colisionaban y uno se perdía
+        en silencio (4 víctimas reales detectadas 2026-10-15).
+        """
+        try:
+            sub = f.parent.relative_to(self.projects / project).as_posix()
+        except ValueError:
+            sub = ""
+        if sub in ("", "."):
+            return f"{prefix}_{project}_{f.stem}"
+        sub_slug = re.sub(r"[^A-Za-z0-9]+", "_", sub).strip("_")
+        return f"{prefix}_{project}_{sub_slug}_{f.stem}"
+
+    def _fingerprint(self, f: Path) -> str:
+        """(mtime, size) para detectar contenido cambiado sin re-leer todo."""
+        try:
+            st = f.stat()
+            return f"{int(st.st_mtime)}:{st.st_size}"
+        except OSError:
+            return ""
+
     def _parse_handoff(self, f: Path) -> Dict[str, Any]:
-        content = f.read_text(encoding="utf-8", errors="replace")[:500]
+        content = f.read_text(encoding="utf-8", errors="replace")[:2000]
         date_m = HANDOFF_RE.search(f.name)
         project = self._extract_project(f)
         identity_valid = bool(IDENTITY_RE.search(content))
         path_scope = self._path_scope(f)
         canonical_root = self._canonical_root(f, project)
         return {
-            "id": f"h_{project}_{f.stem}",
+            "id": self._entry_id("h", f, project),
             "type": "HANDOFF",
             "project": project,
             "ts": date_m.group(1) if date_m else "unknown",
             "path": rel(f, self.workspace),
-            "summary": content[:100],
+            "summary": content[:600],
             "identity_valid": identity_valid,
             "path_scope": path_scope,
             "canonical_root": canonical_root,
+            "fingerprint": self._fingerprint(f),
         }
 
     def _parse_context(self, f: Path) -> Dict[str, Any]:
-        content = f.read_text(encoding="utf-8", errors="replace")[:500]
+        content = f.read_text(encoding="utf-8", errors="replace")[:2000]
         project = self._extract_project(f)
         # Usar mtime como fallback para archivos CONTEXT sin fecha en el nombre
         fallback_ts = _dt.datetime.fromtimestamp(f.stat().st_mtime).isoformat(timespec="seconds")[:19]
         path_scope = self._path_scope(f)
         canonical_root = self._canonical_root(f, project)
         return {
-            "id": f"c_{project}_{f.stem}",
+            "id": self._entry_id("c", f, project),
             "type": "CONTEXT",
             "project": project,
             "ts": fallback_ts,
             "path": rel(f, self.workspace),
-            "summary": content[:100],
+            "summary": content[:600],
             "path_scope": path_scope,
             "canonical_root": canonical_root,
+            "fingerprint": self._fingerprint(f),
         }
 
 

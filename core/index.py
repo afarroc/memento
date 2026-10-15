@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 from collections import Counter
 from datetime import datetime
 from pathlib import Path
@@ -41,16 +42,38 @@ def load_index(path: Optional[Path] = None) -> Dict[str, Dict[str, Any]]:
         data = json.loads(index_path.read_text(encoding="utf-8"))
         return data if isinstance(data, dict) else {}
     except Exception:
+        # Autoopt 2026-10-15: NO devolver {} a secas que lleve a save_index a
+        # borrar el índice corrupto. Se preserva como .corrupt_<ts> y se
+        # reconstruye desde disco en el próximo scan (rápago, sin pérdida
+        # silenciosa de lo que había en proyectos/).
+        try:
+            stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            rescue = index_path.with_suffix(index_path.suffix + f".corrupt_{stamp}")
+            index_path.replace(rescue)
+            print(f"[index] índice corrupto preservado como {rescue.name}; se reconstruirá desde disco", flush=True)
+        except OSError:
+            pass
         return {}
 
 
 def save_index(data: Dict[str, Dict[str, Any]], path: Optional[Path] = None, compact: bool = False) -> Path:
     index_path = path or default_index_path()
     ensure_dir(index_path.parent)
-    if compact:
-        index_path.write_text(json.dumps(data, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
-    else:
-        index_path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    payload = json.dumps(
+        data, ensure_ascii=False, separators=(",", ":") if compact else None, indent=None if compact else 2
+    ) + "\n"
+    # Autoopt 2026-10-15: escritura atómica (temp + os.replace) + backup .bak
+    # previo. Antes un write_text directo perdía el índice completo si el
+    # proceso moría a mitad de escritura (crash/disco lleno/scan concurrente).
+    tmp = index_path.with_suffix(index_path.suffix + ".tmp")
+    tmp.write_text(payload, encoding="utf-8")
+    if index_path.exists():
+        try:
+            bak = index_path.with_suffix(index_path.suffix + ".bak")
+            bak.write_text(index_path.read_text(encoding="utf-8"), encoding="utf-8")
+        except OSError:
+            pass
+    os.replace(tmp, index_path)
     return index_path
 
 
