@@ -731,8 +731,12 @@ class M360Client:
         created_by: str = "assistant",
         priority: str = "medium",
         source: str = "bridge",
+        task: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
-        task = self.api_v1_get_task(task_id)
+        # `task` pre-cargado (del listado) evita el GET por tarea: el sync
+        # hacía 2N+1 round-trips serializados (N+1 de lectura redundante).
+        if task is None:
+            task = self.api_v1_get_task(task_id)
         if not isinstance(task, dict) or task.get("http_error") or task.get("network_error"):
             return task
         title = task.get("title") or task.get("name") or f"Tarea {task_id}"
@@ -772,7 +776,7 @@ class M360Client:
             if not task_id or not title:
                 summary["skipped"] += 1
                 continue
-            ticket = self.m360_create_ticket_from_task(task_id, created_by=created_by, source="bridge")
+            ticket = self.m360_create_ticket_from_task(task_id, created_by=created_by, source="bridge", task=task)
             if isinstance(ticket, dict) and ticket.get("id"):
                 summary["created_tickets"] += 1
             else:

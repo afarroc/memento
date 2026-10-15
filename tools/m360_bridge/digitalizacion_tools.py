@@ -536,7 +536,7 @@ class DigitalizacionTools:
         etapa_verificada = None
         if isinstance(lote_id, int):
             lote = self._get(f"/api/v1/digitalizacion/lotes/{lote_id}/")
-            if isinstance(lote, dict) and not any(lote.get(k) for k in ("http_error", "network_error", "timeout")):
+            if isinstance(lote, dict) and not self._es_error_resp(lote):
                 etapa_verificada = any(
                     isinstance(e, dict)
                     and e.get("documento") == documento_id
