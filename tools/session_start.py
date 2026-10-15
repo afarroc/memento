@@ -837,14 +837,43 @@ def start_service(name: str, cmd: list[str], port: int | None = None, health_url
             popen_kwargs["group"] = owner.pw_gid
     except Exception:
         popen_kwargs = {}
-    proc = subprocess.Popen(
-        cmd,
-        cwd=str(WS_ROOT),
-        stdout=log_file,
-        stderr=subprocess.STDOUT,
-        start_new_session=True,
-        **popen_kwargs,
-    )
+    drop_uid = popen_kwargs.get("user")
+    try:
+        proc = subprocess.Popen(
+            cmd,
+            cwd=str(WS_ROOT),
+            stdout=log_file,
+            stderr=subprocess.STDOUT,
+            start_new_session=True,
+            **popen_kwargs,
+        )
+    except Exception as exc:
+        # Revision 2026-10-15: si bajar privilegios falla (container sin
+        # CAP_SETUID, seccomp, initgroups), degradar a lanzar como el uid
+        # actual en vez de tumbar session_start (entry point obligatorio).
+        if not drop_uid:
+            raise
+        print(f"[session_start] {name}: no se pudo bajar privilegios ({exc}); se lanza como uid actual", flush=True)
+        proc = subprocess.Popen(
+            cmd,
+            cwd=str(WS_ROOT),
+            stdout=log_file,
+            stderr=subprocess.STDOUT,
+            start_new_session=True,
+        )
+    if drop_uid:
+        # El log/pid se abrieron como root: alinear owner o la próxima sesión
+        # sin sudo no podrá abrirlos (crasheaba el entry point).
+        try:
+            import pwd as _pwd
+            import shutil as _shutil
+            owner = _pwd.getpwuid(drop_uid)
+            _shutil.chown(log_path, owner.pw_uid, owner.pw_gid)
+            pid_path = PID_DIR / f"{name}.pid"
+            if pid_path.exists():
+                _shutil.chown(pid_path, owner.pw_uid, owner.pw_gid)
+        except Exception:
+            pass
     write_pid(name, proc.pid)
     log_file.close()
 

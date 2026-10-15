@@ -50,7 +50,6 @@ class QuickScan:
             if replace_existing:
                 return "refresh"
             return "refresh" if prev.get("fingerprint") != entry.get("fingerprint") else None
-
         if incremental_path:
             f = Path(incremental_path)
             if not f.is_absolute():
@@ -62,7 +61,7 @@ class QuickScan:
                     if accion == "new":
                         self.new_count += 1
                     if accion:
-                        self.index[entry["id"]] = entry
+                        self._upsert(entry, replace_existing)
             elif f.name.endswith("_CONTEXT.md"):
                 entry = self._parse_context(f)
                 if entry:
@@ -70,7 +69,7 @@ class QuickScan:
                     if accion == "new":
                         self.new_count += 1
                     if accion:
-                        self.index[entry["id"]] = entry
+                        self._upsert(entry, replace_existing)
         else:
             for f in self.projects.rglob("HANDOFF*.md"):
                 entry = self._parse_handoff(f)
@@ -79,7 +78,7 @@ class QuickScan:
                     if accion == "new":
                         self.new_count += 1
                     if accion:
-                        self.index[entry["id"]] = entry
+                        self._upsert(entry, replace_existing)
 
             for f in self.projects.rglob("*_CONTEXT.md"):
                 entry = self._parse_context(f)
@@ -88,7 +87,7 @@ class QuickScan:
                     if accion == "new":
                         self.new_count += 1
                     if accion:
-                        self.index[entry["id"]] = entry
+                        self._upsert(entry, replace_existing)
 
         if prune_missing:
             to_remove = []
@@ -159,9 +158,24 @@ class QuickScan:
         """(mtime, size) para detectar contenido cambiado sin re-leer todo."""
         try:
             st = f.stat()
-            return f"{int(st.st_mtime)}:{st.st_size}"
+            return f"{st.st_mtime_ns}:{st.st_size}"
         except OSError:
             return ""
+
+    # Campos que optimize_memento persiste sobre la misma entrada; un refresh
+    # por fingerprint NO debe borrarlos (regresión detectada en revisión
+    # 2026-10-15: un checkout bumpea mtimes y borraba todo el enrichment).
+    _ENRICH_FIELDS = ("keywords", "score", "tags", "summary_hash", "source_hash",
+                      "token_count", "last_used_at", "embedding")
+
+    def _upsert(self, entry: Dict[str, Any], replace_existing: bool) -> None:
+        prev = self.index.get(entry["id"])
+        if isinstance(prev, dict) and not replace_existing:
+            merged = dict(prev)
+            merged.update(entry)  # parser manda en los base
+            self.index[entry["id"]] = merged
+        else:
+            self.index[entry["id"]] = entry
 
     def _parse_handoff(self, f: Path) -> Dict[str, Any]:
         content = f.read_text(encoding="utf-8", errors="replace")[:2000]

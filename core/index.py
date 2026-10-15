@@ -39,6 +39,28 @@ def load_index(path: Optional[Path] = None) -> Dict[str, Dict[str, Any]]:
     if not index_path.exists():
         return {}
     try:
+        raw = index_path.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError):
+        # Autoopt (revision 2026-10-15): NO renombrar el índice ante fallos
+        # transitorios (volumen externo lento, encode raro). Renombrar aquí
+        # provocaba que un scan incremental posterior guardara solo 1 entrada
+        # y el contenido real quedara enterrado en .corrupt_<ts>.
+        return {}
+    try:
+        data = json.loads(raw)
+        return data if isinstance(data, dict) else {}
+    except json.JSONDecodeError:
+        # Corrupción REAL (JSON inválido a mitad de escritura): preservar como
+        # .corrupt_<ts> para no perderlo; el próximo scan lo reconstruye.
+        try:
+            stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            rescue = index_path.with_suffix(index_path.suffix + f".corrupt_{stamp}")
+            index_path.replace(rescue)
+            print(f"[index] índice corrupto preservado como {rescue.name}; se reconstruirá desde disco", flush=True)
+        except OSError:
+            pass
+        return {}
+    try:
         data = json.loads(index_path.read_text(encoding="utf-8"))
         return data if isinstance(data, dict) else {}
     except Exception:
@@ -62,10 +84,11 @@ def save_index(data: Dict[str, Dict[str, Any]], path: Optional[Path] = None, com
     payload = json.dumps(
         data, ensure_ascii=False, separators=(",", ":") if compact else None, indent=None if compact else 2
     ) + "\n"
-    # Autoopt 2026-10-15: escritura atómica (temp + os.replace) + backup .bak
-    # previo. Antes un write_text directo perdía el índice completo si el
-    # proceso moría a mitad de escritura (crash/disco lleno/scan concurrente).
-    tmp = index_path.with_suffix(index_path.suffix + ".tmp")
+    # Autoopt 2026-10-15: escritura atómica (temp único + os.replace) + backup
+    # .bak previo. El tmp lleva pid+timestamp para que dos scans concurrentes
+    # (session_start full + optimize_agent incremental) no publiquen un payload
+    # cortado escribiendo al mismo .tmp fijo.
+    tmp = index_path.with_suffix(index_path.suffix + f".tmp{os.getpid()}_{int(datetime.now().timestamp()*1000)%100000}")
     tmp.write_text(payload, encoding="utf-8")
     if index_path.exists():
         try:

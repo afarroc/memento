@@ -74,9 +74,10 @@ class ContextBuilder:
             base = 0.0
         ts = parse_ts(entry.get("ts"))
         if ts != _DT_MIN:
-            # timestamp/1e10 ≈ 0.2: la recencia domina pero no aplasta
-            # los boosts de identidad/tipo (suman ~1.5).
-            base += 10.0 + ts.timestamp() / 1e10
+            # Revision 2026-10-15: con /1e10 la identidad (+1) pesaba ~107
+            # años de recencia — identity mandaba, al revés del docstring.
+            # /1e8: +1 de identidad ≈ 3 años. Recencia domina.
+            base += 10.0 + ts.timestamp() / 1e8
         if entry.get("identity_valid"):
             base += 1.0
         if str(entry.get("type")) == "HANDOFF":
