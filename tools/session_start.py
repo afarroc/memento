@@ -823,12 +823,27 @@ def start_service(name: str, cmd: list[str], port: int | None = None, health_url
     LOG_DIR.mkdir(parents=True, exist_ok=True)
     log_path = LOG_DIR / f"{name}.log"
     log_file = log_path.open("ab")
+    # Autoopt 2026-10-15: si session_start corre como root (agente con shell
+    # privilegiado), los servicios y todo lo que escriben quedan owned by root
+    # y las sesiones sin sudo no pueden usarlos ni commitear (advertencia del
+    # usuario). Se relanzan como el dueño del workspace cuando es posible.
+    popen_kwargs: dict = {}
+    try:
+        if hasattr(os, "geteuid") and os.geteuid() == 0:
+            import pwd
+
+            owner = pwd.getpwuid(WS_ROOT.stat().st_uid)
+            popen_kwargs["user"] = owner.pw_uid
+            popen_kwargs["group"] = owner.pw_gid
+    except Exception:
+        popen_kwargs = {}
     proc = subprocess.Popen(
         cmd,
         cwd=str(WS_ROOT),
         stdout=log_file,
         stderr=subprocess.STDOUT,
         start_new_session=True,
+        **popen_kwargs,
     )
     write_pid(name, proc.pid)
     log_file.close()
