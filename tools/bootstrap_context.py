@@ -418,6 +418,13 @@ def _build_bootstrap_checklist(
             icon = "OPTIONAL"
         elif key == "SESSION_BOOTSTRAP":
             icon = "INFO"
+        elif key == "SERVICES" and ok is False and services_data.get("reason") == "services disabled":
+            # Autoopt 2026-10-15: session_start expande el contexto con
+            # --no-services, por lo que 'checked: False' significa "no evaluado
+            # en esta pasada", NO un fallo. Marcarlo NO llevaba al agente a
+            # perseguir un fallo fantasma cuando el checklist final (que sí
+            # evalúa servicios reales) decía OK.
+            icon = "INFO"
         elif ok:
             icon = "OK"
         else:
