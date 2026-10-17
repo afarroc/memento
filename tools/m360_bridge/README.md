@@ -155,9 +155,25 @@ resp = client.digi_ingestar_lote(
 print(resp["ok"], resp["lote_id"], len(resp["documentos"]))
 ```
 
+# Por curso (crear lote vinculado a curso M360 y subir documentos)
+resp = client.digi_cargar_lote_por_curso(
+    curso_id=123,
+    carpeta_local="/ruta/a/la/carpeta/documentos_escaneados",
+    proyecto_id=456,
+    nombre_lote="LOTE_20261015_001",
+    metadata_proyecto={"origen": "UPN", "ciclo": "2"},
+    ingest_mode="existing",
+)
+print(resp["ok"], resp["lote_id"], resp["total_subidos"], resp["total_errores"])
+for doc in resp["documentos_subidos"]:
+    print("  ", doc["document_id"], doc["ruta_inbox"])
+
 Métodos disponibles:
 - `digi_ingestar_lote(folder_path, nombre_lote=None, metadata_proyecto=None)`: registra archivos born-digital existentes como documentos del lote vía endpoint con modo `existing`. La characterisation, extracción de metadatos embebidos, antivirus y fixity sobre originales las ejecuta el backend de M360.
 - `digi_cargar_lote(folder_path, nombre_lote=None, metadata_proyecto=None)`: alias de compatibilidad de `digi_ingestar_lote`.
+- `digi_subir_documento(lote_id, archivo_path, document_id, tipo="documento", titulo=None, metadata_proyecto=None, ingest_mode="existing")`: sube un archivo escaneado individual a un lote existente vía multipart/form-data (`UPN-DIGIT-API-002`). Crea el `DocumentoDigital`, guarda el archivo en inbox y registra la etapa de digitalización en el pipeline.
+- `digi_crear_lote_por_curso(curso_id, proyecto_id=None, nombre_lote=None, ruta_base=None, metadata_proyecto=None)`: crea un `LoteDigitalizacion` vinculado a un curso de M360 (`UPN-DIGIT-API-001`).
+- `digi_cargar_lote_por_curso(curso_id, carpeta_local, proyecto_id=None, nombre_lote=None, ruta_base=None, metadata_proyecto=None, ingest_mode="existing")`: orquestador de alto nivel que crea el lote por curso y sube todos los archivos válidos de la carpeta local (`UPN-DIGIT-API-003`). Retorna resumen con `lote_id`, documentos subidos y errores.
 - `api_v1_digi_cargar_lote(nombre_lote, ruta_base, modo="existing", created_by_id=None, metadata_proyecto=None, ruta_fuente=None)`: variante directa contra el endpoint `POST /api/v1/digitalizacion/lotes/cargar/`. `ruta_fuente` es obligatorio en el endpoint; si se omite, se envía igual a `ruta_base`.
 - `digi_validar_documento(file_path)`: validación local aún NO implementada; devuelve `ok: False` con `validacion_no_implementada`. No usar como gate de ingesta hasta que exista checksum/characterisation real.
 

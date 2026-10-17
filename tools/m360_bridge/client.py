@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import http.cookiejar
+import hashlib
 import json
 import os
 import urllib.error
@@ -9,6 +10,8 @@ import urllib.parse
 import urllib.request
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+
+import scanlib
 
 
 class M360Client:
@@ -856,3 +859,562 @@ class M360Client:
             "checksum": {},
             "errors": ["validacion_no_implementada: falta checksum SHA-256 y characterisation"],
         }
+
+    # ============================================================
+    # UPN-DIGIT-API-002 — Subir documento escaneado vía multipart
+    # ============================================================
+    def digi_subir_documento(
+        self,
+        lote_id: int,
+        archivo_path: str,
+        document_id: str,
+        tipo: str = "documento",
+        titulo: Optional[str] = None,
+        metadata_proyecto: Optional[Dict[str, Any]] = None,
+        ingest_mode: str = "existing",
+    ) -> Dict[str, Any]:
+        """Subir un documento escaneado individual a un lote existente vía multipart.
+
+        UPN-DIGIT-API-002: Implementar método multipart en bridge para subir
+        documentos escaneados. Envía el archivo binario + metadatos como
+        multipart/form-data al endpoint `/api/v1/digitalizacion/documentos/upload/`.
+
+        Args:
+            lote_id: ID del LoteDigitalizacion donde asociar el documento.
+            archivo_path: Ruta local al archivo a subir.
+            document_id: ID único del documento (formato upn_YYYY-MM-DD_NNN).
+            tipo: Tipo de documento (default: "documento").
+            titulo: Título del documento (default: document_id).
+            metadata_proyecto: Metadata adicional del proyecto (opcional).
+            ingest_mode: Modo de ingestión: scan/existing/born_digital (default: existing).
+
+        Returns:
+            Diccionario con `ok`, `documento_id`, `document_id`, `tipo`, `titulo`,
+            `lote_id`, `ruta_inbox`, `archivo_guardado`, `tamaño`, `ingest_mode`
+            o `{"ok": False, "error": ...}` en caso de fallo.
+        """
+        import mimetypes
+
+        path = Path(archivo_path)
+        if not path.exists() or not path.is_file():
+            return {"ok": False, "error": f"archivo_no_encontrado: {archivo_path}"}
+
+        if titulo is None:
+            titulo = document_id
+        if metadata_proyecto is None:
+            metadata_proyecto = {}
+
+        # Construir cuerpo multipart/form-data
+        boundary = "----M360BridgeBoundary" + str(abs(hash((lote_id, document_id, archivo_path))))
+        partes = []
+
+        # Campo: lote_id
+        partes.append(f"--{boundary}".encode("utf-8"))
+        partes.append(b'Content-Disposition: form-data; name="lote_id"')
+        partes.append(b"")
+        partes.append(str(lote_id).encode("utf-8"))
+
+        # Campo: document_id
+        partes.append(f"--{boundary}".encode("utf-8"))
+        partes.append(b'Content-Disposition: form-data; name="document_id"')
+        partes.append(b"")
+        partes.append(document_id.encode("utf-8"))
+
+        # Campo: tipo
+        partes.append(f"--{boundary}".encode("utf-8"))
+        partes.append(b'Content-Disposition: form-data; name="tipo"')
+        partes.append(b"")
+        partes.append(tipo.encode("utf-8"))
+
+        # Campo: titulo
+        partes.append(f"--{boundary}".encode("utf-8"))
+        partes.append(b'Content-Disposition: form-data; name="titulo"')
+        partes.append(b"")
+        partes.append(titulo.encode("utf-8"))
+
+        # Campo: metadata_proyecto
+        partes.append(f"--{boundary}".encode("utf-8"))
+        partes.append(b'Content-Disposition: form-data; name="metadata_proyecto"')
+        partes.append(b"")
+        partes.append(json.dumps(metadata_proyecto).encode("utf-8"))
+
+        # Campo: ingest_mode
+        partes.append(f"--{boundary}".encode("utf-8"))
+        partes.append(b'Content-Disposition: form-data; name="ingest_mode"')
+        partes.append(b"")
+        partes.append(ingest_mode.encode("utf-8"))
+
+        # Campo: archivo (binario)
+        content_type = mimetypes.guess_type(str(path))[0] or "application/octet-stream"
+        partes.append(f"--{boundary}".encode("utf-8"))
+        partes.append(
+            f'Content-Disposition: form-data; name="archivo"; filename="{path.name}"'.encode("utf-8")
+        )
+        partes.append(f"Content-Type: {content_type}".encode("utf-8"))
+        partes.append(b"")
+        partes.append(path.read_bytes())
+
+        # Cierre del boundary
+        partes.append(f"--{boundary}--".encode("utf-8"))
+        partes.append(b"")
+
+        body = b"\r\n".join(partes)
+
+        path_upload = f"/api/v1/digitalizacion/documentos/upload/"
+        url = f"{self.base_url.rstrip('/')}{path_upload}"
+
+        req = urllib.request.Request(url, data=body, method="POST")
+        req.add_header("Content-Type", f"multipart/form-data; boundary={boundary}")
+        req.add_header("Content-Length", str(len(body)))
+        req.add_header("Referer", self.base_url)
+
+        # Agregar CSRF token si está disponible
+        csrf = self._current_csrf()
+        if csrf:
+            req.add_header("X-CSRFToken", csrf)
+
+        try:
+            with self._opener.open(req, timeout=self._timeout) as resp:
+                try:
+                    return json.loads(resp.read().decode("utf-8", errors="replace"))
+                except Exception:
+                    return {"ok": True, "status": resp.status}
+        except urllib.error.HTTPError as exc:
+            try:
+                body_err = exc.read().decode("utf-8", errors="replace")
+                return json.loads(body_err)
+            except Exception:
+                return {"ok": False, "error": f"HTTP {exc.code}: {exc.reason}"}
+        except Exception as exc:
+            return {"ok": False, "error": str(exc)}
+
+    # ============================================================
+    # UPN-DIGIT-API-003 — Crear lote por curso y cargar documentos
+    # ============================================================
+    def digi_crear_lote_por_curso(
+        self,
+        curso_id: int,
+        proyecto_id: Optional[int] = None,
+        nombre_lote: Optional[str] = None,
+        ruta_base: Optional[str] = None,
+        metadata_proyecto: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        """Crear un LoteDigitalizacion vinculado a un curso de M360.
+
+        UPN-DIGIT-API-001: Método de bajo nivel que llama al endpoint
+        `/api/v1/digitalizacion/lotes/por-curso/` (implementado en UPN-DIGIT-API-001).
+        Usa _post_vista (cookie+CSRF) porque es una vista de app Django, no DRF API.
+
+        Args:
+            curso_id: ID del curso en M360 (obligatorio).
+            proyecto_id: ID del proyecto en M360 (opcional).
+            nombre_lote: Nombre del lote (opcional, se autogenera si se omite).
+            ruta_base: Ruta base para archivos (opcional).
+            metadata_proyecto: Metadata adicional (opcional).
+
+        Returns:
+            Respuesta del endpoint con `lote_id`, `nombre`, `estado`, `curso_id`,
+            `proyecto_id`, `ruta_base`, `metadata_proyecto` o error.
+        """
+        payload: Dict[str, Any] = {"curso_id": curso_id}
+        if proyecto_id is not None:
+            payload["proyecto_id"] = proyecto_id
+        if nombre_lote:
+            payload["nombre_lote"] = nombre_lote
+        if ruta_base:
+            payload["ruta_base"] = ruta_base
+        if metadata_proyecto is not None:
+            payload["metadata_proyecto"] = metadata_proyecto
+
+        return self._request_json(
+            "/api/v1/digitalizacion/lotes/por-curso/",
+            payload,
+            method="POST",
+        )
+
+    def digi_cargar_lote_por_curso(
+        self,
+        curso_id: int,
+        carpeta_local: str,
+        proyecto_id: Optional[int] = None,
+        nombre_lote: Optional[str] = None,
+        ruta_base: Optional[str] = None,
+        metadata_proyecto: Optional[Dict[str, Any]] = None,
+        ingest_mode: str = "existing",
+    ) -> Dict[str, Any]:
+        """Orquestador de alto nivel: crear lote por curso y subir todos los documentos.
+
+        UPN-DIGIT-API-003: Combina UPN-DIGIT-API-001 (crear lote por curso) y
+        UPN-DIGIT-API-002 (subir documentos vía multipart) para cargar una carpeta
+        completa de documentos escaneados a un lote vinculado a un curso.
+
+        Flujo:
+          1. Crear LoteDigitalizacion vinculado al curso (digi_crear_lote_por_curso).
+          2. Para cada archivo en carpeta_local, subirlo individualmente
+             (digi_subir_documento) asociado al lote creado.
+          3. Retornar resumen con lote_id y lista de documentos subidos.
+
+        Args:
+            curso_id: ID del curso en M360 (obligatorio).
+            carpeta_local: Ruta a carpeta local con archivos a subir.
+            proyecto_id: ID del proyecto en M360 (opcional).
+            nombre_lote: Nombre del lote (opcional).
+            ruta_base: Ruta base para archivos (opcional).
+            metadata_proyecto: Metadata adicional (opcional).
+            ingest_mode: Modo de ingestión para cada documento (default: existing).
+
+        Returns:
+            Diccionario con `ok`, `lote_id`, `lote_nombre`, `curso_id`,
+            `documentos_subidos` (lista), `documentos_errores` (lista),
+            `total_subidos`, `total_errores`.
+        """
+        carpeta = Path(carpeta_local)
+        if not carpeta.exists() or not carpeta.is_dir():
+            return {"ok": False, "error": f"carpeta_no_encontrada: {carpeta_local}"}
+
+        # Paso 1: Crear el lote vinculado al curso
+        resultado_lote = self.digi_crear_lote_por_curso(
+            curso_id=curso_id,
+            proyecto_id=proyecto_id,
+            nombre_lote=nombre_lote,
+            ruta_base=ruta_base,
+            metadata_proyecto=metadata_proyecto,
+        )
+        if not resultado_lote.get("ok"):
+            return {
+                "ok": False,
+                "error": f"error_creando_lote: {resultado_lote.get('error')}",
+            }
+
+        lote_id = resultado_lote.get("lote_id")
+        lote_nombre = resultado_lote.get("nombre", "")
+
+        # Paso 2: Subir cada archivo en la carpeta
+        archivos_validos = {".pdf", ".png", ".jpg", ".jpeg", ".tiff", ".tif", ".docx", ".xlsx"}
+        archivos = sorted([
+            p for p in carpeta.rglob("*")
+            if p.is_file() and p.suffix.lower() in archivos_validos
+        ])
+
+        documentos_subidos = []
+        documentos_errores = []
+
+        for archivo in archivos:
+            document_id = archivo.stem[:60]
+            resultado = self.digi_subir_documento(
+                lote_id=lote_id,
+                archivo_path=str(archivo),
+                document_id=document_id,
+                tipo="documento",
+                titulo=document_id,
+                metadata_proyecto=metadata_proyecto,
+                ingest_mode=ingest_mode,
+            )
+            if resultado.get("ok"):
+                documentos_subidos.append({
+                    "archivo": archivo.name,
+                    "documento_id": resultado.get("documento_id"),
+                    "document_id": resultado.get("document_id"),
+                    "ruta_inbox": resultado.get("ruta_inbox"),
+                    "tamaño": resultado.get("tamaño"),
+                })
+            else:
+                documentos_errores.append({
+                    "archivo": archivo.name,
+                    "error": resultado.get("error"),
+                })
+
+        return {
+            "ok": True,
+            "lote_id": lote_id,
+            "lote_nombre": lote_nombre,
+            "curso_id": curso_id,
+            "proyecto_id": proyecto_id,
+            "total_subidos": len(documentos_subidos),
+            "total_errores": len(documentos_errores),
+            "documentos_subidos": documentos_subidos,
+            "documentos_errores": documentos_errores,
+        }
+
+    # ============================================================
+    # UPN-DIGIT-API-004 — Escanear y subir documento
+    # ============================================================
+    def digi_escanear_y_subir(
+        self,
+        lote_id: int,
+        document_id: str,
+        tipo: str = "documento",
+        titulo: Optional[str] = None,
+        metadata_proyecto: Optional[Dict[str, Any]] = None,
+        ingest_mode: str = "scan",
+        nombre_scanner: Optional[str] = None,
+        resolucion_dpi: int = 300,
+        color_mode: str = "color",
+        formato: str = "pdf",
+        carpeta_temporal: str = "/tmp",
+    ) -> Dict[str, Any]:
+        """Escanear un documento físico y subir imágenes a un lote existente.
+
+        UPN-DIGIT-API-004: Implementar modo escaneo en bridge.
+        Funciona igual que el front de M360: escanea el documento físico,
+        extrae cada página como imagen JPG y la guarda en ruta_inbox del
+        documento para que CC1 pueda mostrar el preview.
+
+        Flujo (igual que el front):
+          1. Escanear documento físico → obtener PDF del escáner
+          2. Convertir cada página del PDF a imagen JPG
+          3. Guardar imágenes en ruta_inbox del documento
+          4. Subir la primera imagen como DocumentoDigital (via digi_subir_documento)
+          5. Copiar imágenes restantes al mismo inbox_dir
+
+        Args:
+            lote_id: ID del LoteDigitalizacion donde asociar el documento.
+            document_id: ID único del documento (formato upn_YYYY-MM-DD_NNN).
+            tipo: Tipo de documento (default: "documento").
+            titulo: Título del documento (default: document_id).
+            metadata_proyecto: Metadata adicional del proyecto (opcional).
+            ingest_mode: Modo de ingestión (default: "scan").
+            nombre_scanner: Nombre del escáner (opcional; si se omite, usa el primero disponible).
+            resolucion_dpi: Resolución de escaneo en DPI (default: 300).
+            color_mode: Modo de color: "color", "gray", "bw" (default: "color").
+            formato: Formato de salida del escáner: "pdf", "png", "jpg" (default: "pdf").
+            carpeta_temporal: Carpeta para archivo temporal de escaneo (default: "/tmp").
+
+        Returns:
+            Diccionario con `ok`, `documento_id`, `document_id`, `tipo`, `titulo`,
+            `lote_id`, `ruta_inbox`, `archivo_guardado`, `tamaño`, `ingest_mode`,
+            `scanner_usado`, `resolucion_dpi`, `color_mode`, `formato`,
+            `paginas_escaneadas`, `imagenes_generadas` o `{"ok": False, "error": ...}`.
+        """
+        if titulo is None:
+            titulo = document_id
+        if metadata_proyecto is None:
+            metadata_proyecto = {}
+
+        import fitz  # PyMuPDF
+        import tempfile
+        import hashlib
+        import shutil
+
+        # Paso 1: Listar escáneres disponibles
+        try:
+            escaners = scanlib.list_scanners()
+        except Exception as exc:
+            return {"ok": False, "error": f"error_listando_escanneres: {str(exc)}"}
+
+        if not escaners:
+            return {"ok": False, "error": "no_se_encontraron_escanneres"}
+
+        # Paso 2: Seleccionar escáner
+        scanner_seleccionado = None
+        if nombre_scanner:
+            for esc in escaners:
+                if hasattr(esc, 'name') and esc.name == nombre_scanner:
+                    scanner_seleccionado = esc
+                    break
+                if hasattr(esc, 'device_name') and esc.device_name == nombre_scanner:
+                    scanner_seleccionado = esc
+                    break
+        if scanner_seleccionado is None:
+            scanner_seleccionado = escaners[0]
+
+        nombre_scanner_usado = getattr(scanner_seleccionado, 'name', None) or getattr(scanner_seleccionado, 'device_name', None) or str(scanner_seleccionado)
+        scanner_id_para_abrir = getattr(scanner_seleccionado, 'id', None) or nombre_scanner_usado
+
+        # Paso 3: Abrir escáner, configurar y escanear
+        try:
+            with scanlib.open_scanner(scanner_id_para_abrir) as scanner:
+                # Configurar opciones de escaneo
+                try:
+                    scanner.resolution = resolucion_dpi
+                except Exception:
+                    pass
+
+                try:
+                    if color_mode == "gray":
+                        scanner.color_mode = scanlib.ColorMode.GRAY
+                    elif color_mode == "bw":
+                        scanner.color_mode = scanlib.ColorMode.BW
+                    else:
+                        scanner.color_mode = scanlib.ColorMode.COLOR
+                except Exception:
+                    pass
+
+                # Configurar source de escaneo (ADF o flatbed)
+                try:
+                    fuentes = getattr(scanner, 'sources', None) or getattr(scanner, 'scan_sources', None)
+                    if fuentes:
+                        for src in fuentes:
+                            src_name = str(src).lower()
+                            if 'adf' in src_name or 'feeder' in src_name:
+                                scanner.source = src
+                                break
+                            if 'flat' in src_name or 'glass' in src_name:
+                                scanner.source = src
+                                break
+                        else:
+                            scanner.source = fuentes[0]
+                except Exception:
+                    pass
+
+                # Realizar escaneo
+                documento_escanedo = scanner.scan()
+                if documento_escanedo is None:
+                    return {"ok": False, "error": "escaneo_devuelto_nulo"}
+
+                # Obtener datos binarios del documento escaneado (PDF del escáner)
+                datos_escaneo = None
+                try:
+                    datos_escaneo = bytes(documento_escanedo)
+                except Exception:
+                    pass
+                if datos_escaneo is None:
+                    try:
+                        datos_escaneo = documento_escanedo.data
+                    except Exception:
+                        pass
+                if datos_escaneo is None:
+                    try:
+                        datos_escaneo = documento_escanedo.tobytes()
+                    except Exception:
+                        pass
+                if datos_escaneo is None:
+                    return {"ok": False, "error": "no_se_pudieron_obtener_datos_escaneo"}
+
+        except scanlib.ScannerBusyError:
+            return {"ok": False, "error": "escanner_ocupado"}
+        except scanlib.ScannerNotOpenError:
+            return {"ok": False, "error": "escanner_no_abierto"}
+        except scanlib.ScanError as exc:
+            return {"ok": False, "error": f"error_escaneo: {str(exc)}"}
+        except Exception as exc:
+            return {"ok": False, "error": f"error_abriendo_escanner: {str(exc)}"}
+
+        # Paso 4: Convertir el PDF escaneado a imágenes JPG individuales
+        # Según el pipeline: Digitalización salida = imágenes en ruta_inbox
+        # CC1 preview busca imágenes (.jpg, .png), no PDFs
+        try:
+            pdf_doc = fitz.open(stream=datos_escaneo, filetype="pdf")
+            paginas_escaneadas = pdf_doc.page_count
+        except Exception as exc:
+            return {"ok": False, "error": f"error_abriendo_pdf_escaneado: {str(exc)}"}
+
+        # Paso 5: Extraer cada página como imagen JPG en directorio temporal
+        img_dir = Path(carpeta_temporal) / f"img_{document_id}_{hashlib.md5(str(os.getpid()).encode()).hexdigest()[:8]}"
+        img_dir.mkdir(parents=True, exist_ok=True)
+
+        imagenes_generadas = []
+        try:
+            for i in range(pdf_doc.page_count):
+                pagina = pdf_doc[i]
+                pix = pagina.get_pixmap(dpi=resolucion_dpi)
+                nombre_imagen = f"pagina_{i+1}.jpg"
+                ruta_imagen = img_dir / nombre_imagen
+                pix.save(str(ruta_imagen))
+                imagenes_generadas.append({
+                    "nombre": nombre_imagen,
+                    "ruta": str(ruta_imagen),
+                    "tamaño": ruta_imagen.stat().st_size,
+                })
+            pdf_doc.close()
+        except Exception as exc:
+            pdf_doc.close()
+            return {"ok": False, "error": f"error_guardando_imagenes: {str(exc)}"}
+
+        # Paso 6: Subir la primera imagen como DocumentoDigital vía digi_subir_documento
+        # digi_subir_documento crea el DocumentoDigital y guarda el archivo en inbox_dir
+        primera_imagen = img_dir / imagenes_generadas[0]["nombre"]
+        try:
+            resultado_subida = self.digi_subir_documento(
+                lote_id=lote_id,
+                archivo_path=str(primera_imagen),
+                document_id=document_id,
+                tipo=tipo,
+                titulo=titulo,
+                metadata_proyecto=metadata_proyecto,
+                ingest_mode=ingest_mode,
+            )
+        except Exception as exc:
+            return {"ok": False, "error": f"error_subiendo_documento: {str(exc)}"}
+
+        if not resultado_subida.get("ok"):
+            return resultado_subida
+
+        # Paso 7: Copiar las imágenes restantes al inbox_dir del documento creado
+        inbox_dir = Path(resultado_subida.get("ruta_inbox", ""))
+        if inbox_dir and inbox_dir.exists():
+            for img in imagenes_generadas[1:]:
+                src = Path(img["ruta"])
+                dst = inbox_dir / img["nombre"]
+                if not dst.exists():
+                    try:
+                        shutil.copy2(str(src), str(dst))
+                    except Exception:
+                        pass
+
+        # Limpiar directorio temporal de imágenes
+        try:
+            shutil.rmtree(str(img_dir), ignore_errors=True)
+        except Exception:
+            pass
+
+        # Paso 8: Completar etapa de digitalización en el pipeline
+        # El documento ya está creado y subido; ahora marcamos la etapa como completada
+        try:
+            resultado_etapa = self.digi_completar_etapa(
+                documento_id=resultado_subida.get("documento_id"),
+                etapa="digitalizacion",
+                estado="ok",
+                observaciones="Documento escaneado y subido vía flujo completo desde bridge",
+            )
+            if not resultado_etapa.get("ok"):
+                # No fallar el flujo completo si la etapa no se pudo completar;
+                # solo lo registramos en el resultado
+                resultado_final["etapa_completada"] = False
+                resultado_final["etapa_error"] = resultado_etapa.get("error")
+            else:
+                resultado_final["etapa_completada"] = True
+        except Exception as exc:
+            resultado_final["etapa_completada"] = False
+            resultado_final["etapa_error"] = str(exc)
+
+        return resultado_final
+
+    # ============================================================
+    # UPN-DIGIT-API-004c — Completar etapa de pipeline vía bridge
+    # ============================================================
+    def digi_completar_etapa(
+        self,
+        documento_id: int,
+        etapa: str,
+        estado: str = "ok",
+        observaciones: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Completar una etapa de pipeline para un documento vía API de M360.
+
+        UPN-DIGIT-API-004c: Permite al bridge marcar una etapa de pipeline como
+        completada para un documento, evitando que el documento quede "atrapado"
+        en una etapa sin finalizar.
+
+        Args:
+            documento_id: ID del DocumentoDigital en M360.
+            etapa: Nombre de la etapa (digitalizacion, qc1, preprocesamiento, etc.)
+            estado: Estado de la etapa (ok, no_aplica, etc.)
+            observaciones: Observaciones opcionales.
+
+        Returns:
+            Diccionario con `ok` y el resultado, o `{"ok": False, "error": ...}`.
+        """
+        payload: Dict[str, Any] = {
+            "documento_id": documento_id,
+            "etapa": etapa,
+            "estado": estado,
+        }
+        if observaciones:
+            payload["observaciones"] = observaciones
+
+        return self._request_json(
+            "/api/v1/digitalizacion/etapas/completar/",
+            payload,
+            method="POST",
+        )

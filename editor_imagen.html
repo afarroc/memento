@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Editor de Imagen - Vista Previa</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, sans-serif; background: #f3f4f6; height: 100vh; display: flex; flex-direction: column; }
+
+  /* HEADER de la ventana */
+  .header-bar {
+    background: #f3f4f6;
+    border-bottom: 1px solid #d1d5db;
+    padding: 0.75rem 1rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  .header-title { font-weight: 600; font-size: 0.95rem; color: #374151; }
+  .header-actions { margin-left: auto; display: flex; gap: 0.25rem; }
+  .btn-zoom {
+    padding: 0.4rem 0.75rem;
+    font-size: 1rem;
+    border: 1px solid #d1d5db;
+    background: #fff;
+    border-radius: 0.375rem;
+    cursor: pointer;
+  }
+  .btn-zoom:hover { background: #e5e7eb; }
+
+  /* CONTENEDOR PRINCIPAL - Una sola ventana */
+  .preview-container-view {
+    position: relative;
+    overflow: hidden;
+    background: #e5e7eb;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: grab;
+  }
+  .preview-container-view:active { cursor: grabbing; }
+  .preview-container-view img,
+  .preview-container-view canvas {
+    display: block;
+    max-width: none;
+    max-height: none;
+    width: auto;
+    height: auto;
+    will-change: transform;
+  }
+
+  /* Dos paneles lado a lado */
+  .preview-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    height: 100%;
+  }
+  .preview-pane {
+    flex: 1;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid #e5e7eb;
+  }
+  .preview-pane:last-child { border-right: none; }
+  .preview-pane-header {
+    padding: 0.5rem 1rem;
+    background: #f9fafb;
+    border-bottom: 1px solid #e5e7eb;
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: #4b5563;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .zoom-badge {
+    position: absolute;
+    bottom: 0.5rem;
+    right: 0.5rem;
+    background: rgba(0,0,0,0.6);
+    color: #fff;
+    padding: 0.2rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    z-index: 10;
+  }
+</style>
+</head>
+<body>
+  <div class="preview-card">
+    <!-- HEADER de la ventana -->
+    <div class="preview-header-bar">
+      <div class="title">
+        <i class="fas fa-image"></i>
+        <span>Vista previa de documento</span>
+      </div>
+      <div class="actions">
+        <button type="button" class="btn-zoom" data-zoom-action="zoom-in">＋</button>
+        <button type="button" class="btn-zoom" data-zoom-action="zoom-reset">⟲</button>
+        <button type="button" class="btn-zoom" data-zoom-action="zoom-out">−</button>
+      </div>
+    </div>
+
+    <div class="preview-container-view" data-zoomable>
+      <div class="preview-grid">
+        <!-- Panel Izquierdo: ORIGINAL -->
+        <div class="preview-pane">
+          <div class="preview-pane-header"><i class="fas fa-image"></i> Original</div>
+          <img id="imgOriginal" alt="Original" class="preview-image" data-zoom-target>
+        </div>
+
+        <!-- Panel Derecho: PREPROCESADO -->
+        <div class="preview-pane">
+          <div class="preview-pane-header"><i class="fas fa-magic"></i> Preprocesado</div>
+          <img id="imgPreprocesado" alt="Preprocesado" class="preview-image" data-zoom-target>
+        </div>
+      </div>
+      <span class="zoom-badge" id="zoomBadge">100%</span>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      const ZOOM_STEP = 0.5;
+      const MAX_ZOOM = 4;
+      const MIN_ZOOM = 1;
+
+      function getContainers() {
+        return Array.from(document.querySelectorAll('.preview-container-view[data-zoomable]'));
+      }
+
+      function getState(el) {
+        return parseFloat(el.getAttribute('data-zoom-level') || '1');
+      }
+
+      function setState(el, level, ox, oy) {
+        const img = el.querySelector('img, canvas');
+        if (!img) return;
+        level = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, level));
+        el.setAttribute('data-zoom-level', level);
+        if (level <= 1) {
+          el.classList.remove('zoomed');
+          img.style.transform = 'scale(1)';
+          img.style.transformOrigin = '50% 50%';
+          el.style.setProperty('--zoom-x', '50%');
+          el.style.setProperty('--zoom-y', '50%');
+        } else {
+          el.classList.add('zoomed');
+          const px = ox != null ? ox : 50;
+          const py = oy != null ? oy : 50;
+          img.style.transformOrigin = px + '% ' + py + '%';
+          img.style.transform = 'scale(' + level + ')';
+          el.style.setProperty('--zoom-x', px + '%');
+          el.style.setProperty('--zoom-y', py + '%');
+        }
+        const badge = el.querySelector('.zoom-badge');
+        if (badge) badge.textContent = Math.round(level * 100) + '%';
+      }
+
+      function syncAll() {
+        const containers = getContainers();
+        if (containers.length === 0) return;
+        const first = containers[0];
+        const level = getState(first);
+        const ox = first.style.getPropertyValue('--zoom-x') || '50%';
+        const oy = first.style.getPropertyValue('--zoom-y') || '50%';
+        for (let i = 1; i < containers.length; i++) {
+          setState(containers[i], level, parseFloat(ox), parseFloat(oy));
+        }
+      }
+
+      // Botones de zoom
+      document.addEventListener('click', function(e) {
+        const btn = e.target.closest('[data-zoom-action]');
+        if (!btn) return;
+        const container = btn.closest('.preview-container-view[data-zoomable]');
+        if (!container) return;
+        const action = btn.getAttribute('data-zoom-action');
+        const level = getState(container);
+        if (action === 'zoom-in') {
+          setState(container, Math.min(MAX_ZOOM, level + ZOOM_STEP));
+          syncAll();
+        } else if (action === 'zoom-reset') {
+          setState(container, 1);
+          syncAll();
+        } else if (action === 'zoom-out') {
+          setState(container, Math.max(MIN_ZOOM, level - ZOOM_STEP));
+          syncAll();
+        }
+      });
+
+      // Click en imagen para hacer zoom centrado
+      document.addEventListener('click', function(e) {
+        const container = e.target.closest('.preview-container-view[data-zoomable]');
+        if (!container) return;
+        const img = container.querySelector('img, canvas');
+        if (!img) return;
+        if (e.target.closest('[data-zoom-action]')) return;
+        const currentLevel = getState(container);
+        if (currentLevel <= 1) return;
+        const imgRect = img.getBoundingClientRect();
+        const imgX = ((e.clientX - imgRect.left) / imgRect.width) * 100;
+        const imgY = ((e.clientY - imgRect.top) / imgRect.height) * 100;
+        setState(container, 1, imgX, imgY);
+        setState(container, 2, imgX, imgY);
+        syncAll();
+      });
+
+      // Rueda del ratón para zoom centrado
+      document.addEventListener('wheel', function(e) {
+        const container = e.target.closest('.preview-container-view[data-zoomable]');
+        if (!container) return;
+        e.preventDefault();
+        const img = container.querySelector('img, canvas');
+        if (!img) return;
+        const imgRect = img.getBoundingClientRect();
+        const imgX = ((e.clientX - imgRect.left) / imgRect.width) * 100;
+        const imgY = ((e.clientY - imgRect.top) / imgRect.height) * 100;
+        const level = getState(container);
+        const delta = e.deltaY < 0 ? ZOOM_STEP : -ZOOM_STEP;
+        setState(container, level + delta, imgX, imgY);
+        syncAll();
+      }, { passive: false });
+
+      // ARRASTRAR para navegar cuando está zoomado
+      document.addEventListener('mousedown', function(e) {
+        const container = e.target.closest('.preview-container-view[data-zoomable]');
+        if (!container) return;
+        const img = container.querySelector('img, canvas');
+        if (!img) return;
+        if (getState(container) <= 1) return;
+        dragState.set(container, {
+          isDragging: true,
+          startX: e.clientX,
+          startY: e.clientY,
+          startOriginX: parseFloat(container.style.getPropertyValue('--zoom-x') || '50'),
+          startOriginY: parseFloat(container.style.getPropertyValue('--zoom-y') || '50'),
+        });
+      });
+
+      document.addEventListener('mousemove', function(e) {
+        dragState.forEach((state, container) => {
+          if (!state.isDragging) return;
+          const img = container.querySelector('img, canvas');
+          if (!img) return;
+          const dx = e.clientX - state.startX;
+          const dy = e.clientY - state.startY;
+          const rect = container.getBoundingClientRect();
+          const dxPercent = (dx / rect.width) * 100;
+          const dyPercent = (dy / rect.height) * 100;
+          const newOx = Math.max(0, Math.min(100, state.startOriginX - dxPercent));
+          const newOy = Math.max(0, Math.min(100, state.startOriginY - dyPercent));
+          setState(container, getState(container), newOx, newOy);
+          const containers = getContainers();
+          containers.forEach(c => {
+            if (c !== container) setState(c, getState(container), newOx, newOy);
+          });
+        });
+      });
+
+      document.addEventListener('mouseup', function() {
+        dragState.forEach((state) => { state.isDragging = false; });
+      });
+    })();
+  </script>
+</body>
+</html>
