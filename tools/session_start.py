@@ -483,7 +483,6 @@ def build_agent_content(project: str | None = None) -> tuple[str, str]:
     lines = [
         "---",
         "description: Curador de memoria histórica del proyecto",
-        f"project: {active_project}",
         "mode: primary",
         "model: kilo/kilo-auto/free",
         "steps: 25",
